@@ -10,7 +10,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 START_TIME = time.time()
-DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "campus_os.db")
+
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    import shutil
+    DB_FILE = "/tmp/campus_os.db"
+    source_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "campus_os.db")
+    if not os.path.exists(DB_FILE) and os.path.exists(source_db):
+        try:
+            shutil.copyfile(source_db, DB_FILE)
+        except Exception:
+            pass
+else:
+    DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "campus_os.db")
 
 app = FastAPI(
     title="Campus OS Real-time API & Database Engine",
