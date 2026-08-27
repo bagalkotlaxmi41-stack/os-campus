@@ -1228,7 +1228,7 @@
             <a href="dashboard.html" class="hero-btn-primary">
               <span>📊 Open Dashboard →</span>
             </a>
-            <button class="hero-btn-secondary" onclick="openAccountModal()">
+            <button class="hero-btn-secondary" id="heroAccountBtn" onclick="openAccountModal()">
               <span>🚀 Create Account</span>
             </button>
           </div>
@@ -1786,15 +1786,31 @@ function syncNavbarUser() {
   const user = Storage.getUser();
   const navUserName = document.getElementById('navUserName');
   const navUserAvatar = document.getElementById('navUserAvatar');
+  const navUserBadge = document.getElementById('navUserBadge');
+  const createAccountBtn = document.getElementById('openCreateAccountBtn');
+  const heroAccountBtn = document.getElementById('heroAccountBtn');
   const bottomAvatar = document.getElementById('mobileBottomNavAvatar');
 
   if (!user) {
-    if (navUserName) navUserName.textContent = 'Sign In';
-    if (navUserAvatar) navUserAvatar.textContent = '+';
+    // ---- Guest (No Account Created Yet) ----
+    if (createAccountBtn) createAccountBtn.style.display = 'inline-flex';
+    if (navUserBadge) navUserBadge.style.display = 'none';
+    if (heroAccountBtn) {
+      heroAccountBtn.innerHTML = '<span>🚀 Create Account</span>';
+      heroAccountBtn.onclick = openAccountModal;
+    }
     if (bottomAvatar) {
       bottomAvatar.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
     }
     return;
+  }
+
+  // ---- Account Exists (Hide Create Account button, Show Profile badge) ----
+  if (createAccountBtn) createAccountBtn.style.display = 'none';
+  if (navUserBadge) navUserBadge.style.display = 'inline-flex';
+  if (heroAccountBtn) {
+    heroAccountBtn.innerHTML = '<span>👤 Student Passport</span>';
+    heroAccountBtn.onclick = () => window.location.href = 'profile.html';
   }
 
   const name = user.displayName || user.name || 'Student';
