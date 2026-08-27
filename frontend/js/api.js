@@ -23,6 +23,7 @@ const getPythonApiBaseUrl = () => {
 const PYTHON_API_BASE_URL = getPythonApiBaseUrl();
 
 const PythonAPI = {
+  /**
    * Health Check
    */
   async checkHealth() {
