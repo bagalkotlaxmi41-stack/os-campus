@@ -752,6 +752,32 @@ def save_task(task: TaskModel):
     return {"status": "success", "id": tid, "title": task.title}
 
 
+@app.put("/api/tasks/{task_id}")
+@app.patch("/api/tasks/{task_id}")
+def update_task(task_id: str, updates: Dict[str, Any]):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        return {"status": "error", "message": "Task not found"}
+
+    title = updates.get("title", existing["title"])
+    subject = updates.get("subject", existing["subject"])
+    priority = updates.get("priority", existing["priority"])
+    task_status = updates.get("status", existing["status"])
+    deadline = updates.get("deadline", existing["deadline"])
+    notes = updates.get("notes", existing["notes"])
+
+    cursor.execute("""
+    UPDATE tasks SET title = ?, subject = ?, priority = ?, status = ?, deadline = ?, notes = ? WHERE id = ?
+    """, (title, subject, priority, task_status, deadline, notes, task_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "id": task_id, "updated": True}
+
+
 @app.delete("/api/tasks/{task_id}")
 def delete_task(task_id: str):
     conn = get_db()
@@ -760,6 +786,32 @@ def delete_task(task_id: str):
     conn.commit()
     conn.close()
     return {"status": "success"}
+
+
+@app.put("/api/notes/{note_id}")
+@app.patch("/api/notes/{note_id}")
+def update_note(note_id: str, updates: Dict[str, Any]):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM notes WHERE id = ?", (note_id,))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        return {"status": "error", "message": "Note not found"}
+
+    title = updates.get("title", existing["title"])
+    subject = updates.get("subject", existing["subject"])
+    color = updates.get("color", existing["color"])
+    content = updates.get("content", existing["content"])
+    tags = json.dumps(updates.get("tags", json.loads(existing["tags"] or "[]")))
+    now = int(time.time() * 1000)
+
+    cursor.execute("""
+    UPDATE notes SET title = ?, subject = ?, color = ?, content = ?, tags = ?, updated_at = ? WHERE id = ?
+    """, (title, subject, color, content, tags, now, note_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "id": note_id, "updated": True}
 
 
 @app.get("/api/attendance")
@@ -803,6 +855,166 @@ def save_attendance(att: AttendanceModel):
     return {"status": "success", "id": aid, "name": att.name}
 
 
+@app.put("/api/attendance/{att_id}")
+@app.patch("/api/attendance/{att_id}")
+def update_attendance(att_id: str, updates: Dict[str, Any]):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM attendance WHERE id = ?", (att_id,))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        return {"status": "error", "message": "Attendance record not found"}
+
+    name = updates.get("name", existing["name"])
+    code = updates.get("code", existing["code"])
+    color = updates.get("color", existing["color"])
+    present = int(updates.get("present", existing["present"]))
+    total = int(updates.get("total", existing["total"]))
+
+    cursor.execute("""
+    UPDATE attendance SET name = ?, code = ?, color = ?, present = ?, total = ? WHERE id = ?
+    """, (name, code, color, present, total, att_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "id": att_id, "updated": True}
+
+
+@app.delete("/api/attendance/{att_id}")
+def delete_attendance(att_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM attendance WHERE id = ?", (att_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+
+@app.post("/api/attendance/{att_id}/mark")
+def mark_attendance(att_id: str, data: Dict[str, Any]):
+    present = data.get("present", True)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM attendance WHERE id = ?", (att_id,))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        return {"status": "error", "message": "Subject not found"}
+
+    new_total = existing["total"] + 1
+    new_present = existing["present"] + (1 if present else 0)
+
+    cursor.execute("UPDATE attendance SET present = ?, total = ? WHERE id = ?", (new_present, new_total, att_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "present": new_present, "total": new_total}
+
+
+# ============================================================
+# TIMETABLE & RESOURCES ENDPOINTS
+# ============================================================
+
+@app.get("/api/timetable")
+def get_timetable(handle: Optional[str] = None):
+    conn = get_db()
+    cursor = conn.cursor()
+    handle_clean = (handle or "@student").strip()
+    if not handle_clean.startswith("@"): handle_clean = "@" + handle_clean
+    cursor.execute("SELECT schedule_json FROM timetable WHERE LOWER(handle) = ?", (handle_clean.lower(),))
+    row = cursor.fetchone()
+    conn.close()
+    if row and row["schedule_json"]:
+        try:
+            return json.loads(row["schedule_json"])
+        except:
+            return {}
+    return {}
+
+
+@app.post("/api/timetable")
+@app.post("/api/timetable/slot")
+def save_timetable_slot(slot: Dict[str, Any]):
+    handle = (slot.get("handle") or "@student").strip()
+    if not handle.startswith("@"): handle = "@" + handle
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT schedule_json FROM timetable WHERE LOWER(handle) = ?", (handle.lower(),))
+    row = cursor.fetchone()
+    schedule = json.loads(row["schedule_json"]) if (row and row["schedule_json"]) else {}
+
+    day = slot.get("day", "Mon")
+    time_key = slot.get("time", "09:00")
+    if day not in schedule:
+        schedule[day] = {}
+
+    schedule[day][time_key] = {
+        "subject": slot.get("subject", ""),
+        "code": slot.get("code", ""),
+        "room": slot.get("room", ""),
+        "color": slot.get("color", "cyan")
+    }
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO timetable (handle, schedule_json) VALUES (?, ?)
+    """, (handle, json.dumps(schedule)))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "schedule": schedule}
+
+
+@app.get("/api/resources")
+def get_resources(branch: Optional[str] = None, sem: Optional[int] = None):
+    conn = get_db()
+    cursor = conn.cursor()
+    if branch and sem:
+        cursor.execute("SELECT * FROM resources WHERE branch = ? AND semester = ? ORDER BY created_at DESC", (branch, sem))
+    elif branch:
+        cursor.execute("SELECT * FROM resources WHERE branch = ? ORDER BY created_at DESC", (branch,))
+    else:
+        cursor.execute("SELECT * FROM resources ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{
+        "id": r["id"],
+        "title": r["title"],
+        "url": r["url"],
+        "category": r["category"],
+        "subject": r["subject"],
+        "branch": r["branch"],
+        "semester": r["semester"],
+        "emoji": r["emoji"],
+        "downloadCount": r["download_count"],
+        "uploader": r["uploader"]
+    } for r in rows]
+
+
+@app.post("/api/resources")
+def add_resource(res: Dict[str, Any]):
+    rid = res.get("id") or f"res_{int(time.time() * 1000)}"
+    now = int(time.time() * 1000)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO resources (id, title, url, category, subject, branch, semester, emoji, download_count, uploader, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    """, (
+        rid,
+        res.get("title", "Resource"),
+        res.get("url", "#"),
+        res.get("category", "Lecture Notes"),
+        res.get("subject", "General"),
+        res.get("branch", "CSE"),
+        int(res.get("semester", 5)),
+        res.get("emoji", "📚"),
+        res.get("uploader", "Academic Cell"),
+        now
+    ))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "id": rid}
+
+
 # ============================================================
 # AI SUITE (Note Summarizer, Quiz Generator, Attendance Predictor)
 # ============================================================
@@ -842,6 +1054,7 @@ class AttendancePredictRequest(BaseModel):
 
 
 @app.post("/api/attendance/predict")
+@app.post("/api/attendance/calculate")
 def ai_predict_attendance(req: AttendancePredictRequest):
     if req.total == 0:
         return {
@@ -884,11 +1097,11 @@ def ai_predict_attendance(req: AttendancePredictRequest):
 
 
 # ============================================================
-# SYSTEM HEALTH
+# SYSTEM HEALTH & STATIC ASSET MOUNT
 # ============================================================
 
-@app.get("/")
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "online",
@@ -896,3 +1109,14 @@ def health():
         "version": "3.0.0",
         "uptime_seconds": int(time.time() - START_TIME)
     }
+
+
+# Mount Frontend for Single-Port Production Deployments (Render / Railway / Docker)
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+if os.path.isdir(frontend_dir):
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+else:
+    @app.get("/")
+    def root():
+        return health()

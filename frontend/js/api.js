@@ -3,9 +3,24 @@
 // Connects Frontend to SQLite Realtime Database Engine
 // ============================================
 
-const PYTHON_API_BASE_URL = 'http://localhost:8000';
+// Dynamic Environment-Aware API Base URL
+const getPythonApiBaseUrl = () => {
+  if (typeof localStorage !== 'undefined') {
+    const custom = localStorage.getItem('cos_api_url');
+    if (custom) return custom.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const { hostname, port, origin } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+      if (port === '8000') return origin;
+      return 'http://localhost:8000';
+    }
+    return origin;
+  }
+  return 'http://localhost:8000';
+};
 
-const PythonAPI = {
+const PYTHON_API_BASE_URL = getPythonApiBaseUrl();
   /**
    * Health Check
    */
