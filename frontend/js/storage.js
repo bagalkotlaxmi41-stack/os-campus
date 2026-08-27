@@ -124,15 +124,25 @@ const Storage = {
     return this.getAccounts().find(a => (a.username || a.handle || '').toLowerCase() === clean) || null;
   },
   searchAccounts(query) {
-    if (!query) return this.getAccounts();
-    const q = query.toLowerCase().trim();
-    return this.getAccounts().filter(a => {
+    const list = [...this.getAccounts()];
+    const currentUser = this.getUser();
+    if (currentUser && (currentUser.username || currentUser.handle)) {
+      const uHandle = (currentUser.username || currentUser.handle).toLowerCase();
+      if (!list.some(a => (a.username || a.handle || '').toLowerCase() === uHandle)) {
+        list.unshift(currentUser);
+      }
+    }
+    if (!query || !query.trim()) return list;
+    const q = query.toLowerCase().trim().replace(/^@/, '');
+    return list.filter(a => {
       const name = (a.displayName || a.name || '').toLowerCase();
-      const handle = (a.username || a.handle || '').toLowerCase();
+      const handle = (a.username || a.handle || '').toLowerCase().replace(/^@/, '');
       const dept = (a.department || '').toLowerCase();
+      const prog = (a.program || '').toLowerCase();
       const usn = (a.usn || '').toLowerCase();
-      const skills = (a.skills || []).map(s => s.toLowerCase()).join(' ');
-      return name.includes(q) || handle.includes(q) || dept.includes(q) || usn.includes(q) || skills.includes(q);
+      const bio = (a.bio || '').toLowerCase();
+      const skills = (Array.isArray(a.skills) ? a.skills : []).map(s => String(s).toLowerCase()).join(' ');
+      return name.includes(q) || handle.includes(q) || dept.includes(q) || prog.includes(q) || usn.includes(q) || bio.includes(q) || skills.includes(q);
     });
   },
 

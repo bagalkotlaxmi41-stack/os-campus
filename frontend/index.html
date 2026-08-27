@@ -130,6 +130,7 @@
     .brand-title span {
       background: linear-gradient(135deg, #a78bfa, #38bdf8);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -427,6 +428,7 @@
     .text-hero-gradient {
       background: linear-gradient(135deg, #c4b5fd 0%, #38bdf8 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -1244,7 +1246,7 @@
           <div class="hero-glow-badge" style="background:rgba(6,182,212,0.2); border-color:rgba(6,182,212,0.45); color:#67e8f9;">📅 Class Timetables</div>
           <h1 class="hero-title-text">
             Weekly Lectures &<br />
-            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Daily Class Periods</span>
+            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Daily Class Periods</span>
           </h1>
           <div class="hero-cta-group">
             <a href="timetable.html" class="hero-btn-primary">
@@ -1263,7 +1265,7 @@
           <div class="hero-glow-badge" style="background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.45); color:#34d399;">🌟 75% Attendance Radar</div>
           <h1 class="hero-title-text">
             Attendance Health &<br />
-            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Smart Study Notes Vault</span>
+            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Smart Study Notes Vault</span>
           </h1>
           <div class="hero-cta-group">
             <a href="attendance.html" class="hero-btn-primary">
@@ -1960,6 +1962,60 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { closeSearchOverlay(); closeAccountModal(); }
 });
 
+function renderSearchResults(accounts, tools, query) {
+  const resultsBox = document.getElementById('globalSearchResults');
+  if (!resultsBox) return;
+
+  let html = '';
+
+  if (accounts.length > 0) {
+    html += `<div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">Registered Student Accounts (${accounts.length})</div>`;
+    html += accounts.map(acc => {
+      const name = acc.displayName || acc.name || 'Student';
+      const rawHandle = acc.username || acc.handle || '@student';
+      const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+      const photo = Storage.getUserPhoto(handle) || acc.photo;
+      const avatarContent = photo ? `<img src="${photo}" alt="${escapeHtml(name)}" style="width:100%;height:100%;object-fit:cover;" />` : name[0].toUpperCase();
+      return `
+        <a href="profile.html?handle=${encodeURIComponent(handle)}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+          <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
+            <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; overflow:hidden; flex-shrink:0;">
+              ${avatarContent}
+            </div>
+            <div style="overflow:hidden;">
+              <div style="font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(name)} <span style="font-size:11px; color:#a78bfa;">${escapeHtml(handle)}</span></div>
+              <div style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || '?'} ${acc.usn ? `· ${escapeHtml(acc.usn)}` : ''}</div>
+            </div>
+          </div>
+          <span style="font-size:12px; font-weight:800; color:#a78bfa; white-space:nowrap; flex-shrink:0;">View Passport →</span>
+        </a>
+      `;
+    }).join('');
+  }
+
+  if (tools.length > 0) {
+    html += `<div style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 8px; padding:0 8px;">Workspace Tools (${tools.length})</div>`;
+    html += tools.map(t => `
+      <a href="${t.url}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:20px;">${t.icon}</span>
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">${t.name}</div>
+            <div style="font-size:11px; color:#94a3b8;">${t.desc}</div>
+          </div>
+        </div>
+        <span style="font-size:12px; font-weight:800; color:#38bdf8;">Open →</span>
+      </a>
+    `).join('');
+  }
+
+  if (!html) {
+    html = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">No matching registered students found for "${escapeHtml(query)}".</div>`;
+  }
+
+  resultsBox.innerHTML = html;
+}
+
 let liveSearchDebounce;
 document.getElementById('globalLiveSearchInput')?.addEventListener('input', function() {
   const query = this.value.trim();
@@ -1967,13 +2023,44 @@ document.getElementById('globalLiveSearchInput')?.addEventListener('input', func
   if (!resultsBox) return;
 
   if (query.length < 2) {
-    resultsBox.innerHTML = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">Type at least 2 characters to search across real registered students and workspace tools...</div>`;
+    // Show quick suggestions or hint
+    const allAccounts = Storage.searchAccounts('');
+    if (allAccounts.length > 0) {
+      const top3 = allAccounts.slice(0, 3);
+      resultsBox.innerHTML = `
+        <div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">Recently Active Students</div>
+        ${top3.map(acc => {
+          const name = acc.displayName || acc.name || 'Student';
+          const rawHandle = acc.username || acc.handle || '@student';
+          const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+          const photo = Storage.getUserPhoto(handle) || acc.photo;
+          const avatarContent = photo ? `<img src="${photo}" alt="${escapeHtml(name)}" style="width:100%;height:100%;object-fit:cover;" />` : name[0].toUpperCase();
+          return `
+            <a href="profile.html?handle=${encodeURIComponent(handle)}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+              <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
+                <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; overflow:hidden; flex-shrink:0;">
+                  ${avatarContent}
+                </div>
+                <div style="overflow:hidden;">
+                  <div style="font-size:13px; font-weight:800;">${escapeHtml(name)} <span style="font-size:11px; color:#a78bfa;">${escapeHtml(handle)}</span></div>
+                  <div style="font-size:11px; color:#94a3b8;">${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || '?'}</div>
+                </div>
+              </div>
+              <span style="font-size:12px; font-weight:800; color:#a78bfa;">View Passport →</span>
+            </a>
+          `;
+        }).join('')}
+        <div style="text-align:center; padding:15px 20px; color:#64748b; font-size:12px;">Type at least 2 characters to search across all registered students and tools...</div>
+      `;
+    } else {
+      resultsBox.innerHTML = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">Type at least 2 characters to search across real registered students and workspace tools...</div>`;
+    }
     return;
   }
 
   clearTimeout(liveSearchDebounce);
-  liveSearchDebounce = setTimeout(() => {
-    const accounts = Storage.searchAccounts(query);
+  liveSearchDebounce = setTimeout(async () => {
+    let accounts = Storage.searchAccounts(query);
     const q = query.toLowerCase();
 
     const tools = [
@@ -1986,54 +2073,33 @@ document.getElementById('globalLiveSearchInput')?.addEventListener('input', func
       { name: 'Student Passport', desc: 'Digital ID passport & badges', url: 'profile.html', icon: '👤' }
     ].filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
 
-    let html = '';
+    // Render instant local results
+    renderSearchResults(accounts, tools, query);
 
-    if (accounts.length > 0) {
-      html += `<div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">Registered Student Accounts (${accounts.length})</div>`;
-      html += accounts.map(acc => {
-        const name = acc.displayName || acc.name || 'Student';
-        const handle = acc.username || acc.handle || '@student';
-        const photo = Storage.getUserPhoto(handle) || acc.photo;
-        const avatarContent = photo ? `<img src="${photo}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />` : name[0].toUpperCase();
-        return `
-          <a href="profile.html?handle=${encodeURIComponent(handle)}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; overflow:hidden; flex-shrink:0;">
-                ${avatarContent}
-              </div>
-              <div>
-                <div style="font-size:13px; font-weight:800;">${escapeHtml(name)} <span style="font-size:11px; color:#a78bfa;">${handle}</span></div>
-                <div style="font-size:11px; color:#94a3b8;">${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || '?'} ${acc.usn ? `· ${acc.usn}` : ''}</div>
-              </div>
-            </div>
-            <span style="font-size:12px; font-weight:800; color:#a78bfa;">View Passport →</span>
-          </a>
-        `;
-      }).join('');
+    // Asynchronously search backend API and merge
+    if (window.PythonAPI && PythonAPI.searchAccounts) {
+      try {
+        const remote = await PythonAPI.searchAccounts(query);
+        if (remote && Array.isArray(remote)) {
+          const handles = new Set(accounts.map(a => (a.username || a.handle || '').toLowerCase()));
+          let added = false;
+          remote.forEach(r => {
+            const h = (r.handle || r.username || '').toLowerCase();
+            if (h && !handles.has(h)) {
+              accounts.push(r);
+              handles.add(h);
+              added = true;
+            }
+          });
+          if (added) {
+            renderSearchResults(accounts, tools, query);
+          }
+        }
+      } catch (err) {
+        console.warn('Remote search error:', err);
+      }
     }
-
-    if (tools.length > 0) {
-      html += `<div style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 8px; padding:0 8px;">Workspace Tools (${tools.length})</div>`;
-      html += tools.map(t => `
-        <a href="${t.url}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:20px;">${t.icon}</span>
-            <div>
-              <div style="font-size:13px; font-weight:800; color:#fff;">${t.name}</div>
-              <div style="font-size:11px; color:#94a3b8;">${t.desc}</div>
-            </div>
-          </div>
-          <span style="font-size:12px; font-weight:800; color:#38bdf8;">Open →</span>
-        </a>
-      `).join('');
-    }
-
-    if (!html) {
-      html = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">No matching results for "${escapeHtml(query)}".</div>`;
-    }
-
-    resultsBox.innerHTML = html;
-  }, 160);
+  }, 120);
 });
 
 // =====================================================
