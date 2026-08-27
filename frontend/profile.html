@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Student Academic Passport — Campus OS</title>
+  <meta name="description" content="Student identity passport, published study materials, verified PDF documents, and academic metrics on Campus OS." />
+  <meta name="theme-color" content="#7c3aed" />
+
+  <!-- Favicon / Browser Icon -->
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --bg-base: #06050e;
+      --bg-surface: #0c0a1a;
+      --bg-elevated: #131026;
+      --bg-card: rgba(19, 16, 38, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --primary: #8b5cf6;
+      --primary-light: #a78bfa;
+      --accent-cyan: #06b6d4;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 80% 8%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 15% 35%, rgba(6, 182, 212, 0.1) 0%, transparent 45%);
+      background-attachment: fixed;
+      padding-bottom: 70px;
+    }
+
+    @media (min-width: 769px) {
+      body { padding-bottom: 0; }
+    }
+
+    /* ---- TOP NAVBAR ---- */
+    .campus-navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 72px;
+      z-index: 1000;
+      background: rgba(8, 6, 18, 0.88);
+      backdrop-filter: blur(24px) saturate(1.8);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-logo-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(139, 92, 246, 0.45);
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.4);
+    }
+
+    .nav-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-link-btn {
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s;
+    }
+
+    .nav-link-btn:hover {
+      background: rgba(124, 58, 237, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #fff;
+    }
+
+    /* ---- PROFILE BANNER & PASSPORT CARD ---- */
+    .profile-hero-section {
+      margin-top: 72px;
+    }
+
+    .profile-banner-cover {
+      height: 220px;
+      background: linear-gradient(135deg, #180638 0%, #2e1065 45%, #08172c 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-banner-cover::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 25% 50%, rgba(124,58,237,0.4) 0%, transparent 60%),
+                  radial-gradient(ellipse at 85% 20%, rgba(6,182,212,0.25) 0%, transparent 50%);
+    }
+
+    .profile-passport-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+      position: relative;
+      width: 100%;
+    }
+
+    .passport-header-card {
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+      margin-top: -64px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    /* Avatar Upload */
+    .avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .student-avatar-big {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      border: 4px solid #06050e;
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 46px;
+      font-weight: 900;
+      color: #fff;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .student-avatar-big img { width: 100%; height: 100%; object-fit: cover; }
+
+    .photo-upload-badge {
+      position: absolute;
+      bottom: 4px; right: 4px;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #7c3aed;
+      border: 2px solid #06050e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: all 0.2s;
+    }
+
+    .photo-upload-badge:hover {
+      background: #9d5cf5;
+      transform: scale(1.1);
+    }
+
+    .passport-meta-col {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .passport-name-h1 {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .passport-handle-text {
+      font-size: 14px;
+      font-family: var(--font-mono);
+      color: #a78bfa;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .passport-bio-p {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      max-width: 620px;
+      margin-bottom: 12px;
+    }
+
+    .passport-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .student-meta-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .passport-actions-col {
+      display: flex;
+      gap: 10px;
+      align-self: center;
+      margin-top: 10px;
+    }
+
+    .passport-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .passport-btn.primary {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      border-color: rgba(139, 92, 246, 0.4);
+      box-shadow: 0 4px 18px rgba(124, 58, 237, 0.4);
+    }
+
+    .passport-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* ---- STATS ROW ---- */
+    .passport-stats-ribbon {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .passport-stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    .stat-val-num {
+      font-size: 24px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .stat-label-text {
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ---- TABS ---- */
+    .passport-tabs-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .passport-tab-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .passport-tab-btn.active {
+      color: #a78bfa;
+      border-bottom-color: #8b5cf6;
+    }
+
+    .tab-content-panel {
+      display: none;
+    }
+
+    .tab-content-panel.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Grid for Materials & Academic Info */
+    .materials-grid-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .material-card-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s;
+    }
+
+    .material-card-item:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-3px);
+    }
+
+    .academic-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .academic-info-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+
+    .academic-card-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    .academic-card-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .tech-skill-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #c4b5fd;
+    }
+
+    /* Modal */
+    .edit-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 2, 8, 0.85);
+      backdrop-filter: blur(20px);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .edit-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .edit-dialog-card {
+      background: #110e24;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 540px;
+      padding: 28px;
+    }
+
+    .youtube-embed-frame {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      border: none;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hidden File Input for Avatar Upload -->
+<input type="file" id="profilePhotoFileInput" accept="image/*" style="display:none;" />
+
+<!-- ===================== TOP NAVBAR ===================== -->
+<header class="campus-navbar">
+  <a href="index.html" class="brand-logo-wrap" title="Campus OS">
+    <img src="img/logo.jpg" alt="Campus OS Logo" class="brand-logo-img" />
+  </a>
+
+  <div class="nav-actions-group">
+    <a href="index.html" class="nav-link-btn">← Home</a>
+    <a href="dashboard.html" class="nav-link-btn" style="background:rgba(124,58,237,0.2); border-color:rgba(139,92,246,0.5); color:#c4b5fd;">
+      Dashboard →
+    </a>
+  </div>
+</header>
+
+<!-- ===================== PROFILE BANNER & PASSPORT ===================== -->
+<section class="profile-hero-section">
+  <div class="profile-banner-cover"></div>
+
+  <div class="profile-passport-wrap">
+    <!-- Header Card -->
+    <div class="passport-header-card">
+      <div class="avatar-wrapper">
+        <div class="student-avatar-big" id="passportAvatar">S</div>
+        <div class="photo-upload-badge" id="photoUploadTrigger" title="Upload Photo From Device">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+      </div>
+
+      <div class="passport-meta-col">
+        <h1 class="passport-name-h1">
+          <span id="passportName">Student</span>
+          <span style="font-size:16px; color:#38bdf8;" title="Verified Student">✓</span>
+        </h1>
+        <div class="passport-handle-text" id="passportHandle">@student</div>
+        <p class="passport-bio-p" id="passportBio">Student at Campus OS Academic Platform.</p>
+        <div class="passport-chips-row" id="passportChips">
+          <!-- Chips injected by JS -->
+        </div>
+      </div>
+
+      <div class="passport-actions-col" id="passportActions">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+    <!-- Stats Ribbon -->
+    <div class="passport-stats-ribbon">
+      <div class="passport-stat-box">
+        <div class="stat-val-num" id="statPDFsUploaded">0</div>
+        <div class="stat-label-text">Shared Posts</div>
+      </div>
+      <div class="passport-stat-box">
+        <div class="stat-val-num" id="passportXPPoints">100</div>
+        <div class="stat-label-text">Academic XP</div>
+      </div>
+      <div class="passport-stat-box">
+        <div class="stat-val-num" id="statSemesterLevel">Sem 5</div>
+        <div class="stat-label-text">Current Term</div>
+      </div>
+      <div class="passport-stat-box">
+        <div class="stat-val-num" style="color:#34d399;">Active</div>
+        <div class="stat-label-text">Status</div>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="passport-tabs-header">
+      <button class="passport-tab-btn active" data-tab="materials">
+        <span>📄 Posts & Materials</span>
+      </button>
+      <button class="passport-tab-btn" data-tab="academic">
+        <span>🏛️ Academic Passport</span>
+      </button>
+      <button class="passport-tab-btn" data-tab="skills">
+        <span>⚡ Skills & Tech</span>
+      </button>
+    </div>
+
+    <!-- Tab 1: Uploaded Posts & Materials -->
+    <div class="tab-content-panel active" id="tab-materials">
+      <div class="materials-grid-layout" id="publishedMaterialsGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Tab 2: Academic Info -->
+    <div class="tab-content-panel" id="tab-academic">
+      <div class="academic-info-grid" id="academicInfoGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Tab 3: Skills -->
+    <div class="tab-content-panel" id="tab-skills">
+      <div style="display:flex; flex-wrap:wrap; gap:12px;" id="skillsChipsWrap">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== CREATE PROFILE MODAL ===================== -->
+<div class="edit-modal-backdrop" id="createProfileModal">
+  <div class="edit-dialog-card">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:44px; margin-bottom:8px;">🎓</div>
+      <h3 style="font-size:20px; font-weight:900; color:#fff; margin-bottom:4px;">Create Student Profile</h3>
+      <p style="font-size:13px; color:#94a3b8;">Set up your verified academic identity on Campus OS</p>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name *</label>
+      <input type="text" class="form-input" id="createFullName" placeholder="e.g. Channabasava Patil" />
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Username *</label>
+        <input type="text" class="form-input" id="createUsername" placeholder="@channu_cs" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll No</label>
+        <input type="text" class="form-input" id="createUSN" placeholder="e.g. 2BL22CS045" />
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program *</label>
+        <select class="form-select" id="createProgram">
+          <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+          <option value="BSc">BSc (Bachelor of Science)</option>
+          <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+          <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+          <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+          <option value="BBA">BBA (Bachelor of Business Admin)</option>
+          <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+          <option value="BA">BA (Bachelor of Arts)</option>
+          <option value="MCA">MCA (Master of Computer Applications)</option>
+          <option value="M.Tech">M.Tech (Master of Technology)</option>
+          <option value="MSc">MSc (Master of Science)</option>
+          <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
+          <option value="MBA">MBA (Master of Business Admin)</option>
+          <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
+          <option value="Diploma">Diploma / Polytechnic</option>
+          <option value="Other">Other Degree</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester *</label>
+        <select class="form-select" id="createSem">
+          <option value="1">1st Semester</option>
+          <option value="2">2nd Semester</option>
+          <option value="3">3rd Semester</option>
+          <option value="4">4th Semester</option>
+          <option value="5" selected>5th Semester</option>
+          <option value="6">6th Semester</option>
+          <option value="7">7th Semester</option>
+          <option value="8">8th Semester</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Branch / Department *</label>
+      <select class="form-select" id="createDept">
+        <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+        <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+        <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+        <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+        <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+        <option value="Mechanical Engineering">Mechanical Engineering</option>
+        <option value="Civil Engineering">Civil Engineering</option>
+        <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+        <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
+        <option value="Biotechnology">Biotechnology</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Mathematics & Statistics">Mathematics & Statistics</option>
+        <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+        <option value="Business Administration">Business Administration</option>
+        <option value="Arts & Humanities">Arts & Humanities</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Bio / Interests</label>
+      <textarea class="form-textarea" id="createBio" style="min-height:60px;" placeholder="Brief bio, subjects you love or projects you are working on..."></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Skills (comma separated)</label>
+      <input type="text" class="form-input" id="createSkills" placeholder="Python, DSA, SQL, Web Dev, C++" />
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full" onclick="saveNewProfile()" style="box-shadow:0 8px 24px rgba(124,58,237,0.45);">
+      🚀 Create Profile & Join
+    </button>
+  </div>
+</div>
+
+<!-- ===================== EDIT PROFILE MODAL ===================== -->
+<div class="edit-modal-backdrop" id="editProfileModal">
+  <div class="edit-dialog-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px; font-weight:900; color:#fff;">✏️ Edit Student Profile</h3>
+      <button class="modal-dismiss-btn" onclick="closeEditModal()" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name</label>
+      <input type="text" class="form-input" id="editFullName" placeholder="Your full name" />
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
+        <input type="text" class="form-input" id="editUSN" placeholder="e.g. 2BL22CS045" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
+        <select class="form-select" id="editSemSelect">
+          <option value="1">1st Semester</option>
+          <option value="2">2nd Semester</option>
+          <option value="3">3rd Semester</option>
+          <option value="4">4th Semester</option>
+          <option value="5">5th Semester</option>
+          <option value="6">6th Semester</option>
+          <option value="7">7th Semester</option>
+          <option value="8">8th Semester</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
+        <select class="form-select" id="editProgramSelect">
+          <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+          <option value="BSc">BSc (Bachelor of Science)</option>
+          <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+          <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+          <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+          <option value="BBA">BBA (Bachelor of Business Admin)</option>
+          <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+          <option value="BA">BA (Bachelor of Arts)</option>
+          <option value="MCA">MCA (Master of Computer Applications)</option>
+          <option value="M.Tech">M.Tech (Master of Technology)</option>
+          <option value="MSc">MSc (Master of Science)</option>
+          <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
+          <option value="MBA">MBA (Master of Business Admin)</option>
+          <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
+          <option value="Diploma">Diploma / Polytechnic</option>
+          <option value="Other">Other Degree</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Branch / Department</label>
+        <select class="form-select" id="editDeptSelect">
+          <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+          <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+          <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+          <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+          <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+          <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+          <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
+          <option value="Biotechnology">Biotechnology</option>
+          <option value="Physics">Physics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="Mathematics & Statistics">Mathematics & Statistics</option>
+          <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+          <option value="Business Administration">Business Administration</option>
+          <option value="Arts & Humanities">Arts & Humanities</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
+      <textarea class="form-textarea" id="editBioText" style="min-height:75px;" placeholder="Brief bio regarding subjects, projects or study goals..."></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Skills (comma separated)</label>
+      <input type="text" class="form-input" id="editSkillsInput" placeholder="Python, DSA, SQL, Web Dev" />
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full" onclick="saveEditedProfile()">
+      💾 Save Changes
+    </button>
+  </div>
+</div>
+
+<!-- ===================== FIREBASE SDK & CORE LOGIC SCRIPTS ===================== -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+
+<script>
+function extractYoutubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+const urlParams = new URLSearchParams(window.location.search);
+const viewHandle = urlParams.get('handle');
+
+let currentUser = Storage.getUser();
+const isOwnProfile = !viewHandle || (currentUser && viewHandle.toLowerCase() === (currentUser.username || '').toLowerCase());
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (viewHandle) {
+    // Check local storage first for instant display
+    let target = Storage.getAccountByHandle(viewHandle);
+    if (target) renderStudentProfile(target, isOwnProfile);
+
+    // Sync fresh profile from Python backend
+    if (window.PythonAPI) {
+      try {
+        const remoteTarget = await PythonAPI.getAccount(viewHandle);
+        if (remoteTarget) {
+          target = remoteTarget;
+          Storage.addAccount(remoteTarget);
+          renderStudentProfile(remoteTarget, isOwnProfile);
+        }
+        const remotePosts = await PythonAPI.getPosts({ handle: viewHandle });
+        if (remotePosts) {
+          renderPostsGrid(remotePosts, isOwnProfile);
+        }
+      } catch (e) {
+        console.warn('Remote profile sync notice:', e);
+      }
+    }
+
+    if (!target) {
+      renderStudentProfile({
+        displayName: viewHandle.replace('@', ''),
+        username: viewHandle,
+        program: 'BCA',
+        department: 'Computer Science & Engineering',
+        semester: 5,
+        bio: 'Student at Campus OS Academic Platform.'
+      }, false);
+    }
+  } else if (!currentUser) {
+    // Prompt first-time visitor to create profile
+    document.getElementById('createProfileModal').classList.add('open');
+    renderStudentProfile({
+      displayName: 'New Student',
+      username: '@student',
+      program: 'BCA',
+      department: 'Computer Science & Engineering',
+      semester: 1,
+      bio: 'Set up your student profile to access timetables, attendance radar, and notes.'
+    }, true);
+  } else {
+    renderStudentProfile(currentUser, true);
+  }
+});
+
+function saveNewProfile() {
+  const name = document.getElementById('createFullName').value.trim();
+  let username = document.getElementById('createUsername').value.trim();
+  const usn = document.getElementById('createUSN').value.trim();
+  const program = document.getElementById('createProgram')?.value || 'BCA';
+  const dept = document.getElementById('createDept').value;
+  const sem = parseInt(document.getElementById('createSem').value, 10) || 5;
+  const bio = document.getElementById('createBio').value.trim();
+  const skills = document.getElementById('createSkills').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  if (!name || !username) {
+    alert('Full Name and Username are required!');
+    return;
+  }
+
+  if (!username.startsWith('@')) username = '@' + username;
+
+  const newUser = {
+    uid: 'user_' + Date.now().toString(36),
+    displayName: name,
+    name: name,
+    username,
+    handle: username,
+    usn: usn || 'USN Verified',
+    college: "BLDE Association's Campus, Jamakhandi",
+    program: program,
+    department: dept,
+    semester: sem,
+    xp: 150,
+    skills: skills.length ? skills : ['Academic Learner'],
+    bio: bio || 'Student at Campus OS.',
+    status: 'ACTIVE',
+    verified: true,
+    createdAt: Date.now()
+  };
+
+  Storage.setUser(newUser);
+  currentUser = newUser;
+
+  document.getElementById('createProfileModal').classList.remove('open');
+  renderStudentProfile(newUser, true);
+}
+
+function renderStudentProfile(profile, isOwn) {
+  const name = profile.displayName || profile.name || 'Student';
+  const handle = profile.username || '@student';
+  const initial = name[0].toUpperCase();
+  const photo = Storage.getUserPhoto(handle);
+
+  const avatarEl = document.getElementById('passportAvatar');
+  if (photo) {
+    avatarEl.innerHTML = `<img src="${photo}" alt="${name}" />`;
+  } else {
+    avatarEl.textContent = initial;
+  }
+
+  document.getElementById('photoUploadTrigger').style.display = isOwn ? 'flex' : 'none';
+  document.getElementById('passportName').textContent = name;
+  document.getElementById('passportHandle').textContent = handle;
+  document.title = `${name} — Campus OS`;
+
+  document.getElementById('passportBio').textContent = profile.bio || (isOwn ? 'Click Edit Profile to add your study focus.' : 'Student at Campus OS.');
+
+  const chips = [];
+  chips.push(`<span class="student-meta-chip">🎓 ${profile.program || 'Degree'}</span>`);
+  chips.push(`<span class="student-meta-chip">🏛️ ${profile.department || 'Branch'}</span>`);
+  chips.push(`<span class="student-meta-chip">📅 Sem ${profile.semester || '?'}</span>`);
+  if (profile.usn) chips.push(`<span class="student-meta-chip">🆔 ${profile.usn}</span>`);
+  document.getElementById('passportChips').innerHTML = chips.join('');
+
+  // Get this user's posts (all types)
+  const allPosts = Storage.getPosts();
+  const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
+
+  document.getElementById('statPDFsUploaded').textContent = userPosts.length;
+  document.getElementById('passportXPPoints').textContent = profile.xp || 100;
+  document.getElementById('statSemesterLevel').textContent = `Sem ${profile.semester || '?'}`;
+
+  const actCol = document.getElementById('passportActions');
+  if (isOwn) {
+    actCol.innerHTML = `
+      <button class="passport-btn" onclick="openEditModal()">✏️ Edit Profile</button>
+      <a href="dashboard.html" class="passport-btn primary">Dashboard →</a>
+    `;
+  } else {
+    actCol.innerHTML = `<span class="student-meta-chip" style="color:#38bdf8; border-color:rgba(6,182,212,0.4); padding:8px 16px;">✓ Verified Student</span>`;
+  }
+
+  renderPostsGrid(userPosts, isOwn);
+  renderSkillsChips(profile.skills || [], isOwn);
+  renderAcademicPassportGrid(profile);
+}
+
+function renderPostsGrid(posts, isOwn) {
+  const grid = document.getElementById('publishedMaterialsGrid');
+  if (!posts || posts.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; color:#64748b;">
+        <div style="font-size:42px; margin-bottom:10px;">📌</div>
+        <div style="font-size:15px; font-weight:800; color:#cbd5e1; margin-bottom:6px;">${isOwn ? 'You have not created any posts yet' : 'No posts published yet'}</div>
+        <div style="font-size:13px;">${isOwn ? '<a href="index.html" style="color:#a78bfa; font-weight:800;">Create your first post on Home →</a>' : ''}</div>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = posts.map(post => {
+    const typeIcon = post.type === 'youtube' ? '🎥' : post.type === 'pdf' ? '📄' : '💬';
+    const typeBg = post.type === 'youtube' ? 'rgba(239,68,68,0.15)' : post.type === 'pdf' ? 'rgba(239,68,68,0.15)' : 'rgba(6,182,212,0.15)';
+    const typeColor = post.type === 'youtube' ? '#f87171' : post.type === 'pdf' ? '#f87171' : '#67e8f9';
+
+    let mediaEmbed = '';
+    if (post.type === 'youtube' && post.youtubeUrl) {
+      const ytId = extractYoutubeId(post.youtubeUrl);
+      if (ytId) {
+        mediaEmbed = `
+          <div style="margin: 10px 0; border-radius:10px; overflow:hidden;">
+            <iframe class="youtube-embed-frame" src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>
+          </div>
+        `;
+      }
+    } else if (post.type === 'pdf' && post.fileName) {
+      mediaEmbed = `
+        <div style="margin: 10px 0; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:12px; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📄 ${post.fileName} (${post.fileSize || 'PDF'})</div>
+          <button class="passport-btn" style="padding:4px 10px; font-size:11px;" onclick="downloadStudentPDF('${post.id}', '${post.fileName || 'note.pdf'}')">📥 Download</button>
+        </div>
+      `;
+    }
+
+    return `
+    <div class="material-card-item">
+      <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:${typeBg}; color:${typeColor}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+          ${typeIcon}
+        </div>
+        <div style="min-width:0; flex:1;">
+          <h4 style="font-size:14px; font-weight:800; color:#fff;">${post.title || 'Untitled Post'}</h4>
+          <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${post.subject || 'General'} · ${new Date(post.createdAt || Date.now()).toLocaleDateString()}</div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin-bottom:8px;">${post.desc || ''}</p>
+      ${mediaEmbed}
+    </div>
+  `}).join('');
+}
+
+function downloadStudentPDF(id, fileName) {
+  const posts = Storage.getPosts();
+  const post = posts.find(p => p.id === id);
+  if (post && post.pdfData) {
+    const a = document.createElement('a');
+    a.href = post.pdfData;
+    a.download = fileName || 'note.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } else {
+    const pdfs = Storage.getPDFMaterials();
+    const item = pdfs.find(p => p.id === id);
+    if (item && item.pdfData) {
+      const a = document.createElement('a');
+      a.href = item.pdfData;
+      a.download = fileName || 'note.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      alert(`📥 Accessing verified study note: ${fileName}`);
+    }
+  }
+}
+
+function renderSkillsChips(skills, isOwn) {
+  const container = document.getElementById('skillsChipsWrap');
+  if (!skills || skills.length === 0) {
+    container.innerHTML = `<div style="color:#64748b; padding:20px 0;">${isOwn ? 'No skills listed. Click Edit Profile to add your tech stack!' : 'No skills specified.'}</div>`;
+    return;
+  }
+  container.innerHTML = skills.map(s => `<span class="tech-skill-pill"><span>⚡</span>${s}</span>`).join('');
+}
+
+function renderAcademicPassportGrid(profile) {
+  const grid = document.getElementById('academicInfoGrid');
+  const items = [
+    { label: 'Academic Department', val: profile.department || 'Not set' },
+    { label: 'Current Semester', val: `Semester ${profile.semester || '?'}` },
+    { label: 'USN / Student ID', val: profile.usn || 'Not set' },
+    { label: 'Academic Program', val: profile.program || 'B.Tech' },
+    { label: 'Contribution XP', val: `${profile.xp || 100} XP` },
+    { label: 'Institutional Affiliation', val: profile.college || "BLDE Association's College, Jamakhandi" }
+  ];
+  grid.innerHTML = items.map(it => `
+    <div class="academic-info-card">
+      <div class="academic-card-label">${it.label}</div>
+      <div class="academic-card-val">${it.val}</div>
+    </div>
+  `).join('');
+}
+
+// Tab Switching
+document.querySelectorAll('.passport-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.passport-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+// Photo Upload Logic
+document.getElementById('photoUploadTrigger').addEventListener('click', () => {
+  document.getElementById('profilePhotoFileInput').click();
+});
+
+document.getElementById('profilePhotoFileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { alert('Please choose an image.'); return; }
+  if (file.size > 3 * 1024 * 1024) { alert('Max 3MB.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const data = ev.target.result;
+    const user = Storage.getUser() || currentUser;
+    if (user && user.username) {
+      Storage.setUserPhoto(user.username, data);
+    }
+    document.getElementById('passportAvatar').innerHTML = `<img src="${data}" alt="${user ? user.displayName : 'Student'}" />`;
+    alert('🎉 Profile photo updated from device!');
+  };
+  reader.readAsDataURL(file);
+});
+
+// Edit Profile Modal
+function openEditModal() {
+  const user = Storage.getUser() || {};
+  document.getElementById('editFullName').value = user.displayName || user.name || '';
+  document.getElementById('editUSN').value = user.usn || '';
+  document.getElementById('editBioText').value = user.bio || '';
+  if (document.getElementById('editProgramSelect')) {
+    document.getElementById('editProgramSelect').value = user.program || 'BCA';
+  }
+  document.getElementById('editDeptSelect').value = user.department || 'Computer Science & Engineering';
+  document.getElementById('editSemSelect').value = user.semester || 5;
+  document.getElementById('editSkillsInput').value = (user.skills || []).join(', ');
+  document.getElementById('editProfileModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editProfileModal').classList.remove('open');
+}
+
+function saveEditedProfile() {
+  const user = Storage.getUser() || {};
+  user.displayName = document.getElementById('editFullName').value.trim() || user.displayName;
+  user.name = user.displayName;
+  user.usn = document.getElementById('editUSN').value.trim();
+  user.bio = document.getElementById('editBioText').value.trim();
+  if (document.getElementById('editProgramSelect')) {
+    user.program = document.getElementById('editProgramSelect').value;
+  }
+  user.department = document.getElementById('editDeptSelect').value;
+  user.semester = parseInt(document.getElementById('editSemSelect').value, 10);
+  user.skills = document.getElementById('editSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  Storage.setUser(user);
+  currentUser = user;
+  closeEditModal();
+  renderStudentProfile(user, true);
+}
+</script>
+</body>
+</html>

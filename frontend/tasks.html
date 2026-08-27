@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Kanban task board and assignment tracker for college students." />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+  <title>Tasks — College OS</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .kanban-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kanban-col {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-5);
+    }
+
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+
+    .kanban-col-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .kanban-col-count {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-full);
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .kanban-cards {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      min-height: 80px;
+    }
+
+    .kanban-card {
+      position: relative;
+    }
+
+    .task-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .task-card-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .task-deadline {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .task-card-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: none;
+      gap: 4px;
+    }
+
+    .kanban-card:hover .task-card-actions {
+      display: flex;
+    }
+
+    .task-act-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .task-act-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .move-btn {
+      font-size: 10px;
+      padding: 4px 8px;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .task-card-deadline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: var(--space-3);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--border-subtle);
+      justify-content: flex-end;
+    }
+
+    .task-action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      transition: color var(--transition-fast);
+    }
+
+    .task-action-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tasks-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 900px) {
+      .tasks-summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .tasks-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/logo.png" alt="Campus OS Logo" class="sidebar-logo-img" />
+      <div class="sidebar-logo-text">Campus<span class="text-gradient">OS</span></div>
+    </div>
+    <div class="sidebar-section-label">Navigation</div>
+    <a href="index.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🌐</span>Home Platform</a>
+    <a href="profile.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">👤</span>Student Passport</a>
+    <div class="sidebar-section-label">Main Workspace</div>
+    <a href="dashboard.html" class="sidebar-nav-item" data-page="dashboard"><span
+        class="sidebar-nav-icon">📊</span>Dashboard</a>
+    <a href="notes.html" class="sidebar-nav-item" data-page="notes"><span class="sidebar-nav-icon">📝</span>Notes</a>
+    <a href="tasks.html" class="sidebar-nav-item active" data-page="tasks"><span
+        class="sidebar-nav-icon">✅</span>Tasks</a>
+    <div class="sidebar-section-label">Academic</div>
+    <a href="timetable.html" class="sidebar-nav-item" data-page="timetable"><span
+        class="sidebar-nav-icon">📅</span>Timetable</a>
+    <a href="attendance.html" class="sidebar-nav-item" data-page="attendance"><span
+        class="sidebar-nav-icon">📈</span>Attendance</a>
+    <a href="resources.html" class="sidebar-nav-item" data-page="resources"><span
+        class="sidebar-nav-icon">📚</span>Resources</a>
+    <div class="sidebar-footer">
+      <a href="profile.html" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;text-decoration:none;color:inherit;">
+        <div class="avatar avatar-md" id="sidebar-avatar">?</div>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="sidebar-name">Loading...</div>
+        </div>
+      </a>
+      <button class="btn btn-ghost btn-sm w-full" id="logout-btn" style="justify-content:flex-start;gap:8px">🚪
+        Logout</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+    <div style="flex:1"></div>
+    <div class="avatar avatar-md" id="topbar-avatar">?</div>
+  </header>
+
+  <main class="main-layout">
+    <div class="main-content page-transition">
+      <div class="page-header animate-fade-in-up">
+        <div>
+          <div class="page-title">✅ Task Board</div>
+          <div class="page-subtitle">Track your assignments and deadlines</div>
+        </div>
+        <button class="btn btn-primary" id="new-task-btn">+ Add Task</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="tasks-summary animate-fade-in-up delay-100">
+        <div class="stat-card">
+          <div class="stat-label">To Do</div>
+          <div class="stat-value" id="count-todo">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value" style="color:var(--info)" id="count-progress">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" style="color:var(--success)" id="count-done">0</div>
+        </div>
+      </div>
+
+      <!-- Kanban Board -->
+      <div class="kanban-board animate-fade-in-up delay-200">
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title">
+              <span style="color:var(--text-muted)">📋</span>
+              To Do
+              <span class="kanban-col-count" id="badge-todo">0</span>
+            </div>
+          </div>
+          <div class="kanban-cards" id="col-todo"></div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title">
+              <span style="color:var(--info)">⚡</span>
+              In Progress
+              <span class="kanban-col-count" id="badge-progress">0</span>
+            </div>
+          </div>
+          <div class="kanban-cards" id="col-progress"></div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <div class="kanban-col-title">
+              <span style="color:var(--success)">✅</span>
+              Done
+              <span class="kanban-col-count" id="badge-done">0</span>
+            </div>
+          </div>
+          <div class="kanban-cards" id="col-done"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- New/Edit Task Modal -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="task-modal-title">New Task</span>
+        <button class="modal-close" onclick="closeModal('task-modal')">×</button>
+      </div>
+      <form id="task-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <input type="hidden" id="task-id" />
+        <div class="form-group">
+          <label class="form-label">Task Title *</label>
+          <input type="text" id="task-title" class="form-input" placeholder="What needs to be done?" required />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" id="task-subject" class="form-input" placeholder="e.g. OS, DS" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select id="task-priority" class="form-select">
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="task-status" class="form-select">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input type="date" id="task-deadline" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <textarea id="task-notes" class="form-textarea" placeholder="Any additional details..."
+            style="min-height:80px"></textarea>
+        </div>
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('task-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="fab" id="fab-task" title="Add Task">+</div>
+  <div id="toast-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let editingTaskId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = requireAuth();
+      if (!user) return;
+
+      const initials = (user.displayName || user.name || 'U').split(' ').map(w => w[0]).join('').substr(0, 2).toUpperCase();
+      const photo = Storage.getUserPhoto(user.username || user.handle);
+      if (photo) {
+        document.getElementById('sidebar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        document.getElementById('topbar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      } else {
+        document.getElementById('sidebar-avatar').textContent = initials;
+        document.getElementById('topbar-avatar').textContent = initials;
+      }
+      document.getElementById('sidebar-name').textContent = user.displayName || user.name || 'Student';
+
+      renderBoard();
+
+      const openNew = () => {
+        editingTaskId = null;
+        document.getElementById('task-modal-title').textContent = 'New Task';
+        document.getElementById('task-form').reset();
+        document.getElementById('task-id').value = '';
+        // Set default deadline to tomorrow
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('task-deadline').value = tomorrow.toISOString().split('T')[0];
+        openModal('task-modal');
+      };
+      document.getElementById('new-task-btn').addEventListener('click', openNew);
+      document.getElementById('fab-task').addEventListener('click', openNew);
+      if (window.location.hash === '#new') openNew();
+
+      document.getElementById('task-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = document.getElementById('task-title').value.trim();
+        const subject = document.getElementById('task-subject').value.trim();
+        const priority = document.getElementById('task-priority').value;
+        const status = document.getElementById('task-status').value;
+        const deadline = document.getElementById('task-deadline').value;
+        const notes = document.getElementById('task-notes').value.trim();
+
+        if (!title) { showToast('Title required', '', 'error'); return; }
+
+        const data = { title, subject, priority, status, deadline, notes };
+        if (editingTaskId) {
+          Storage.updateTask(editingTaskId, data);
+          showToast('Task updated!', '', 'success');
+        } else {
+          Storage.addTask(data);
+          showToast('Task added!', '', 'success');
+        }
+        closeModal('task-modal');
+        renderBoard();
+      });
+
+      document.getElementById('logout-btn').addEventListener('click', () => { Storage.clearUser(); window.location.href = 'auth.html'; });
+      closeModalOnOverlay('task-modal');
+    });
+
+    function renderBoard() {
+      const tasks = Storage.getTasks();
+      const cols = { 'todo': [], 'in-progress': [], 'done': [] };
+      tasks.forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
+
+      // Sort each col by priority
+      const priOrder = { high: 0, medium: 1, low: 2 };
+      Object.values(cols).forEach(col => col.sort((a, b) => priOrder[a.priority] - priOrder[b.priority]));
+
+      const counts = { todo: cols.todo.length, progress: cols['in-progress'].length, done: cols.done.length };
+      document.getElementById('count-todo').textContent = counts.todo;
+      document.getElementById('count-progress').textContent = counts.progress;
+      document.getElementById('count-done').textContent = counts.done;
+      document.getElementById('badge-todo').textContent = counts.todo;
+      document.getElementById('badge-progress').textContent = counts.progress;
+      document.getElementById('badge-done').textContent = counts.done;
+
+      const priColors = { high: 'var(--danger)', medium: 'var(--warning)', low: 'var(--success)' };
+      const priEmoji = { high: '🔴', medium: '🟡', low: '🟢' };
+      const statusNext = { 'todo': 'in-progress', 'in-progress': 'done', 'done': 'todo' };
+      const statusLabel = { 'todo': '▶', 'in-progress': '✅', 'done': '↩' };
+
+      function renderCol(colEl, taskList, status) {
+        if (taskList.length === 0) {
+          colEl.innerHTML = `<div style="text-align:center;padding:var(--space-6);color:var(--text-muted);font-size:13px;border:1px dashed var(--border-subtle);border-radius:var(--radius-md)">Drop tasks here</div>`;
+          return;
+        }
+        colEl.innerHTML = taskList.map(t => {
+          const days = daysUntil(t.deadline);
+          const deadlineText = t.deadline ? (days < 0 ? `⚠ Overdue ${Math.abs(days)}d` : days === 0 ? '⚠ Due today!' : `📅 ${days}d left`) : '';
+          const deadlineColor = days !== null && days <= 1 ? 'var(--danger)' : days !== null && days <= 3 ? 'var(--warning)' : 'var(--text-muted)';
+          return `<div class="kanban-card animate-fade-in">
+          <div style="width:3px;height:100%;position:absolute;left:0;top:0;background:${priColors[t.priority]};border-radius:3px 0 0 3px"></div>
+          <div style="padding-left:8px">
+            <div class="task-card-title ${t.status === 'done' ? 'text-muted' : ''}" style="${t.status === 'done' ? 'text-decoration:line-through' : ''}">${esc(t.title)}</div>
+            <div class="task-card-meta">
+              ${t.subject ? `<span class="tag">${esc(t.subject)}</span>` : ''}
+              <span style="font-size:11px">${priEmoji[t.priority]} ${t.priority}</span>
+              ${deadlineText ? `<span class="task-deadline" style="color:${deadlineColor}">${deadlineText}</span>` : ''}
+            </div>
+          </div>
+          <div class="task-card-actions">
+            <div class="task-act-btn move-btn" onclick="moveTask('${t.id}', '${statusNext[status]}')" title="Move to next">${statusLabel[status]}</div>
+            <div class="task-act-btn" onclick="editTask('${t.id}')" title="Edit">✏️</div>
+            <div class="task-act-btn" onclick="removeTask('${t.id}')" title="Delete">🗑️</div>
+          </div>
+        </div>`;
+        }).join('');
+      }
+
+      renderCol(document.getElementById('col-todo'), cols.todo, 'todo');
+      renderCol(document.getElementById('col-progress'), cols['in-progress'], 'in-progress');
+      renderCol(document.getElementById('col-done'), cols.done, 'done');
+    }
+
+    function moveTask(id, newStatus) {
+      Storage.updateTask(id, { status: newStatus });
+      renderBoard();
+      showToast('Task moved!', '', 'success');
+    }
+
+    function editTask(id) {
+      const task = Storage.getTasks().find(t => t.id === id);
+      if (!task) return;
+      editingTaskId = id;
+      document.getElementById('task-modal-title').textContent = 'Edit Task';
+      document.getElementById('task-id').value = id;
+      document.getElementById('task-title').value = task.title || '';
+      document.getElementById('task-subject').value = task.subject || '';
+      document.getElementById('task-priority').value = task.priority || 'medium';
+      document.getElementById('task-status').value = task.status || 'todo';
+      document.getElementById('task-deadline').value = task.deadline || '';
+      document.getElementById('task-notes').value = task.notes || '';
+      openModal('task-modal');
+    }
+
+    function removeTask(id) {
+      if (confirm('Delete this task?')) {
+        Storage.deleteTask(id);
+        renderBoard();
+        showToast('Task deleted', '', 'info');
+      }
+    }
+  </script>
+</body>
+
+</html>

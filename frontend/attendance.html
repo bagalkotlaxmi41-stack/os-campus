@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance — College OS</title>
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    .att-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-5);
+    }
+
+    .att-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      transition: all var(--transition-base);
+    }
+
+    .att-card:hover {
+      border-color: var(--border-default);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .att-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-5);
+    }
+
+    .att-subject-name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .att-subject-code {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .att-ring-container {
+      position: relative;
+    }
+
+    .att-ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .att-ring-pct {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .att-ring-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .att-stats {
+      display: flex;
+      justify-content: space-between;
+      margin: var(--space-4) 0;
+      font-size: 13px;
+    }
+
+    .att-stat-item {
+      text-align: center;
+    }
+
+    .att-stat-val {
+      font-size: 20px;
+      font-weight: 800;
+      display: block;
+    }
+
+    .att-stat-lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .att-warning {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      font-size: 12px;
+      color: #f87171;
+      margin-top: var(--space-3);
+    }
+
+    .att-safe {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      font-size: 12px;
+      color: #34d399;
+      margin-top: var(--space-3);
+    }
+
+    .att-caution {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      font-size: 12px;
+      color: #fbbf24;
+      margin-top: var(--space-3);
+    }
+
+    .att-mark-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+
+    .att-mark-present {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      border-radius: var(--radius-md);
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .att-mark-present:hover {
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    .att-mark-absent {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      border-radius: var(--radius-md);
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .att-mark-absent:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .att-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .overall-banner {
+      background: var(--gradient-card);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin-bottom: var(--space-8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .overall-stats {
+      display: flex;
+      gap: var(--space-8);
+    }
+
+    .overall-stat-val {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .overall-stat-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/logo.png" alt="Campus OS Logo" class="sidebar-logo-img" />
+      <div class="sidebar-logo-text">Campus<span class="text-gradient">OS</span></div>
+    </div>
+    <div class="sidebar-section-label">Navigation</div>
+    <a href="index.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🌐</span>Home Platform</a>
+    <a href="profile.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">👤</span>Student Passport</a>
+    <div class="sidebar-section-label">Main Workspace</div>
+    <a href="dashboard.html" class="sidebar-nav-item" data-page="dashboard"><span
+        class="sidebar-nav-icon">📊</span>Dashboard</a>
+    <a href="notes.html" class="sidebar-nav-item" data-page="notes"><span class="sidebar-nav-icon">📝</span>Notes</a>
+    <a href="tasks.html" class="sidebar-nav-item" data-page="tasks"><span class="sidebar-nav-icon">✅</span>Tasks</a>
+    <div class="sidebar-section-label">Academic</div>
+    <a href="timetable.html" class="sidebar-nav-item" data-page="timetable"><span
+        class="sidebar-nav-icon">📅</span>Timetable</a>
+    <a href="attendance.html" class="sidebar-nav-item active" data-page="attendance"><span
+        class="sidebar-nav-icon">📈</span>Attendance</a>
+    <a href="resources.html" class="sidebar-nav-item" data-page="resources"><span
+        class="sidebar-nav-icon">📚</span>Resources</a>
+    <div class="sidebar-footer">
+      <a href="profile.html" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;text-decoration:none;color:inherit;">
+        <div class="avatar avatar-md" id="sidebar-avatar">?</div>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="sidebar-name">Loading...</div>
+        </div>
+      </a>
+      <button class="btn btn-ghost btn-sm w-full" id="logout-btn" style="justify-content:flex-start;gap:8px">🚪
+        Logout</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+    <div style="flex:1"></div>
+    <div class="avatar avatar-md" id="topbar-avatar">?</div>
+  </header>
+
+  <main class="main-layout">
+    <div class="main-content page-transition">
+      <div class="page-header animate-fade-in-up">
+        <div>
+          <div class="page-title">📈 Attendance Tracker</div>
+          <div class="page-subtitle">Stay above 75% to avoid detention</div>
+        </div>
+        <button class="btn btn-primary" id="add-subject-btn">+ Add Subject</button>
+      </div>
+
+      <!-- Overall Banner -->
+      <div class="overall-banner animate-fade-in-up delay-100">
+        <div>
+          <div
+            style="font-size:13px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">
+            Overall Attendance</div>
+          <div class="overall-stat-val text-gradient" id="overall-pct">0%</div>
+          <div id="overall-status" style="font-size:13px;margin-top:4px;color:var(--text-muted)">Loading...</div>
+        </div>
+        <div class="overall-stats" id="overall-stats">
+          <div>
+            <div class="overall-stat-val" id="ov-present" style="color:var(--success)">0</div>
+            <div class="overall-stat-lbl">Total Present</div>
+          </div>
+          <div>
+            <div class="overall-stat-val" id="ov-total" style="color:var(--text-muted)">0</div>
+            <div class="overall-stat-lbl">Total Classes</div>
+          </div>
+          <div>
+            <div class="overall-stat-val" id="ov-subjects" style="color:var(--primary-light)">0</div>
+            <div class="overall-stat-lbl">Subjects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Grid -->
+      <div class="att-grid animate-fade-in-up delay-200" id="att-grid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Subject Modal -->
+  <div class="modal-overlay" id="subject-modal">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="subject-modal-title">Add Subject</span>
+        <button class="modal-close" onclick="closeModal('subject-modal')">×</button>
+      </div>
+      <form id="subject-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <input type="hidden" id="subject-id" />
+        <div class="form-group">
+          <label class="form-label">Subject Name *</label>
+          <input type="text" id="subject-name" class="form-input" placeholder="e.g. Operating Systems" required />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="form-group">
+            <label class="form-label">Subject Code</label>
+            <input type="text" id="subject-code" class="form-input" placeholder="e.g. CS301" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color</label>
+            <select id="subject-color" class="form-select">
+              <option value="violet">🟣 Violet</option>
+              <option value="cyan">🔵 Cyan</option>
+              <option value="green">🟢 Green</option>
+              <option value="amber">🟡 Amber</option>
+              <option value="red">🔴 Red</option>
+              <option value="pink">🩷 Pink</option>
+              <option value="blue">💙 Blue</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="form-group">
+            <label class="form-label">Classes Attended</label>
+            <input type="number" id="subject-present" class="form-input" placeholder="0" min="0" value="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Classes Held</label>
+            <input type="number" id="subject-total" class="form-input" placeholder="0" min="0" value="0" />
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('subject-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="fab" id="fab-att" title="Add Subject">+</div>
+  <div id="toast-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const COLOR_MAP = { violet: '#7c3aed', cyan: '#06b6d4', green: '#10b981', amber: '#f59e0b', red: '#ef4444', pink: '#ec4899', blue: '#3b82f6' };
+    let editingSubjectId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = requireAuth();
+      if (!user) return;
+
+      const initials = (user.displayName || user.name || 'U').split(' ').map(w => w[0]).join('').substr(0, 2).toUpperCase();
+      const photo = Storage.getUserPhoto(user.username || user.handle);
+      if (photo) {
+        document.getElementById('sidebar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        document.getElementById('topbar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      } else {
+        document.getElementById('sidebar-avatar').textContent = initials;
+        document.getElementById('topbar-avatar').textContent = initials;
+      }
+      document.getElementById('sidebar-name').textContent = user.displayName || user.name || 'Student';
+
+      renderAttendance();
+
+      const openAddSubject = () => {
+        editingSubjectId = null;
+        document.getElementById('subject-modal-title').textContent = 'Add Subject';
+        document.getElementById('subject-form').reset();
+        document.getElementById('subject-id').value = '';
+        document.getElementById('subject-present').value = '0';
+        document.getElementById('subject-total').value = '0';
+        openModal('subject-modal');
+      };
+      document.getElementById('add-subject-btn').addEventListener('click', openAddSubject);
+      document.getElementById('fab-att').addEventListener('click', openAddSubject);
+      if (window.location.hash === '#mark') openAddSubject();
+
+      document.getElementById('subject-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('subject-name').value.trim();
+        const code = document.getElementById('subject-code').value.trim();
+        const color = document.getElementById('subject-color').value;
+        const present = parseInt(document.getElementById('subject-present').value) || 0;
+        const total = parseInt(document.getElementById('subject-total').value) || 0;
+        if (!name) { showToast('Subject name required', '', 'error'); return; }
+        if (present > total) { showToast('Present cannot exceed total', '', 'error'); return; }
+
+        if (editingSubjectId) {
+          Storage.updateSubject(editingSubjectId, { name, code, color, present, total });
+          showToast('Subject updated!', '', 'success');
+        } else {
+          const att = Storage.getAttendance();
+          att.push({ id: genId(), name, code, color, present, total });
+          Storage.setAttendance(att);
+          showToast('Subject added!', '', 'success');
+        }
+        closeModal('subject-modal');
+        renderAttendance();
+      });
+
+      document.getElementById('logout-btn').addEventListener('click', () => { Storage.clearUser(); window.location.href = 'auth.html'; });
+      closeModalOnOverlay('subject-modal');
+    });
+
+    function renderAttendance() {
+      const att = Storage.getAttendance();
+      const grid = document.getElementById('att-grid');
+
+      // Overall stats
+      const totalP = att.reduce((s, a) => s + a.present, 0);
+      const totalT = att.reduce((s, a) => s + a.total, 0);
+      const ovPct = totalT ? Math.round((totalP / totalT) * 100) : 0;
+      document.getElementById('overall-pct').textContent = ovPct + '%';
+      document.getElementById('ov-present').textContent = totalP;
+      document.getElementById('ov-total').textContent = totalT;
+      document.getElementById('ov-subjects').textContent = att.length;
+      const statusEl = document.getElementById('overall-status');
+      if (ovPct >= 75) { statusEl.textContent = '✅ Safe zone — you are above 75%'; statusEl.style.color = 'var(--success)'; }
+      else if (ovPct >= 60) { statusEl.textContent = '⚠️ Caution — at risk of falling below 75%'; statusEl.style.color = 'var(--warning)'; }
+      else { statusEl.textContent = '❌ Danger — you are below 75%! Attend all classes.'; statusEl.style.color = 'var(--danger)'; }
+
+      if (att.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📈</div><div class="empty-state-title">No subjects added</div><div class="empty-state-desc">Add your subjects to start tracking attendance</div><button class="btn btn-primary" onclick="document.getElementById('add-subject-btn').click()" style="margin-top:16px">+ Add First Subject</button></div>`;
+        return;
+      }
+
+      grid.innerHTML = att.map(s => {
+        const p = pct(s.present, s.total);
+        const color = attColor(p);
+        const subjectColor = COLOR_MAP[s.color] || COLOR_MAP.violet;
+        // SVG ring
+        const r = 40, circ = 2 * Math.PI * r;
+        const offset = circ - (p / 100) * circ;
+        // 75% threshold line
+        const t75offset = circ - 0.75 * circ;
+
+        // Classes needed to reach 75%
+        let needsMsg = '';
+        if (p < 75 && s.total >= 0) {
+          // present/(total+x) = 0.75 → x = (present - 0.75*total) / (0.75 - 1) = (0.75*total - present) / 0.25
+          const needed = Math.ceil((0.75 * s.total - s.present) / 0.25);
+          if (needed > 0) needsMsg = `You need to attend <strong>${needed}</strong> more classes to reach 75%.`;
+        } else if (p >= 75) {
+          // How many can skip: present - 0.75*(total+x) >= 0 → x <= (present - 0.75*total)/0.75
+          const canSkip = Math.floor((s.present - 0.75 * s.total) / 0.75);
+          if (canSkip >= 0) needsMsg = `You can skip up to <strong>${canSkip}</strong> classes and stay safe.`;
+        }
+
+        const statusClass = p >= 75 ? 'att-safe' : p >= 60 ? 'att-caution' : 'att-warning';
+        const statusIcon = p >= 75 ? '✅' : p >= 60 ? '⚠️' : '❌';
+
+        return `<div class="att-card animate-fade-in">
+        <div class="att-card-header">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <div style="width:10px;height:10px;border-radius:50%;background:${subjectColor};flex-shrink:0"></div>
+              <div class="att-subject-name">${esc(s.name)}</div>
+            </div>
+            <div class="att-subject-code">${esc(s.code || 'No code')}</div>
+          </div>
+          <div class="att-ring-container" style="width:100px;height:100px">
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <circle class="progress-ring-track" cx="50" cy="50" r="${r}" stroke-width="8" />
+              <!-- 75% threshold marker -->
+              <circle cx="50" cy="50" r="${r}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8" stroke-dasharray="2 ${circ / 1}" stroke-dashoffset="${t75offset}" class="progress-ring" />
+              <circle class="progress-ring-fill progress-ring" cx="50" cy="50" r="${r}" stroke-width="8" stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" />
+            </svg>
+            <div class="att-ring-center">
+              <div class="att-ring-pct" style="color:${color}">${p}%</div>
+              <div class="att-ring-label">attended</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="att-stats">
+          <div class="att-stat-item">
+            <span class="att-stat-val" style="color:var(--success)">${s.present}</span>
+            <span class="att-stat-lbl">Present</span>
+          </div>
+          <div class="att-stat-item">
+            <span class="att-stat-val" style="color:var(--danger)">${s.total - s.present}</span>
+            <span class="att-stat-lbl">Absent</span>
+          </div>
+          <div class="att-stat-item">
+            <span class="att-stat-val">${s.total}</span>
+            <span class="att-stat-lbl">Total</span>
+          </div>
+        </div>
+
+        ${needsMsg ? `<div class="${statusClass}">${statusIcon} ${needsMsg}</div>` : ''}
+
+        <div class="att-mark-btns">
+          <button class="att-mark-present" onclick="markAtt('${s.id}', true)">✅ Present</button>
+          <button class="att-mark-absent" onclick="markAtt('${s.id}', false)">❌ Absent</button>
+        </div>
+
+        <div class="att-card-footer">
+          <div style="font-size:12px;color:var(--text-muted)">${s.total} classes held</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="editSubject('${s.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="removeSubject('${s.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+      }).join('');
+    }
+
+    function markAtt(id, present) {
+      Storage.markAttendance(id, present);
+      renderAttendance();
+      showToast(present ? 'Marked Present ✅' : 'Marked Absent ❌', '', present ? 'success' : 'error');
+    }
+
+    function editSubject(id) {
+      const s = Storage.getAttendance().find(a => a.id === id);
+      if (!s) return;
+      editingSubjectId = id;
+      document.getElementById('subject-modal-title').textContent = 'Edit Subject';
+      document.getElementById('subject-id').value = id;
+      document.getElementById('subject-name').value = s.name || '';
+      document.getElementById('subject-code').value = s.code || '';
+      document.getElementById('subject-color').value = s.color || 'violet';
+      document.getElementById('subject-present').value = s.present || 0;
+      document.getElementById('subject-total').value = s.total || 0;
+      openModal('subject-modal');
+    }
+
+    function removeSubject(id) {
+      if (confirm('Remove this subject?')) {
+        Storage.deleteSubject(id);
+        renderAttendance();
+        showToast('Subject removed', '', 'info');
+      }
+    }
+  </script>
+</body>
+
+</html>

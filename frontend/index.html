@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Campus OS — Smart Academic Operating Platform</title>
+  <meta name="description" content="Next-generation student operating system. Real-time academic workspace, verified timetables, attendance radar, and authentic student profiles." />
+  <meta name="theme-color" content="#7c3aed" />
+
+  <!-- Favicon / Browser Icon -->
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --bg-base: #06050e;
+      --bg-surface: #0c0a1a;
+      --bg-elevated: #131026;
+      --bg-card: rgba(19, 16, 38, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(139, 92, 246, 0.35);
+      --primary: #8b5cf6;
+      --primary-light: #a78bfa;
+      --primary-glow: rgba(139, 92, 246, 0.4);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 85%, rgba(244, 63, 94, 0.06) 0%, transparent 55%);
+      background-attachment: fixed;
+      padding-bottom: 70px;
+    }
+
+    @media (min-width: 860px) {
+      body { padding-bottom: 0; }
+    }
+
+    /* ---- TOP NAVIGATION BAR ---- */
+    .campus-navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 70px;
+      z-index: 1000;
+      background: rgba(8, 6, 18, 0.85);
+      backdrop-filter: blur(24px) saturate(1.8);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      transition: all 0.3s ease;
+    }
+
+    .campus-navbar.scrolled {
+      background: rgba(6, 4, 14, 0.96);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-left-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .brand-logo-img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 20px rgba(124, 58, 237, 0.55);
+      flex-shrink: 0;
+      border: 1.5px solid rgba(139, 92, 246, 0.45);
+      transition: transform 0.2s ease;
+    }
+
+    .brand-logo-img:hover {
+      transform: scale(1.06);
+    }
+
+    .brand-text-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title span {
+      background: linear-gradient(135deg, #a78bfa, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.03em;
+    }
+
+    .nav-search-box {
+      flex: 1;
+      max-width: 440px;
+      margin: 0 24px;
+    }
+
+    @media (max-width: 768px) {
+      .nav-search-box { display: none; }
+    }
+
+    .nav-search-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 28px;
+      padding: 9px 18px;
+      color: #94a3b8;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-search-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(139, 92, 246, 0.5);
+      color: #f8fafc;
+      box-shadow: 0 0 24px rgba(124, 58, 237, 0.25);
+    }
+
+    .nav-search-btn kbd {
+      margin-left: auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .nav-right-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-dashboard-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-dashboard-link:hover {
+      background: rgba(124, 58, 237, 0.2);
+      border-color: rgba(139, 92, 246, 0.5);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .nav-cta-account {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 9px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.45);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .nav-cta-account:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.65);
+    }
+
+    .nav-user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124, 58, 237, 0.12);
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      padding: 4px 12px 4px 4px;
+      border-radius: 28px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .nav-user-chip:hover {
+      background: rgba(124, 58, 237, 0.22);
+    }
+
+    .nav-user-avatar-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(139, 92, 246, 0.5);
+    }
+
+    .nav-user-avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nav-user-name-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #f1f5f9;
+      max-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 768px) {
+      .nav-search-box { display: none; }
+      .nav-dashboard-link, .nav-cta-account, .nav-user-chip { display: none !important; }
+    }
+
+    .mobile-bottom-nav-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .mobile-bottom-nav-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1.5px solid #a78bfa;
+    }
+
+    /* ---- HERO BANNER SLIDER (CLEAN, COOL, AESTHETIC) ---- */
+    .hero-slider-section {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      margin-top: 70px;
+      overflow: hidden;
+      background: #020106;
+    }
+
+    @media (max-width: 768px) {
+      .hero-slider-section {
+        height: 220px;
+        margin: 78px 12px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(139, 92, 246, 0.35);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      }
+    }
+
+    .hero-slides-wrapper {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: scale(1.02);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero-slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+      z-index: 2;
+    }
+
+    .hero-slide-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: contrast(1.05) saturate(1.1);
+      transform: scale(1);
+      transition: transform 8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .hero-slide.active .hero-slide-bg {
+      transform: scale(1.04);
+    }
+
+    .hero-slide-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(6, 4, 14, 0.82) 0%, rgba(6, 4, 14, 0.45) 50%, rgba(6, 4, 14, 0.15) 100%),
+                  linear-gradient(180deg, transparent 70%, #06050e 100%);
+      display: flex;
+      align-items: center;
+      padding: 0 60px;
+      z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+      .hero-slide-overlay {
+        background: linear-gradient(180deg, rgba(6, 5, 14, 0.2) 0%, rgba(6, 4, 16, 0.88) 100%);
+        padding: 16px;
+        align-items: flex-end;
+      }
+    }
+
+    .hero-slide-content {
+      max-width: 640px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .hero-glow-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 30px;
+      background: rgba(124, 58, 237, 0.25);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      font-size: 12px;
+      font-weight: 800;
+      color: #c4b5fd;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .hero-glow-badge { font-size: 10px; padding: 2px 10px; margin-bottom: 6px; }
+    }
+
+    .hero-title-text {
+      font-size: clamp(22px, 3.8vw, 38px);
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    @media (max-width: 768px) {
+      .hero-title-text { font-size: 16px; margin-bottom: 10px; }
+    }
+
+    .text-hero-gradient {
+      background: linear-gradient(135deg, #c4b5fd 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(124, 58, 237, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .hero-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.7);
+    }
+
+    .hero-btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .hero-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      .hero-btn-primary { padding: 6px 12px; font-size: 11px; }
+      .hero-btn-secondary { display: none; }
+    }
+
+    .slider-arrow-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(8, 6, 18, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 16px;
+    }
+
+    .slider-arrow-btn:hover {
+      background: rgba(124, 58, 237, 0.85);
+    }
+
+    .slider-arrow-prev { left: 20px; }
+    .slider-arrow-next { right: 20px; }
+
+    @media (max-width: 768px) {
+      .slider-arrow-btn { display: none; }
+    }
+
+    .slider-controller-bar {
+      position: absolute;
+      bottom: 20px;
+      right: 36px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(8, 6, 18, 0.65);
+      backdrop-filter: blur(20px);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    @media (max-width: 768px) {
+      .slider-controller-bar { bottom: 10px; right: 12px; padding: 4px 8px; }
+    }
+
+    .slide-counter-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      color: #a78bfa;
+    }
+
+    .slider-indicators-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slider-indicator-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .slider-indicator-dot.active {
+      width: 18px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+    }
+
+    /* ---- MAIN WORKSPACE CONTAINER ---- */
+    .platform-main-container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+      width: 100%;
+    }
+
+    .section-headline-group {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 30px;
+    }
+
+    .section-pill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #a78bfa;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      padding: 3px 12px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .section-h2-title {
+      font-size: clamp(22px, 3.2vw, 30px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .section-sub-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* ---- 1. MILESTONES RADAR GRID ---- */
+    .milestones-radar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .radar-card {
+      background: rgba(16, 13, 32, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(16px);
+    }
+
+    .radar-card:hover {
+      border-color: var(--radar-accent, #8b5cf6);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .radar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .radar-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    .radar-days-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      color: #c4b5fd;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .radar-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+
+    .radar-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+
+    .radar-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+
+    /* ---- 2. CAMPUS NOTICEBOARD ---- */
+    .notice-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      scrollbar-width: none;
+    }
+
+    .notice-filter-bar::-webkit-scrollbar { display: none; }
+
+    .notice-tab-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #94a3b8;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .notice-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .notice-tab-btn.active {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #ffffff;
+      border-color: #8b5cf6;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+    }
+
+    .notices-display-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-bottom: 40px;
+    }
+
+    .notice-item-card {
+      background: rgba(14, 11, 28, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+    }
+
+    .notice-item-card:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    .notice-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .notice-type-badge {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .badge-exam { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-scholarship { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-placement { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-academic { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .notice-date-text {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .notice-headline {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .notice-summary {
+      font-size: 12.5px;
+      color: #94a3b8;
+      line-height: 1.55;
+      margin-bottom: 16px;
+      flex: 1;
+    }
+
+    .notice-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11.5px;
+    }
+
+    .notice-authority {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .notice-action-tag {
+      color: #a78bfa;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* ---- 3. DAILY INTEL & APTITUDE SECTION ---- */
+    .daily-intel-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .daily-intel-card {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(15, 12, 34, 0.8) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .intel-card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #c4b5fd;
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .intel-headline {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .intel-text {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+
+    .solution-toggle-btn {
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      color: #67e8f9;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: all 0.2s;
+    }
+
+    .solution-toggle-btn:hover {
+      background: rgba(6, 182, 212, 0.22);
+    }
+
+    /* ---- 4. CAMPUS HELPDESK & SUPPORT DIRECTORY ---- */
+    .campus-helpdesk-wrap {
+      background: rgba(10, 8, 22, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      padding: 26px;
+      margin-bottom: 20px;
+    }
+
+    .helpdesk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+    }
+
+    .helpdesk-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .helpdesk-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .helpdesk-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .helpdesk-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .helpdesk-contact {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      font-family: var(--font-mono);
+    }
+
+    /* ---- CREATE ACCOUNT MODAL ---- */
+    .account-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 2, 8, 0.88);
+      backdrop-filter: blur(24px);
+      z-index: 2100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .account-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .account-dialog-card {
+      background: #0f0c22;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 600px;
+      padding: 28px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(-20px) scale(0.98);
+      transition: all 0.25s ease;
+    }
+
+    .account-modal-backdrop.open .account-dialog-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .photo-upload-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(139, 92, 246, 0.4);
+      border-radius: 16px;
+    }
+
+    .photo-preview-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .photo-preview-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ---- SEARCH OVERLAY MODAL ---- */
+    .search-overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 2, 8, 0.85);
+      backdrop-filter: blur(20px);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 80px 20px 20px;
+    }
+
+    .search-overlay-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .search-dialog-card {
+      background: #110e24;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 620px;
+      overflow: hidden;
+    }
+
+    .search-input-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .search-input-header input {
+      flex: 1;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .search-close-x {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-results-viewport {
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* ---- FOOTER ---- */
+    .campus-mega-footer {
+      background: #04030a;
+      border-top: 1px solid var(--border-subtle);
+      padding: 36px 20px 24px;
+      color: #94a3b8;
+      margin-top: auto;
+    }
+
+    .footer-content-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    /* ---- MOBILE NAVIGATION BAR ---- */
+    .campus-mobile-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 62px;
+      background: rgba(8, 6, 18, 0.94);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 1000;
+      padding: 0 10px;
+    }
+
+    @media (min-width: 860px) {
+      .campus-mobile-nav { display: none; }
+    }
+
+    .mobile-tab-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+
+    .mobile-tab-link.active, .mobile-tab-link:hover {
+      color: #a78bfa;
+    }
+
+    .mobile-tab-fab {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.5);
+      cursor: pointer;
+      margin-top: -14px;
+    }
+
+    /* ---- TOAST NOTIFICATION ---- */
+    .campus-toast-box {
+      position: fixed;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(14, 11, 28, 0.95);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 10px 20px;
+      border-radius: 30px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      z-index: 3000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+
+    .campus-toast-box.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== TOP NAVIGATION ===================== -->
+<header class="campus-navbar" id="topNavbar">
+  <div class="nav-left-cluster">
+    <a href="index.html" class="brand-logo-wrap" title="Campus OS">
+      <img src="img/logo.png" alt="Campus OS Logo" class="brand-logo-img" />
+      <div class="brand-text-block">
+        <div class="brand-title">Campus<span>OS</span></div>
+        <div class="brand-sub">BLDEA · Jamkhandi</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Search Bar Trigger -->
+  <div class="nav-search-box">
+    <div class="nav-search-btn" id="openSearchModalBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <span>Search students, timetable, notes…</span>
+      <kbd>Ctrl+K</kbd>
+    </div>
+  </div>
+
+  <!-- Right Actions -->
+  <div class="nav-right-cluster">
+    <a href="dashboard.html" class="nav-dashboard-link" title="Open Student Workspace Dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </a>
+
+    <button class="nav-cta-account" id="openCreateAccountBtn" onclick="openAccountModal()">
+      <span>🚀 Create Account</span>
+    </button>
+
+    <!-- Desktop PC User Profile Badge -->
+    <a href="profile.html" class="nav-user-chip" id="navUserBadge">
+      <div class="nav-user-avatar-circle" id="navUserAvatar">S</div>
+      <span class="nav-user-name-text" id="navUserName">Profile</span>
+    </a>
+  </div>
+</header>
+
+<!-- ===================== HERO BANNER SLIDER (CLEAN, COOL, AESTHETIC) ===================== -->
+<section class="hero-slider-section" id="heroBannerSlider">
+  <div class="hero-slides-wrapper">
+    
+    <!-- Slide 1: Main Campus -->
+    <div class="hero-slide active" data-slide="0">
+      <div class="hero-slide-bg" style="background-image: url('img/banner1.jpg');"></div>
+      <div class="hero-slide-overlay">
+        <div class="hero-slide-content">
+          <div class="hero-glow-badge">✨ BLDE Association's Campus · Jamkhandi</div>
+          <h1 class="hero-title-text">
+            Commerce, BHS Arts &<br />
+            <span class="text-hero-gradient">TGP Science College</span>
+          </h1>
+          <div class="hero-cta-group">
+            <a href="dashboard.html" class="hero-btn-primary">
+              <span>📊 Open Dashboard →</span>
+            </a>
+            <button class="hero-btn-secondary" onclick="openAccountModal()">
+              <span>🚀 Create Account</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: Timetable & Schedule -->
+    <div class="hero-slide" data-slide="1">
+      <div class="hero-slide-bg" style="background-image: url('img/banner2.jpg');"></div>
+      <div class="hero-slide-overlay">
+        <div class="hero-slide-content">
+          <div class="hero-glow-badge" style="background:rgba(6,182,212,0.2); border-color:rgba(6,182,212,0.45); color:#67e8f9;">📅 Class Timetables</div>
+          <h1 class="hero-title-text">
+            Weekly Lectures &<br />
+            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Daily Class Periods</span>
+          </h1>
+          <div class="hero-cta-group">
+            <a href="timetable.html" class="hero-btn-primary">
+              <span>📅 View Timetable →</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Attendance Radar & Study Vault -->
+    <div class="hero-slide" data-slide="2">
+      <div class="hero-slide-bg" style="background-image: url('img/banner3.jpg');"></div>
+      <div class="hero-slide-overlay">
+        <div class="hero-slide-content">
+          <div class="hero-glow-badge" style="background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.45); color:#34d399;">🌟 75% Attendance Radar</div>
+          <h1 class="hero-title-text">
+            Attendance Health &<br />
+            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Smart Study Notes Vault</span>
+          </h1>
+          <div class="hero-cta-group">
+            <a href="attendance.html" class="hero-btn-primary">
+              <span>📈 Check Attendance</span>
+            </a>
+            <a href="notes.html" class="hero-btn-secondary">
+              <span>📝 Notes Vault</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button class="slider-arrow-btn slider-arrow-prev" id="sliderPrevBtn" aria-label="Previous Slide">❮</button>
+  <button class="slider-arrow-btn slider-arrow-next" id="sliderNextBtn" aria-label="Next Slide">❯</button>
+
+  <!-- Slide Controller Bar -->
+  <div class="slider-controller-bar">
+    <div class="slide-counter-badge" id="sliderCounterText">01 / 03</div>
+    <div class="slider-indicators-bar" id="sliderDotsBar">
+      <div class="slider-indicator-dot active" data-idx="0"></div>
+      <div class="slider-indicator-dot" data-idx="1"></div>
+      <div class="slider-indicator-dot" data-idx="2"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CAMPUS INTELLIGENCE & STUDENT BULLETIN HUB ===================== -->
+<main class="platform-main-container">
+
+  <!-- 1. ACADEMIC COUNTDOWN & SEMESTER RADAR -->
+  <div class="section-headline-group">
+    <div class="section-pill-tag">⏱️ Semester Milestone Radar</div>
+    <h2 class="section-h2-title">Upcoming Dates & Critical Deadlines</h2>
+    <p class="section-sub-desc">Stay ahead of university final exams, internal test schedules, and scholarship application windows.</p>
+  </div>
+
+  <div class="milestones-radar-grid">
+    <div class="radar-card" style="--radar-accent: #8b5cf6;">
+      <div class="radar-top">
+        <span class="radar-tag" style="background: rgba(139, 92, 246, 0.18); color: #c4b5fd;">University Finals</span>
+        <span class="radar-days-badge" id="examCountdownDays">45 Days</span>
+      </div>
+      <h3 class="radar-title">Odd Semester University Exams</h3>
+      <p class="radar-desc">RCUB & VTU Regular / Backlog Theory Examination Schedule 2026</p>
+      <div class="radar-footer">
+        <span>Target: Nov 15, 2026</span>
+        <span style="color: #a78bfa; font-weight: 700;">Scheme 2022/24</span>
+      </div>
+    </div>
+
+    <div class="radar-card" style="--radar-accent: #06b6d4;">
+      <div class="radar-top">
+        <span class="radar-tag" style="background: rgba(6, 182, 212, 0.18); color: #67e8f9;">Internal Assessment</span>
+        <span class="radar-days-badge" style="color: #38bdf8; border-color: rgba(6, 182, 212, 0.4);">12 Days</span>
+      </div>
+      <h3 class="radar-title">IA-2 Continuous Evaluation</h3>
+      <p class="radar-desc">Internal Assessment Test 2 across BCA, BSc, B.Pharm, and Engineering branches</p>
+      <div class="radar-footer">
+        <span>Starts: Sept 10, 2026</span>
+        <span style="color: #38bdf8; font-weight: 700;">Weightage: 25 Marks</span>
+      </div>
+    </div>
+
+    <div class="radar-card" style="--radar-accent: #10b981;">
+      <div class="radar-top">
+        <span class="radar-tag" style="background: rgba(16, 185, 129, 0.18); color: #34d399;">State Scholarship</span>
+        <span class="radar-days-badge" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">18 Days</span>
+      </div>
+      <h3 class="radar-title">SSP Post-Matric Application</h3>
+      <p class="radar-desc">Karnataka State Scholarship Portal e-Attestation & Fee Receipt Upload</p>
+      <div class="radar-footer">
+        <span>Deadline: Sept 15, 2026</span>
+        <span style="color: #34d399; font-weight: 700;">Govt of Karnataka</span>
+      </div>
+    </div>
+
+    <div class="radar-card" style="--radar-accent: #f59e0b;">
+      <div class="radar-top">
+        <span class="radar-tag" style="background: rgba(245, 158, 11, 0.18); color: #fcd34d;">Lab Practical</span>
+        <span class="radar-days-badge" style="color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">24 Days</span>
+      </div>
+      <h3 class="radar-title">Lab Record & Viva Submission</h3>
+      <p class="radar-desc">Departmental Laboratory Journal Certification & Final External Viva Mock</p>
+      <div class="radar-footer">
+        <span>Due: Sept 22, 2026</span>
+        <span style="color: #fbbf24; font-weight: 700;">All Science & IT Labs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. OFFICIAL CAMPUS NOTICEBOARD & CIRCULARS -->
+  <div class="section-headline-group" style="margin-top: 48px;">
+    <div class="section-pill-tag" style="color: #38bdf8; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3);">📢 Campus Circulars</div>
+    <h2 class="section-h2-title">Official Student Noticeboard</h2>
+    <p class="section-sub-desc">Verified updates from college administration, examination department, and career placement cell.</p>
+  </div>
+
+  <!-- Filter Category Tabs -->
+  <div class="notice-filter-bar">
+    <button class="notice-tab-btn active" data-filter="all" onclick="filterNotices('all', this)">All Updates (6)</button>
+    <button class="notice-tab-btn" data-filter="exams" onclick="filterNotices('exams', this)">Exams & Hall Tickets</button>
+    <button class="notice-tab-btn" data-filter="scholarship" onclick="filterNotices('scholarship', this)">Scholarships</button>
+    <button class="notice-tab-btn" data-filter="placement" onclick="filterNotices('placement', this)">Campus Placements</button>
+    <button class="notice-tab-btn" data-filter="academic" onclick="filterNotices('academic', this)">Academic & Library</button>
+  </div>
+
+  <!-- Notices Grid -->
+  <div class="notices-display-grid" id="campusNoticesGrid">
+    
+    <!-- Notice 1 -->
+    <div class="notice-item-card" data-category="exams">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-exam">Exams & Results</span>
+        <span class="notice-date-text">27 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">Odd Semester University Examination Form Submission & Fee Notification</h3>
+      <p class="notice-summary">Students appearing for 1st, 3rd, 5th, and 7th semester examinations must verify their course registration and submit university fees before the deadline to avoid late penaltes.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">🏛️ Examination Cell · BLDEA</span>
+        <span class="notice-action-tag">Read Circular →</span>
+      </div>
+    </div>
+
+    <!-- Notice 2 -->
+    <div class="notice-item-card" data-category="scholarship">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-scholarship">Scholarships</span>
+        <span class="notice-date-text">26 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">State Scholarship Portal (SSP) 2026-27: Mandatory Aadhaar e-KYC Verification</h3>
+      <p class="notice-summary">All SC/ST/OBC/Minority scholarship applicants must complete biometric Aadhaar-NPCI mapping at their designated banks. E-attestation desk is open in Room 104 from 10:00 AM to 4:00 PM.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">💰 Student Welfare Desk</span>
+        <span class="notice-action-tag">View Guidelines →</span>
+      </div>
+    </div>
+
+    <!-- Notice 3 -->
+    <div class="notice-item-card" data-category="placement">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-placement">Placements</span>
+        <span class="notice-date-text">25 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">Campus Recruitment Drive for BCA, BSc, B.Tech Final Year Students</h3>
+      <p class="notice-summary">Leading IT consulting firm visiting campus for Software Associate & Cloud Support roles (4.5 – 6.5 LPA). Eligible students must update their resumes in the Training & Placement portal.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">💼 Career Placement Cell</span>
+        <span class="notice-action-tag">Register Drive →</span>
+      </div>
+    </div>
+
+    <!-- Notice 4 -->
+    <div class="notice-item-card" data-category="academic">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-academic">Library & Academics</span>
+        <span class="notice-date-text">24 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">Central Library Book Bank Scheme: Issue of Core Reference Textbooks</h3>
+      <p class="notice-summary">Book Bank books for 3rd and 5th semester degree courses are available for issue from the central library. Bring your valid College ID card and previous semester clearance slip.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">📚 Central Library Desk</span>
+        <span class="notice-action-tag">Check Book List →</span>
+      </div>
+    </div>
+
+    <!-- Notice 5 -->
+    <div class="notice-item-card" data-category="exams">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-exam">Exams & Results</span>
+        <span class="notice-date-text">23 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">Internal Assessment IA-2 Timetable & Syllabus Blueprint Released</h3>
+      <p class="notice-summary">The detailed period-wise schedule for IA-2 has been published on departmental bulletin boards. Maximum marks: 25. Syllabus covers Modules 3 and 4 of respective curriculum.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">📝 Academic Council</span>
+        <span class="notice-action-tag">Download Schedule →</span>
+      </div>
+    </div>
+
+    <!-- Notice 6 -->
+    <div class="notice-item-card" data-category="academic">
+      <div class="notice-card-header">
+        <span class="notice-type-badge badge-academic">Campus Activity</span>
+        <span class="notice-date-text">22 Aug 2026</span>
+      </div>
+      <h3 class="notice-headline">Annual Inter-Collegiate Science & Tech Symposium 'INNOVA 2026'</h3>
+      <p class="notice-summary">Registrations are invited for Technical Paper Presentation, Coding Hackathon, and Robo-Race events. Cash prizes up to ₹50,000. Form teams and register at the Student Council office.</p>
+      <div class="notice-card-footer">
+        <span class="notice-authority">🏆 Student Council · BLDEA</span>
+        <span class="notice-action-tag">Event Details →</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 3. DAILY STUDENT INTELLIGENCE & APTITUDE CHALLENGE -->
+  <div class="daily-intel-section">
+    <div class="daily-intel-card">
+      <div class="intel-card-badge">💡 Concept of the Day</div>
+      <h3 class="intel-headline">Time Complexity & Big-O in Algorithm Optimization</h3>
+      <p class="intel-text">
+        When choosing search algorithms, <strong>Binary Search</strong> operates in <code style="background: rgba(139,92,246,0.2); padding: 2px 6px; border-radius: 4px; color:#c4b5fd;">O(log n)</code> time by halving the search space in sorted arrays, compared to <strong>Linear Search</strong> in <code style="background: rgba(139,92,246,0.2); padding: 2px 6px; border-radius: 4px; color:#c4b5fd;">O(n)</code> time.
+      </p>
+      <div style="font-size: 11px; color: #a78bfa; font-weight: 700;">Subjects: Data Structures & Algorithms · Computer Science & BCA</div>
+    </div>
+
+    <div class="daily-intel-card" style="border-color: rgba(6, 182, 212, 0.35);">
+      <div class="intel-card-badge" style="background: rgba(6, 182, 212, 0.18); border-color: rgba(6, 182, 212, 0.4); color: #67e8f9;">🎯 Placement Aptitude Challenge</div>
+      <h3 class="intel-headline">Quantitative Reasoning</h3>
+      <p class="intel-text">
+        A train running at 72 km/h crosses a 200m long platform in 22 seconds. What is the length of the train?
+      </p>
+      <button class="solution-toggle-btn" onclick="toggleSolution(this)">💡 Reveal Step-by-Step Solution</button>
+      <div class="solution-content-box" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+        <div><strong>Step 1:</strong> Speed in m/s = 72 × (5/18) = <strong>20 m/s</strong>.</div>
+        <div><strong>Step 2:</strong> Total Distance = Speed × Time = 20 × 22 = <strong>440 meters</strong>.</div>
+        <div><strong>Step 3:</strong> Train Length = Total Distance - Platform Length = 440 - 200 = <strong style="color: #34d399;">240 meters</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CAMPUS HELPDESK & EMERGENCY SUPPORT DIRECTORY -->
+  <div class="campus-helpdesk-wrap">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h3 style="font-size: 17px; font-weight: 800; color: #fff;">📞 Campus Helpdesk & Student Grievance Contacts</h3>
+        <p style="font-size: 12px; color: #94a3b8;">Direct departmental phone extensions and official administrative support desks</p>
+      </div>
+      <span style="font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.12); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(16,185,129,0.3);">● Support Desks Active</span>
+    </div>
+
+    <div class="helpdesk-grid">
+      <div class="helpdesk-card">
+        <div class="helpdesk-icon">📝</div>
+        <div>
+          <div class="helpdesk-name">Examination & Results Section</div>
+          <div class="helpdesk-sub">Room 102, Admin Block · Ext: 204</div>
+          <div class="helpdesk-contact">📞 +91 (08353) 220186</div>
+        </div>
+      </div>
+
+      <div class="helpdesk-card">
+        <div class="helpdesk-icon">💰</div>
+        <div>
+          <div class="helpdesk-name">Scholarship & Fee Attestation</div>
+          <div class="helpdesk-sub">Room 104, Student Section · Ext: 208</div>
+          <div class="helpdesk-contact">✉️ scholarship@bldeajkd.ac.in</div>
+        </div>
+      </div>
+
+      <div class="helpdesk-card">
+        <div class="helpdesk-icon">🛡️</div>
+        <div>
+          <div class="helpdesk-name">Anti-Ragging & Grievance Cell</div>
+          <div class="helpdesk-sub">24x7 Student Helpline & Redressal</div>
+          <div class="helpdesk-contact" style="color: #f87171;">🚨 Toll Free: 1800-180-5522</div>
+        </div>
+      </div>
+
+      <div class="helpdesk-card">
+        <div class="helpdesk-icon">💻</div>
+        <div>
+          <div class="helpdesk-name">Central Computing & IT Support</div>
+          <div class="helpdesk-sub">Main IT Server Lab · Ext: 215</div>
+          <div class="helpdesk-contact">✉️ itsupport@bldeajkd.ac.in</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===================== CLEAN MEGA FOOTER ===================== -->
+<footer class="campus-mega-footer">
+  <div class="footer-content-wrap">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img src="img/logo.png" alt="Campus OS" style="width:28px; height:28px; border-radius:50%;" />
+      <span style="font-size:14px; font-weight:800; color:#fff;">Campus<span style="color:#a78bfa;">OS</span> · BLDEA Jamkhandi</span>
+    </div>
+    <div style="display:flex; gap:20px; font-size:12px;">
+      <a href="dashboard.html" style="color:#94a3b8; text-decoration:none;">Dashboard</a>
+      <a href="timetable.html" style="color:#94a3b8; text-decoration:none;">Timetable</a>
+      <a href="attendance.html" style="color:#94a3b8; text-decoration:none;">Attendance</a>
+      <a href="notes.html" style="color:#94a3b8; text-decoration:none;">Notes</a>
+      <a href="profile.html" style="color:#94a3b8; text-decoration:none;">Profile</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== CREATE / EDIT STUDENT ACCOUNT MODAL ===================== -->
+<div class="account-modal-backdrop" id="accountModalBackdrop">
+  <div class="account-dialog-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <div>
+        <h3 style="font-size:19px; font-weight:900; color:#fff;" id="modalAccountHeading">🚀 Student Account</h3>
+        <p style="font-size:12px; color:#94a3b8; margin-top:2px;">Set up degree, branch, USN & photo</p>
+      </div>
+      <button class="search-close-x" onclick="closeAccountModal()">✕</button>
+    </div>
+
+    <!-- Photo Upload Section -->
+    <div class="photo-upload-container">
+      <div class="photo-preview-circle" id="modalPhotoPreview">📸</div>
+      <div>
+        <input type="file" id="modalPhotoFileInput" accept="image/*" style="display:none;" onchange="handleModalPhotoUpload(this)" />
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('modalPhotoFileInput').click()" style="padding:6px 14px; font-size:12px; border-radius:10px; margin-bottom:4px;">
+          📁 Choose Profile Photo
+        </button>
+        <div style="font-size:11px; color:#94a3b8;">Upload JPG, PNG or WebP</div>
+      </div>
+    </div>
+
+    <form id="modalAccountForm" onsubmit="executeModalAccountSave(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name *</label>
+          <input type="text" class="form-input" id="modalFullName" placeholder="e.g. Rahul Sharma" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Username (@handle) *</label>
+          <input type="text" class="form-input" id="modalUsername" placeholder="e.g. @rahul_sharma" required />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">College / Campus</label>
+          <input type="text" class="form-input" id="modalCollege" value="BLDEA Campus Jamkhandi" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
+          <input type="text" class="form-input" id="modalUSN" placeholder="e.g. 2BL22CS045" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program *</label>
+          <select class="form-select" id="modalProgram">
+            <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+            <option value="BSc">BSc (Bachelor of Science)</option>
+            <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+            <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+            <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+            <option value="BBA">BBA (Bachelor of Business Admin)</option>
+            <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+            <option value="BA">BA (Bachelor of Arts)</option>
+            <option value="MCA">MCA (Master of Computer Applications)</option>
+            <option value="M.Tech">M.Tech (Master of Technology)</option>
+            <option value="MSc">MSc (Master of Science)</option>
+            <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
+            <option value="MBA">MBA (Master of Business Admin)</option>
+            <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
+            <option value="Diploma">Diploma / Polytechnic</option>
+            <option value="Other">Other Degree</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Branch / Department *</label>
+          <select class="form-select" id="modalDept">
+            <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+            <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+            <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+            <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+            <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            <option value="Civil Engineering">Civil Engineering</option>
+            <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+            <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
+            <option value="Biotechnology">Biotechnology</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Mathematics & Statistics">Mathematics & Statistics</option>
+            <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+            <option value="Business Administration">Business Administration</option>
+            <option value="Arts & Humanities">Arts & Humanities</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Current Semester / Year *</label>
+        <select class="form-select" id="modalSem">
+          <option value="1">1st Semester (Year 1)</option>
+          <option value="2">2nd Semester (Year 1)</option>
+          <option value="3">3rd Semester (Year 2)</option>
+          <option value="4">4th Semester (Year 2)</option>
+          <option value="5" selected>5th Semester (Year 3)</option>
+          <option value="6">6th Semester (Year 3)</option>
+          <option value="7">7th Semester (Year 4)</option>
+          <option value="8">8th Semester (Year 4)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Bio / Interests</label>
+        <input type="text" class="form-input" id="modalBio" placeholder="e.g. 5th Sem | Web Development & Programming enthusiast" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-full" style="box-shadow:0 8px 24px rgba(124,58,237,0.45); font-weight:800;">
+        🚀 Save & Activate Profile
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== SEARCH OVERLAY MODAL ===================== -->
+<div class="search-overlay-backdrop" id="searchBackdrop">
+  <div class="search-dialog-card">
+    <div class="search-input-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="globalLiveSearchInput" placeholder="Search real students by name, @handle, branch, USN..." />
+      <button class="search-close-x" onclick="closeSearchOverlay()">✕</button>
+    </div>
+    <div class="search-results-viewport" id="globalSearchResults">
+      <div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">
+        Type at least 2 characters to search across real registered students and workspace tools...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MOBILE BOTTOM NAVIGATION ===================== -->
+<nav class="campus-mobile-nav">
+  <a href="index.html" class="mobile-tab-link active">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="javascript:void(0)" class="mobile-tab-link" onclick="openSearchOverlay()">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <span>Search</span>
+  </a>
+  <div class="mobile-tab-fab" onclick="openAccountModal()" title="Create Student Account">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </div>
+  <a href="dashboard.html" class="mobile-tab-link">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>Dashboard</span>
+  </a>
+  <a href="profile.html" class="mobile-tab-link" id="mobileBottomProfileTab">
+    <div class="mobile-bottom-nav-avatar" id="mobileBottomNavAvatar">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <span>Profile</span>
+  </a>
+</nav>
+
+<!-- ===================== TOAST NOTIFICATION ===================== -->
+<div class="campus-toast-box" id="campusToast">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="campusToastMsg">Action completed successfully</span>
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+
+<script>
+// =====================================================
+// HERO SLIDER
+// =====================================================
+let currentHeroSlide = 0;
+let heroSlideTimer = null;
+const totalHeroSlides = 3;
+
+function setHeroSlide(idx) {
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots = document.querySelectorAll('.slider-indicator-dot');
+  currentHeroSlide = (idx + totalHeroSlides) % totalHeroSlides;
+  slides.forEach((s, i) => s.classList.toggle('active', i === currentHeroSlide));
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentHeroSlide));
+  const counter = document.getElementById('sliderCounterText');
+  if (counter) {
+    counter.textContent = `0${currentHeroSlide + 1} / 0${totalHeroSlides}`;
+  }
+}
+
+function startHeroSlideTimer() {
+  clearInterval(heroSlideTimer);
+  heroSlideTimer = setInterval(() => setHeroSlide(currentHeroSlide + 1), 5000);
+}
+
+document.getElementById('sliderNextBtn')?.addEventListener('click', () => { setHeroSlide(currentHeroSlide + 1); startHeroSlideTimer(); });
+document.getElementById('sliderPrevBtn')?.addEventListener('click', () => { setHeroSlide(currentHeroSlide - 1); startHeroSlideTimer(); });
+document.getElementById('sliderDotsBar')?.addEventListener('click', (e) => {
+  const dot = e.target.closest('.slider-indicator-dot');
+  if (dot) { setHeroSlide(parseInt(dot.dataset.idx, 10)); startHeroSlideTimer(); }
+});
+
+// =====================================================
+// HELPERS
+// =====================================================
+function showCampusToast(msg) {
+  const toast = document.getElementById('campusToast');
+  if (!toast) return;
+  document.getElementById('campusToastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// =====================================================
+// USER SESSION & NAVBAR SYNC
+// =====================================================
+function syncNavbarUser() {
+  const user = Storage.getUser();
+  const navUserName = document.getElementById('navUserName');
+  const navUserAvatar = document.getElementById('navUserAvatar');
+  const bottomAvatar = document.getElementById('mobileBottomNavAvatar');
+
+  if (!user) {
+    if (navUserName) navUserName.textContent = 'Sign In';
+    if (navUserAvatar) navUserAvatar.textContent = '+';
+    if (bottomAvatar) {
+      bottomAvatar.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+    return;
+  }
+
+  const name = user.displayName || user.name || 'Student';
+  const handle = user.username || user.handle || '@student';
+  const initial = name[0].toUpperCase();
+  const photo = Storage.getUserPhoto(handle) || user.photo;
+
+  if (navUserName) navUserName.textContent = name.split(' ')[0];
+  
+  if (photo) {
+    if (navUserAvatar) navUserAvatar.innerHTML = `<img src="${photo}" alt="${name}" />`;
+    if (bottomAvatar) bottomAvatar.innerHTML = `<img src="${photo}" alt="${name}" />`;
+  } else {
+    if (navUserAvatar) navUserAvatar.textContent = initial;
+    if (bottomAvatar) {
+      bottomAvatar.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+  }
+}
+
+// =====================================================
+// CREATE / EDIT ACCOUNT MODAL
+// =====================================================
+let _modalSelectedPhotoBase64 = null;
+
+function openAccountModal() {
+  const modal = document.getElementById('accountModalBackdrop');
+  if (!modal) return;
+
+  const user = Storage.getUser();
+  if (user) {
+    document.getElementById('modalAccountHeading').textContent = '👤 Update Student Account';
+    document.getElementById('modalFullName').value = user.displayName || user.name || '';
+    document.getElementById('modalUsername').value = (user.username || user.handle || '').replace(/^@/, '');
+    document.getElementById('modalCollege').value = user.college || 'BLDEA Campus Jamkhandi';
+    document.getElementById('modalUSN').value = user.usn || '';
+    document.getElementById('modalProgram').value = user.program || 'BCA';
+    document.getElementById('modalDept').value = user.department || 'Computer Science & Engineering';
+    document.getElementById('modalSem').value = user.semester || '5';
+    document.getElementById('modalBio').value = user.bio || '';
+    
+    const photo = Storage.getUserPhoto(user.username || user.handle) || user.photo;
+    if (photo) {
+      _modalSelectedPhotoBase64 = photo;
+      document.getElementById('modalPhotoPreview').innerHTML = `<img src="${photo}" alt="Preview" />`;
+    }
+  }
+
+  modal.classList.add('open');
+}
+
+function closeAccountModal() {
+  const modal = document.getElementById('accountModalBackdrop');
+  if (modal) modal.classList.remove('open');
+}
+
+function handleModalPhotoUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Photo is too large (max 5MB). Please choose a smaller image.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _modalSelectedPhotoBase64 = e.target.result;
+    const previewBox = document.getElementById('modalPhotoPreview');
+    if (previewBox) {
+      previewBox.innerHTML = `<img src="${_modalSelectedPhotoBase64}" alt="Preview" />`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function executeModalAccountSave(e) {
+  e.preventDefault();
+  const name = document.getElementById('modalFullName').value.trim();
+  const rawHandle = document.getElementById('modalUsername').value.trim().replace(/^@/, '');
+  const college = document.getElementById('modalCollege').value.trim() || 'BLDEA Campus Jamkhandi';
+  const usn = document.getElementById('modalUSN').value.trim();
+  const program = document.getElementById('modalProgram').value;
+  const dept = document.getElementById('modalDept').value;
+  const sem = parseInt(document.getElementById('modalSem').value, 10) || 5;
+  const bio = document.getElementById('modalBio').value.trim();
+
+  if (!name || !rawHandle) {
+    alert('Full name and username are required.');
+    return;
+  }
+
+  const handle = '@' + rawHandle.toLowerCase();
+
+  const userAccount = {
+    uid: 'user_' + Date.now(),
+    displayName: name,
+    name: name,
+    username: handle,
+    handle: handle,
+    college: college,
+    usn: usn || null,
+    program: program,
+    department: dept,
+    semester: sem,
+    bio: bio,
+    photo: _modalSelectedPhotoBase64 || null,
+    xp: 150,
+    skills: [],
+    role: 'STUDENT',
+    status: 'ACTIVE',
+    updatedAt: Date.now()
+  };
+
+  Storage.setUser(userAccount);
+  if (_modalSelectedPhotoBase64) {
+    Storage.setUserPhoto(handle, _modalSelectedPhotoBase64);
+  }
+
+  if (window.PythonAPI && PythonAPI.saveAccount) {
+    PythonAPI.saveAccount(userAccount).catch(err => console.warn('Account API sync:', err));
+  }
+
+  closeAccountModal();
+  syncNavbarUser();
+  showCampusToast(`🎉 Profile for ${name} (${program}) activated!`);
+}
+
+// =====================================================
+// GLOBAL LIVE SEARCH OVERLAY
+// =====================================================
+function openSearchOverlay() {
+  const backdrop = document.getElementById('searchBackdrop');
+  if (backdrop) {
+    backdrop.classList.add('open');
+    document.getElementById('globalLiveSearchInput')?.focus();
+  }
+}
+
+function closeSearchOverlay() {
+  const backdrop = document.getElementById('searchBackdrop');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+document.getElementById('openSearchModalBtn')?.addEventListener('click', openSearchOverlay);
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearchOverlay(); }
+  if (e.key === 'Escape') { closeSearchOverlay(); closeAccountModal(); }
+});
+
+let liveSearchDebounce;
+document.getElementById('globalLiveSearchInput')?.addEventListener('input', function() {
+  const query = this.value.trim();
+  const resultsBox = document.getElementById('globalSearchResults');
+  if (!resultsBox) return;
+
+  if (query.length < 2) {
+    resultsBox.innerHTML = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">Type at least 2 characters to search across real registered students and workspace tools...</div>`;
+    return;
+  }
+
+  clearTimeout(liveSearchDebounce);
+  liveSearchDebounce = setTimeout(() => {
+    const accounts = Storage.searchAccounts(query);
+    const q = query.toLowerCase();
+
+    const tools = [
+      { name: 'Academic Dashboard', desc: 'GPA targets & semester tracker', url: 'dashboard.html', icon: '📊' },
+      { name: 'Weekly Class Timetable', desc: 'Lecture schedule & classroom timings', url: 'timetable.html', icon: '📅' },
+      { name: '75% Attendance Radar', desc: 'Safe bunk margin calculator', url: 'attendance.html', icon: '📈' },
+      { name: 'Smart Notes Vault', desc: 'Handwritten notes & formula sheets', url: 'notes.html', icon: '📝' },
+      { name: 'Tasks & Deadlines', desc: 'Kanban assignment planner', url: 'tasks.html', icon: '✅' },
+      { name: 'VTU Question Bank', desc: 'Previous years papers & syllabus', url: 'resources.html', icon: '📚' },
+      { name: 'Student Passport', desc: 'Digital ID passport & badges', url: 'profile.html', icon: '👤' }
+    ].filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+
+    let html = '';
+
+    if (accounts.length > 0) {
+      html += `<div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">Registered Student Accounts (${accounts.length})</div>`;
+      html += accounts.map(acc => {
+        const name = acc.displayName || acc.name || 'Student';
+        const handle = acc.username || acc.handle || '@student';
+        const photo = Storage.getUserPhoto(handle) || acc.photo;
+        const avatarContent = photo ? `<img src="${photo}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />` : name[0].toUpperCase();
+        return `
+          <a href="profile.html?handle=${encodeURIComponent(handle)}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; overflow:hidden; flex-shrink:0;">
+                ${avatarContent}
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:800;">${escapeHtml(name)} <span style="font-size:11px; color:#a78bfa;">${handle}</span></div>
+                <div style="font-size:11px; color:#94a3b8;">${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || '?'} ${acc.usn ? `· ${acc.usn}` : ''}</div>
+              </div>
+            </div>
+            <span style="font-size:12px; font-weight:800; color:#a78bfa;">View Passport →</span>
+          </a>
+        `;
+      }).join('');
+    }
+
+    if (tools.length > 0) {
+      html += `<div style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 8px; padding:0 8px;">Workspace Tools (${tools.length})</div>`;
+      html += tools.map(t => `
+        <a href="${t.url}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; margin-bottom:8px; text-decoration:none; color:#fff; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:20px;">${t.icon}</span>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#fff;">${t.name}</div>
+              <div style="font-size:11px; color:#94a3b8;">${t.desc}</div>
+            </div>
+          </div>
+          <span style="font-size:12px; font-weight:800; color:#38bdf8;">Open →</span>
+        </a>
+      `).join('');
+    }
+
+    if (!html) {
+      html = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">No matching results for "${escapeHtml(query)}".</div>`;
+    }
+
+    resultsBox.innerHTML = html;
+  }, 160);
+});
+
+// =====================================================
+// NOTICEBOARD FILTER & INTERACTIVE INTELLIGENCE
+// =====================================================
+function filterNotices(category, btn) {
+  document.querySelectorAll('.notice-tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const cards = document.querySelectorAll('.notice-item-card');
+  cards.forEach(card => {
+    if (category === 'all' || card.dataset.category === category) {
+      card.style.display = 'flex';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+function toggleSolution(btn) {
+  const box = btn.nextElementSibling;
+  if (!box) return;
+  if (box.style.display === 'none' || !box.style.display) {
+    box.style.display = 'block';
+    btn.textContent = '🔒 Hide Solution';
+  } else {
+    box.style.display = 'none';
+    btn.textContent = '💡 Reveal Step-by-Step Solution';
+  }
+}
+
+// =====================================================
+// NAVBAR SCROLL EFFECT & INIT
+// =====================================================
+window.addEventListener('scroll', () => {
+  const navbar = document.getElementById('topNavbar');
+  if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 30);
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  syncNavbarUser();
+  startHeroSlideTimer();
+
+  const user = Storage.getUser();
+  if (!user && !sessionStorage.getItem('cos_account_prompted')) {
+    sessionStorage.setItem('cos_account_prompted', 'true');
+    setTimeout(() => {
+      openAccountModal();
+    }, 1200);
+  }
+
+  if (window.Storage && Storage.init) {
+    try {
+      await Storage.init();
+      syncNavbarUser();
+    } catch (e) {
+      console.warn('Realtime sync note:', e);
+    }
+  }
+});
+</script>
+</body>
+</html>

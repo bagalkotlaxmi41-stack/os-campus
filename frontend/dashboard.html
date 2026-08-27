@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — College OS</title>
+  <meta name="description"
+    content="Your College OS dashboard — view today's schedule, pending tasks, attendance overview, and recent notes." />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    /* Dashboard-specific */
+    .welcome-card {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-8);
+    }
+
+    .welcome-card-bg {
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .welcome-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .welcome-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .welcome-stats {
+      display: flex;
+      gap: var(--space-6);
+      margin-top: var(--space-5);
+      flex-wrap: wrap;
+    }
+
+    .welcome-stat {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .welcome-stat strong {
+      color: var(--text-primary);
+    }
+
+    .welcome-emoji {
+      font-size: 64px;
+      position: absolute;
+      right: var(--space-8);
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.3;
+      user-select: none;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .today-classes {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-5);
+    }
+
+    .section-header-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .class-slot {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .class-slot:last-child {
+      border-bottom: none;
+    }
+
+    .class-time {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 50px;
+      font-family: var(--font-mono);
+    }
+
+    .class-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .class-info {
+      flex: 1;
+    }
+
+    .class-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .class-room {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .class-now {
+      background: rgba(16, 185, 129, 0.08);
+      border-radius: var(--radius-md);
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .tasks-preview {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .task-check.done {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .task-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .task-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .deadline-red {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .deadline-amber {
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 900px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .notes-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-4);
+    }
+
+    @media (max-width: 600px) {
+      .notes-preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dash-notes {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+    }
+
+    .att-mini {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+    }
+
+    .att-mini-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .att-mini-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .att-mini-bar {
+      flex: 1;
+    }
+
+    .att-mini-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .att-mini-subject {
+      font-weight: 600;
+    }
+
+    .att-mini-pct {
+      font-weight: 700;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 600px) {
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .quick-action {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+      color: var(--text-secondary);
+      display: block;
+    }
+
+    .quick-action:hover {
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-2px);
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      box-shadow: var(--shadow-md);
+    }
+
+    .quick-action-icon {
+      font-size: 28px;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .quick-action-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Stat card order fix: value on top, label below */
+    .stat-card .stat-value {
+      margin-bottom: 4px;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/logo.png" alt="Campus OS Logo" class="sidebar-logo-img" />
+      <div class="sidebar-logo-text">Campus<span class="text-gradient">OS</span></div>
+    </div>
+
+    <div class="sidebar-section-label">Platform & Community</div>
+    <a href="index.html" class="sidebar-nav-item">
+      <span class="sidebar-nav-icon">🌐</span>
+      Home Platform
+    </a>
+    <a href="profile.html" class="sidebar-nav-item">
+      <span class="sidebar-nav-icon">👤</span>
+      Student Passport
+    </a>
+
+    <div class="sidebar-section-label">Main Workspace</div>
+    <a href="dashboard.html" class="sidebar-nav-item active" data-page="dashboard">
+      <span class="sidebar-nav-icon">📊</span>
+      Dashboard
+    </a>
+    <a href="notes.html" class="sidebar-nav-item" data-page="notes">
+      <span class="sidebar-nav-icon">📝</span>
+      Notes
+    </a>
+    <a href="tasks.html" class="sidebar-nav-item" data-page="tasks">
+      <span class="sidebar-nav-icon">✅</span>
+      Tasks
+    </a>
+
+    <div class="sidebar-section-label">Academic</div>
+    <a href="timetable.html" class="sidebar-nav-item" data-page="timetable">
+      <span class="sidebar-nav-icon">📅</span>
+      Timetable
+    </a>
+    <a href="attendance.html" class="sidebar-nav-item" data-page="attendance">
+      <span class="sidebar-nav-icon">📈</span>
+      Attendance
+    </a>
+    <a href="resources.html" class="sidebar-nav-item" data-page="resources">
+      <span class="sidebar-nav-icon">📚</span>
+      Resources
+    </a>
+
+    <div class="sidebar-footer">
+      <a href="profile.html" id="sidebar-user" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;text-decoration:none;color:inherit;">
+        <div class="avatar avatar-md" id="sidebar-avatar">?</div>
+        <div style="overflow:hidden;flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-name">Loading...</div>
+          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-college">BLDE Jamakhandi</div>
+        </div>
+      </a>
+      <button class="btn btn-ghost btn-sm w-full" id="logout-btn" style="justify-content:flex-start;gap:8px">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:600;color:var(--text-primary)" id="topbar-greeting">Good Morning</div>
+      <div style="font-size:12px;color:var(--text-muted)" id="topbar-date">Loading...</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;position:relative">
+      <button class="btn btn-ghost btn-icon" title="Notifications" id="notif-btn">🔔</button>
+      <div class="avatar avatar-md" id="topbar-avatar" style="cursor:pointer" data-dropdown="user-dropdown">?</div>
+      <div class="dropdown-menu" id="user-dropdown">
+        <div class="dropdown-item" id="dd-profile">👤 My Profile</div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item danger" id="dd-logout">🚪 Logout</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-layout">
+    <div class="main-content page-transition">
+
+      <!-- Welcome Banner -->
+      <div class="welcome-card animate-fade-in-up">
+        <div class="welcome-card-bg"></div>
+        <span class="welcome-emoji" id="greeting-emoji">👋</span>
+        <div class="welcome-title" id="welcome-title">Good Morning, Student!</div>
+        <div class="welcome-subtitle" id="welcome-subtitle">Here's your academic overview for today</div>
+        <div class="welcome-stats" id="welcome-stats">
+          <div class="welcome-stat">📅 <strong id="ws-day">Mon</strong></div>
+          <div class="welcome-stat">✅ <strong id="ws-tasks">0</strong> tasks due</div>
+          <div class="welcome-stat">📝 <strong id="ws-notes">0</strong> notes</div>
+          <div class="welcome-stat">📈 Avg <strong id="ws-att">0%</strong> attendance</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions animate-fade-in-up delay-100">
+        <a href="notes.html#new" class="quick-action">
+          <span class="quick-action-icon">📝</span>
+          <div class="quick-action-label">New Note</div>
+        </a>
+        <a href="tasks.html#new" class="quick-action">
+          <span class="quick-action-icon">✅</span>
+          <div class="quick-action-label">Add Task</div>
+        </a>
+        <a href="timetable.html" class="quick-action">
+          <span class="quick-action-icon">📅</span>
+          <div class="quick-action-label">Timetable</div>
+        </a>
+        <a href="attendance.html#mark" class="quick-action">
+          <span class="quick-action-icon">📈</span>
+          <div class="quick-action-label">Mark Attendance</div>
+        </a>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row animate-fade-in-up delay-150">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-notes">0</div>
+          <div class="stat-label">Total Notes</div>
+          <div class="stat-change up" id="stat-notes-ch">↑ Your knowledge base</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-tasks">0</div>
+          <div class="stat-label">Pending Tasks</div>
+          <div class="stat-change" id="stat-tasks-ch">tasks to complete</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-att">0%</div>
+          <div class="stat-label">Avg Attendance</div>
+          <div class="stat-change" id="stat-att-ch">across all subjects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-classes">0</div>
+          <div class="stat-label">Today's Classes</div>
+          <div class="stat-change up" id="stat-classes-ch">↑ Stay on time</div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Grid -->
+      <div class="dashboard-grid animate-fade-in-up delay-200">
+        <!-- Today's Timetable -->
+        <div class="today-classes">
+          <div class="section-header">
+            <div class="section-header-title">📅 Today's Schedule</div>
+            <a href="timetable.html" style="font-size:13px;color:var(--primary-light)">View all →</a>
+          </div>
+          <div id="today-classes-list">
+            <div class="empty-state" style="padding:var(--space-8)">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-title">No classes today</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Tasks -->
+        <div class="tasks-preview">
+          <div class="section-header">
+            <div class="section-header-title">✅ Pending Tasks</div>
+            <a href="tasks.html" style="font-size:13px;color:var(--primary-light)">View all →</a>
+          </div>
+          <div id="pending-tasks-list">
+            <div class="empty-state" style="padding:var(--space-8)">
+              <div class="empty-state-icon">✅</div>
+              <div class="empty-state-title">All caught up!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Row: Notes + Attendance -->
+      <div class="dashboard-grid animate-fade-in-up delay-300">
+        <!-- Recent Notes -->
+        <div class="dash-notes">
+          <div class="section-header">
+            <div class="section-header-title">📝 Recent Notes</div>
+            <a href="notes.html" style="font-size:13px;color:var(--primary-light)">View all →</a>
+          </div>
+          <div class="notes-preview-grid" id="recent-notes-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
+
+        <!-- Attendance Overview -->
+        <div class="att-mini">
+          <div class="section-header">
+            <div class="section-header-title">📈 Attendance Overview</div>
+            <a href="attendance.html" style="font-size:13px;color:var(--primary-light)">Details →</a>
+          </div>
+          <div id="att-overview-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = requireAuth();
+      if (!user) return;
+
+      // ---- Render user info ----
+      const displayName = user.displayName || user.name || 'Student';
+      const userHandle = user.username || '@student';
+      const initials = displayName.split(' ').map(w => w[0]).join('').substr(0, 2).toUpperCase();
+      const photo = Storage.getUserPhoto(userHandle);
+
+      if (photo) {
+        document.getElementById('sidebar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        document.getElementById('topbar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      } else {
+        document.getElementById('sidebar-avatar').textContent = initials;
+        document.getElementById('topbar-avatar').textContent = initials;
+      }
+      document.getElementById('sidebar-name').textContent = displayName;
+      document.getElementById('sidebar-college').textContent =
+        (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || 'BLDE Jamakhandi';
+
+      // ---- Greeting ----
+      const greeting = getGreeting();
+      const greetEmojis = { 'Good Morning': '☀️', 'Good Afternoon': '🌤️', 'Good Evening': '🌙', 'Good Night': '🌛' };
+      const firstName = displayName.split(' ')[0];
+      document.getElementById('welcome-title').textContent = `${greeting}, ${firstName}! 👋`;
+      document.getElementById('topbar-greeting').textContent = `${greeting}, ${firstName}`;
+      document.getElementById('greeting-emoji').textContent = greetEmojis[greeting] || '👋';
+      document.getElementById('welcome-subtitle').textContent = `Here's your academic overview for today`;
+
+      const now = new Date();
+      document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-IN', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+      document.getElementById('ws-day').textContent = now.toLocaleDateString('en-IN', { weekday: 'long' });
+
+      // ---- Stats ----
+      const notes = Storage.getNotes();
+      const tasks = Storage.getTasks();
+      const att = Storage.getAttendance();
+      const tt = Storage.getTimetable();
+      const today = getTodayName();
+      const todayClasses = Object.entries(tt[today] || {});
+      const pendingTasks = tasks.filter(t => t.status !== 'done');
+      const avgAtt = att.length
+        ? Math.round(att.reduce((s, a) => s + pct(a.present, a.total), 0) / att.length)
+        : 0;
+
+      document.getElementById('stat-notes').textContent = notes.length;
+      document.getElementById('stat-tasks').textContent = pendingTasks.length;
+      document.getElementById('stat-att').textContent = avgAtt + '%';
+      const attChangeEl = document.getElementById('stat-att-ch');
+      attChangeEl.className = 'stat-change ' + (avgAtt >= 75 ? 'up' : 'down');
+      attChangeEl.textContent = avgAtt >= 75 ? '↑ Above safe zone' : '⚠ Below 75%!';
+      document.getElementById('stat-classes').textContent = todayClasses.length;
+      document.getElementById('ws-tasks').textContent = pendingTasks.length;
+      document.getElementById('ws-notes').textContent = notes.length;
+      document.getElementById('ws-att').textContent = avgAtt + '%';
+
+      // Animate stats
+      ['stat-notes', 'stat-tasks', 'stat-classes'].forEach(id => {
+        const el = document.getElementById(id);
+        const val = parseInt(el.textContent);
+        if (!isNaN(val) && val > 0) animateCount(el, val);
+      });
+
+      // ---- Today's Classes ----
+      const classList = document.getElementById('today-classes-list');
+      if (todayClasses.length === 0) {
+        classList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">🎉</div><div class="empty-state-title">No classes today!</div><div class="empty-state-desc">Enjoy your free day or catch up on studies</div></div>`;
+      } else {
+        const nowH = now.getHours() * 60 + now.getMinutes();
+        classList.innerHTML = todayClasses
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([time, cls]) => {
+            const [h, m] = time.split(':').map(Number);
+            const classStart = h * 60 + m;
+            const isNow = nowH >= classStart && nowH < classStart + 60;
+            const colorMap = { violet: 'var(--primary)', cyan: 'var(--accent)', green: 'var(--success)', amber: 'var(--warning)', red: 'var(--danger)', pink: '#ec4899', blue: 'var(--info)' };
+            const dotColor = colorMap[cls.color] || 'var(--primary)';
+            return `<div class="class-slot">
+              <div class="class-time">${esc(time)}</div>
+              <div class="class-dot" style="background:${dotColor}"></div>
+              <div class="class-info">
+                <div class="class-name">${esc(cls.subject)}</div>
+                <div class="class-room">${esc(cls.code || '')} · ${esc(cls.room || '')}</div>
+              </div>
+              ${isNow ? '<span class="class-now">NOW</span>' : ''}
+            </div>`;
+          }).join('');
+      }
+
+      // ---- Pending Tasks ----
+      const taskList = document.getElementById('pending-tasks-list');
+      const shownTasks = pendingTasks
+        .sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority]))
+        .slice(0, 5);
+
+      if (shownTasks.length === 0) {
+        taskList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">✅</div><div class="empty-state-title">All caught up!</div><div class="empty-state-desc">No pending tasks. Great work!</div></div>`;
+      } else {
+        taskList.innerHTML = shownTasks.map(t => {
+          const days = daysUntil(t.deadline);
+          const dClass = days !== null && days <= 1 ? 'deadline-red' : days !== null && days <= 3 ? 'deadline-amber' : '';
+          const deadlineText = days === null ? '' : days < 0 ? 'Overdue!' : days === 0 ? 'Due today!' : `Due in ${days}d`;
+          return `<div class="task-item">
+            <div class="task-check ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}">✓</div>
+            <div style="flex:1;min-width:0">
+              <div class="task-text">${esc(t.title)}</div>
+              <div class="task-meta">
+                ${t.subject ? `<span>${esc(t.subject)}</span>` : ''}
+                ${deadlineText ? `<span class="${dClass}">${deadlineText}</span>` : ''}
+                ${priorityBadge(t.priority)}
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
+        taskList.querySelectorAll('.task-check').forEach(cb => {
+          cb.addEventListener('click', function () {
+            const id = this.dataset.id;
+            Storage.updateTask(id, { status: 'done' });
+            this.classList.add('done');
+            this.closest('.task-item').style.opacity = '0.4';
+            showToast('Task done! ✅', '', 'success');
+          });
+        });
+      }
+
+      // ---- Recent Notes ----
+      const notesGrid = document.getElementById('recent-notes-list');
+      const shownNotes = notes.slice(0, 4);
+      if (shownNotes.length === 0) {
+        notesGrid.innerHTML = `<div class="empty-state" style="padding:var(--space-6);grid-column:1/-1"><div class="empty-state-icon">📝</div><div class="empty-state-title">No notes yet</div><div class="empty-state-desc">Create your first note to see it here</div></div>`;
+      } else {
+        notesGrid.innerHTML = shownNotes.map(n => `
+          <div class="note-card ${n.color || 'violet'}" onclick="location.href='notes.html'">
+            <div style="font-size:14px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.title)}</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(n.content)}</div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+              ${n.subject ? `<span class="tag" style="font-size:10px;padding:2px 8px">${esc(n.subject)}</span>` : ''}
+            </div>
+          </div>`).join('');
+      }
+
+      // ---- Attendance Overview ----
+      const attList = document.getElementById('att-overview-list');
+      if (att.length === 0) {
+        attList.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">📈</div><div class="empty-state-title">No subjects added</div><div class="empty-state-desc">Add subjects in the Attendance page</div></div>`;
+      } else {
+        attList.innerHTML = att.map(s => {
+          const p = pct(s.present, s.total);
+          const color = attColor(p);
+          return `<div class="att-mini-item">
+            <div class="color-dot dot-${s.color || 'violet'}"></div>
+            <div class="att-mini-bar">
+              <div class="att-mini-label">
+                <span class="att-mini-subject">${esc(s.name)}</span>
+                <span class="att-mini-pct" style="color:${color}">${p}%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:${color}"></div></div>
+            </div>
+            ${p < 75 ? '<span style="font-size:16px" title="Below 75%!">⚠️</span>' : ''}
+          </div>`;
+        }).join('');
+      }
+
+      // ---- Logout ----
+      const logoutFn = () => {
+        Storage.clearUser();
+        window.location.href = 'auth.html';
+      };
+      document.getElementById('logout-btn')?.addEventListener('click', logoutFn);
+      document.getElementById('dd-logout')?.addEventListener('click', logoutFn);
+
+      // Profile link
+      document.getElementById('dd-profile')?.addEventListener('click', () => {
+        window.location.href = 'profile.html';
+      });
+    });
+  </script>
+</body>
+
+</html>

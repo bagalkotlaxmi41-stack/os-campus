@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Notes & PDF Vault — Campus OS</title>
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    .notes-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--space-5);
+    }
+
+    .notes-grid.list-view {
+      grid-template-columns: 1fr;
+    }
+
+    .view-toggle-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .view-toggle-btn.active {
+      color: var(--text-primary);
+      border-color: var(--primary-light);
+      background: rgba(124, 58, 237, 0.15);
+    }
+
+    .ai-badge {
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .pdf-attached-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .pdf-attached-badge:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/logo.png" alt="Campus OS Logo" class="sidebar-logo-img" />
+      <div class="sidebar-logo-text">Campus<span class="text-gradient">OS</span></div>
+    </div>
+    <div class="sidebar-section-label">Navigation</div>
+    <a href="index.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🌐</span>Home Platform</a>
+    <a href="profile.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">👤</span>Student Passport</a>
+    <div class="sidebar-section-label">Main Workspace</div>
+    <a href="dashboard.html" class="sidebar-nav-item" data-page="dashboard"><span class="sidebar-nav-icon">📊</span>Dashboard</a>
+    <a href="notes.html" class="sidebar-nav-item active" data-page="notes"><span class="sidebar-nav-icon">📝</span>Notes Vault</a>
+    <a href="tasks.html" class="sidebar-nav-item" data-page="tasks"><span class="sidebar-nav-icon">✅</span>Tasks</a>
+    <div class="sidebar-section-label">Academic Suite</div>
+    <a href="timetable.html" class="sidebar-nav-item" data-page="timetable"><span class="sidebar-nav-icon">📅</span>Timetable</a>
+    <a href="attendance.html" class="sidebar-nav-item" data-page="attendance"><span class="sidebar-nav-icon">📈</span>Attendance</a>
+    <a href="resources.html" class="sidebar-nav-item" data-page="resources"><span class="sidebar-nav-icon">📚</span>Resources</a>
+    <div class="sidebar-footer">
+      <a href="profile.html" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;text-decoration:none;color:inherit;">
+        <div class="avatar avatar-md" id="sidebar-avatar">?</div>
+        <div>
+          <div style="font-size:13px;font-weight:600" id="sidebar-name">Student</div>
+        </div>
+      </a>
+      <button class="btn btn-ghost btn-sm w-full" id="logout-btn" style="justify-content:flex-start;gap:8px">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+    <div style="flex:1"></div>
+    <div class="avatar avatar-md" id="topbar-avatar">?</div>
+  </header>
+
+  <main class="main-layout">
+    <div class="main-content page-transition">
+      <div class="page-header animate-fade-in-up">
+        <div>
+          <div class="page-title">📝 Smart Notes & PDF Vault</div>
+          <div class="page-subtitle">Organize study materials with device PDF attachments & AI summarization</div>
+        </div>
+        <button class="btn btn-primary" id="new-note-btn">+ Create Note</button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="notes-toolbar animate-fade-in-up delay-100">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-notes" placeholder="Search notes by title, subject, tag or PDF attachment..." />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="view-toggle-btn active" id="btn-grid-view">Grid</button>
+          <button class="view-toggle-btn" id="btn-list-view">List</button>
+        </div>
+      </div>
+
+      <!-- Notes Grid -->
+      <div class="notes-grid animate-fade-in-up delay-200" id="notes-container">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Note Modal -->
+  <div class="modal-overlay" id="note-modal">
+    <div class="modal" style="max-width: 580px;">
+      <div class="modal-title">
+        <span id="note-modal-title">New Note</span>
+        <button class="modal-close" onclick="closeModal('note-modal')">×</button>
+      </div>
+      <form id="note-form" style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <input type="hidden" id="note-id" />
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input type="text" id="note-title" class="form-input" placeholder="e.g. Operating System Scheduling Algorithms" required />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" id="note-subject" class="form-input" placeholder="e.g. OS, DBMS, DS" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Card Color</label>
+            <select id="note-color" class="form-select">
+              <option value="violet">🟣 Violet</option>
+              <option value="cyan">🔵 Cyan</option>
+              <option value="green">🟢 Green</option>
+              <option value="amber">🟡 Amber</option>
+              <option value="red">🔴 Red</option>
+              <option value="pink">🩷 Pink</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Direct PDF File Attachment From Device -->
+        <div class="form-group">
+          <label class="form-label">Attach PDF From Device (Optional)</label>
+          <input type="file" id="note-pdf-input" accept=".pdf,application/pdf" class="form-input" style="padding:8px;" />
+          <div id="note-pdf-status" style="font-size:11px; color:#38bdf8; margin-top:4px; display:none;"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <label class="form-label" style="margin-bottom:0">Content / Key Summary</label>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-ai-summarize" style="font-size:11px;color:var(--primary-light)">
+              ✨ AI Summarize Note
+            </button>
+          </div>
+          <textarea id="note-content" class="form-textarea" placeholder="Write or paste your lecture notes here..." style="min-height:120px"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tags (comma separated)</label>
+          <input type="text" id="note-tags" class="form-input" placeholder="e.g. exam-prep, algorithms, VTU" />
+        </div>
+
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('note-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Note</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="fab" id="fab-note" title="New Note">+</div>
+  <div id="toast-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let editingNoteId = null;
+    let isListView = false;
+    let notePDFDataUrl = null;
+    let notePDFFileName = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = requireAuth();
+      if (!user) return;
+
+      const initials = (user.displayName || user.name || 'Student').split(' ').map(w => w[0]).join('').substr(0, 2).toUpperCase();
+      const photo = Storage.getUserPhoto(user.username || user.handle);
+      if (photo) {
+        document.getElementById('sidebar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        document.getElementById('topbar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      } else {
+        document.getElementById('sidebar-avatar').textContent = initials;
+        document.getElementById('topbar-avatar').textContent = initials;
+      }
+      document.getElementById('sidebar-name').textContent = user.displayName || user.name || 'Student';
+
+      renderNotes();
+
+      // View toggle
+      document.getElementById('btn-grid-view').addEventListener('click', () => {
+        isListView = false;
+        document.getElementById('btn-grid-view').classList.add('active');
+        document.getElementById('btn-list-view').classList.remove('active');
+        document.getElementById('notes-container').classList.remove('list-view');
+      });
+      document.getElementById('btn-list-view').addEventListener('click', () => {
+        isListView = true;
+        document.getElementById('btn-list-view').classList.add('active');
+        document.getElementById('btn-grid-view').classList.remove('active');
+        document.getElementById('notes-container').classList.add('list-view');
+      });
+
+      // Search
+      document.getElementById('search-notes').addEventListener('input', e => renderNotes(e.target.value));
+
+      // PDF Input Change
+      document.getElementById('note-pdf-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        notePDFFileName = file.name;
+        const statusEl = document.getElementById('note-pdf-status');
+        statusEl.style.display = 'block';
+        statusEl.textContent = `✓ PDF Attached: ${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          notePDFDataUrl = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Open new note modal
+      const openNewNote = () => {
+        editingNoteId = null;
+        notePDFDataUrl = null;
+        notePDFFileName = null;
+        document.getElementById('note-modal-title').textContent = 'New Note';
+        document.getElementById('note-form').reset();
+        document.getElementById('note-id').value = '';
+        document.getElementById('note-pdf-status').style.display = 'none';
+        openModal('note-modal');
+      };
+      document.getElementById('new-note-btn').addEventListener('click', openNewNote);
+      document.getElementById('fab-note').addEventListener('click', openNewNote);
+      if (window.location.hash === '#new') openNewNote();
+
+      // AI Summarize Button
+      document.getElementById('btn-ai-summarize').addEventListener('click', async () => {
+        const title = document.getElementById('note-title').value.trim() || 'Untitled Note';
+        const content = document.getElementById('note-content').value.trim();
+        const subject = document.getElementById('note-subject').value.trim() || 'General';
+
+        if (!content) {
+          showToast('Content empty', 'Add some content before summarizing', 'warning');
+          return;
+        }
+
+        showToast('Processing AI Summary...', 'Analyzing lecture concepts', 'info');
+        const res = await window.PythonAPI.summarizeNote(title, content, subject);
+        
+        if (res && res.key_points) {
+          const summaryBox = `\n\n--- 🤖 AI Key Summary ---\n• ` + res.key_points.join('\n• ');
+          document.getElementById('note-content').value += summaryBox;
+          if (res.suggested_tags && res.suggested_tags.length) {
+            document.getElementById('note-tags').value = res.suggested_tags.join(', ');
+          }
+          showToast('AI Summary Added! ✨', 'Key takeaways and tags generated', 'success');
+        }
+      });
+
+      // Save Note Form
+      document.getElementById('note-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = document.getElementById('note-title').value.trim();
+        const subject = document.getElementById('note-subject').value.trim();
+        const color = document.getElementById('note-color').value;
+        const content = document.getElementById('note-content').value.trim();
+        const tagsRaw = document.getElementById('note-tags').value;
+        const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+
+        if (!title || !content) { showToast('Missing fields', 'Title and content required', 'error'); return; }
+
+        const noteData = { 
+          title, 
+          subject, 
+          color, 
+          content, 
+          tags,
+          pdfFileName: notePDFFileName,
+          pdfData: notePDFDataUrl
+        };
+
+        if (editingNoteId) {
+          Storage.updateNote(editingNoteId, noteData);
+          showToast('Note updated!', '', 'success');
+        } else {
+          Storage.addNote(noteData);
+          showToast('Note saved to vault!', '', 'success');
+        }
+        closeModal('note-modal');
+        renderNotes();
+      });
+
+      document.getElementById('logout-btn').addEventListener('click', () => { Storage.clearUser(); window.location.href = 'auth.html'; });
+      closeModalOnOverlay('note-modal');
+    });
+
+    function renderNotes(filterQuery = '') {
+      const notes = Storage.getNotes();
+      const container = document.getElementById('notes-container');
+      const query = filterQuery.toLowerCase().trim();
+
+      const filtered = notes.filter(n => {
+        if (!query) return true;
+        return (n.title || '').toLowerCase().includes(query) ||
+               (n.subject || '').toLowerCase().includes(query) ||
+               (n.content || '').toLowerCase().includes(query) ||
+               (n.pdfFileName || '').toLowerCase().includes(query) ||
+               (n.tags || []).some(t => t.toLowerCase().includes(query));
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📝</div><div class="empty-state-title">No notes found</div><div class="empty-state-desc">Try creating your first note or attaching a PDF</div></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(n => `
+        <div class="note-card ${n.color || 'violet'} animate-fade-in">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div style="font-size:16px;font-weight:700;line-height:1.3">${esc(n.title)}</div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}')" title="Edit">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteNote('${n.id}')" title="Delete">🗑️</button>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:12px;white-space:pre-line">${esc(n.content)}</div>
+          
+          ${n.pdfFileName ? `
+            <div class="pdf-attached-badge" onclick="downloadNotePDF('${n.id}')" title="Click to download attached PDF">
+              <span>📄 Attached PDF: ${esc(n.pdfFileName)}</span>
+              <span>📥</span>
+            </div>
+          ` : ''}
+
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-top:14px;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              ${n.subject ? `<span class="badge badge-primary">${esc(n.subject)}</span>` : ''}
+              ${(n.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
+            </div>
+            <span style="font-size:11px;color:var(--text-muted)">${formatRelative(n.updatedAt || n.createdAt)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function downloadNotePDF(id) {
+      const note = Storage.getNotes().find(n => n.id === id);
+      if (note && note.pdfData) {
+        const a = document.createElement('a');
+        a.href = note.pdfData;
+        a.download = note.pdfFileName || 'Note.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        showToast('PDF Document', `Accessing: ${note ? note.pdfFileName : 'note.pdf'}`, 'info');
+      }
+    }
+
+    function editNote(id) {
+      const note = Storage.getNotes().find(n => n.id === id);
+      if (!note) return;
+      editingNoteId = id;
+      document.getElementById('note-modal-title').textContent = 'Edit Note';
+      document.getElementById('note-id').value = id;
+      document.getElementById('note-title').value = note.title || '';
+      document.getElementById('note-subject').value = note.subject || '';
+      document.getElementById('note-color').value = note.color || 'violet';
+      document.getElementById('note-content').value = note.content || '';
+      document.getElementById('note-tags').value = (note.tags || []).join(', ');
+      
+      const statusEl = document.getElementById('note-pdf-status');
+      if (note.pdfFileName) {
+        notePDFFileName = note.pdfFileName;
+        notePDFDataUrl = note.pdfData;
+        statusEl.style.display = 'block';
+        statusEl.textContent = `✓ Current PDF: ${note.pdfFileName}`;
+      } else {
+        statusEl.style.display = 'none';
+      }
+      openModal('note-modal');
+    }
+
+    function deleteNote(id) {
+      if (confirm('Delete this note?')) {
+        Storage.deleteNote(id);
+        renderNotes();
+        showToast('Note deleted', '', 'info');
+      }
+    }
+  </script>
+</body>
+
+</html>

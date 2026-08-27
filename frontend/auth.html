@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus OS — Sign In / Join</title>
+  <meta name="description" content="Create your Campus OS account or sign in to access your student dashboard." />
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    /* ---- Page Layout ---- */
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .auth-page {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 20px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-page::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 90% 80%, rgba(6,182,212,0.10) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .auth-wrap {
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ---- Logo ---- */
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .auth-logo-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 10px;
+      box-shadow: 0 0 32px rgba(124,58,237,0.35);
+    }
+    .auth-logo-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    /* ---- Card ---- */
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+
+    /* ---- Tabs ---- */
+    .auth-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124,58,237,.4);
+    }
+
+    /* ---- Stepper ---- */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      color: var(--text-muted);
+      transition: all .3s;
+      flex-shrink: 0;
+    }
+    .step-dot.active {
+      border-color: #7c3aed;
+      background: rgba(124,58,237,.15);
+      color: #a78bfa;
+    }
+    .step-dot.done {
+      border-color: #10b981;
+      background: rgba(16,185,129,.15);
+      color: #34d399;
+    }
+    .step-line {
+      flex: 1; height: 2px;
+      background: var(--border-default);
+      border-radius: 2px;
+      transition: background .3s;
+    }
+    .step-line.done { background: #10b981; }
+    .step-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+    .step-with-label { display: flex; flex-direction: column; align-items: center; }
+
+    /* ---- Form pieces ---- */
+    .form-heading { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .form-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px; font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-default);
+      border-radius: 12px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: border .2s, box-shadow .2s;
+      box-sizing: border-box;
+      appearance: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.15);
+      outline: none;
+    }
+    .field input::placeholder { color: var(--text-muted); }
+    .field-err {
+      font-size: 12px;
+      color: #f87171;
+      margin-top: 5px;
+      display: none;
+    }
+    .field-err.show { display: block; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 480px) { .field-row { grid-template-columns: 1fr; } }
+
+    /* ---- Big button ---- */
+    .btn-auth {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+      box-shadow: 0 8px 24px rgba(124,58,237,.4);
+    }
+    .btn-auth:hover { opacity: .92; }
+    .btn-auth:active { transform: scale(.98); }
+    .btn-auth:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .btn-back {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 12px;
+      border: 1px solid var(--border-default);
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all .2s;
+    }
+    .btn-back:hover { border-color: var(--primary); color: var(--primary-light); }
+
+    /* ---- Footer links ---- */
+    .auth-footer-link {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 20px;
+    }
+    .auth-footer-link a {
+      color: #a78bfa;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .auth-footer-link a:hover { text-decoration: underline; }
+
+    /* ---- Success ---- */
+    .success-box {
+      text-align: center;
+      padding: 24px 0;
+    }
+    .success-icon {
+      width: 80px; height: 80px;
+      margin: 0 auto 18px;
+      background: rgba(16,185,129,.12);
+      border: 2px solid #10b981;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+    .success-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ---- Password toggle ---- */
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 48px; }
+    .pass-toggle {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      padding: 4px;
+    }
+
+    /* ---- Username prefix ---- */
+    .username-wrap { position: relative; }
+    .username-wrap input { padding-left: 34px; }
+    .username-at {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .username-status {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .username-status.ok { color: #34d399; }
+    .username-status.taken { color: #f87171; }
+
+    /* ---- Panel show/hide ---- */
+    .panel { display: none; }
+    .panel.show { display: block; animation: fadeUp .35s ease both; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="landing-nav scrolled" style="background:rgba(8,8,15,.92);backdrop-filter:blur(20px);">
+    <a href="index.html" class="nav-brand" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <img src="img/logo.png" alt="Campus OS Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(139,92,246,0.4);" />
+      <span class="nav-logo-text" style="font-size:18px;font-weight:800;color:#fff;">Campus<span class="text-gradient">OS</span></span>
+    </a>
+    <a href="index.html" class="btn btn-ghost btn-sm">← Home</a>
+  </nav>
+
+  <div class="auth-page">
+    <div class="auth-wrap">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <img src="img/logo.png" alt="Campus OS Logo" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid rgba(139,92,246,0.5);box-shadow:0 0 24px rgba(124,58,237,0.4);margin-bottom:12px;" />
+        <div class="auth-logo-name">Campus<span class="text-gradient">OS</span></div>
+      </div>
+
+      <div class="auth-card">
+
+        <!-- TABS -->
+        <div class="auth-tabs" id="authTabs">
+          <button class="auth-tab active" id="tabLogin"    onclick="showPanel('login')">Sign In</button>
+          <button class="auth-tab"        id="tabRegister" onclick="showPanel('step1')">Create Account</button>
+        </div>
+
+        <!-- ========== SIGN IN ========== -->
+        <div class="panel show" id="panelLogin">
+          <h2 class="form-heading">Welcome back 👋</h2>
+          <p class="form-sub">Sign in to your Campus OS account</p>
+
+          <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="loginEmail" placeholder="you@university.edu"
+                   onkeydown="if(event.key==='Enter') doLogin()" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="loginPass" placeholder="Your password"
+                     onkeydown="if(event.key==='Enter') doLogin()" />
+              <button class="pass-toggle" onclick="togglePass('loginPass',this)" type="button">👁</button>
+            </div>
+          </div>
+
+          <button class="btn-auth" id="loginBtn" onclick="doLogin()">Sign In →</button>
+          <div class="auth-footer-link">No account? <a href="#" onclick="showPanel('step1')">Create one free</a></div>
+        </div>
+
+        <!-- ========== REGISTER STEP 1: Account Details ========== -->
+        <div class="panel" id="panelStep1">
+
+          <!-- Stepper -->
+          <div class="stepper">
+            <div class="step-with-label">
+              <div class="step-dot active" id="dot1">1</div>
+              <div class="step-label">Details</div>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step-with-label">
+              <div class="step-dot" id="dot2">2</div>
+              <div class="step-label">Profile</div>
+            </div>
+          </div>
+
+          <h2 class="form-heading">Create Account</h2>
+          <p class="form-sub">Join thousands of students on Campus OS</p>
+
+          <div class="field">
+            <label>Full Name</label>
+            <input type="text" id="regName" placeholder="e.g. Priya Sharma" />
+            <div class="field-err" id="errName">Please enter your name</div>
+          </div>
+          <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="regEmail" placeholder="you@university.edu" />
+            <div class="field-err" id="errEmail">Enter a valid email address</div>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="regPass" placeholder="Min. 6 characters" />
+              <button class="pass-toggle" onclick="togglePass('regPass',this)" type="button">👁</button>
+            </div>
+            <div class="field-err" id="errPass">Password must be at least 6 characters</div>
+          </div>
+
+          <button class="btn-auth" onclick="goStep2()">Continue → Set Up Profile</button>
+          <div class="auth-footer-link">Already have an account? <a href="#" onclick="showPanel('login')">Sign in</a></div>
+        </div>
+
+        <!-- ========== REGISTER STEP 2: Profile ========== -->
+        <div class="panel" id="panelStep2">
+
+          <!-- Stepper -->
+          <div class="stepper">
+            <div class="step-with-label">
+              <div class="step-dot done" id="dot1b">✓</div>
+              <div class="step-label">Details</div>
+            </div>
+            <div class="step-line done"></div>
+            <div class="step-with-label">
+              <div class="step-dot active" id="dot2b">2</div>
+              <div class="step-label">Profile</div>
+            </div>
+          </div>
+
+          <h2 class="form-heading">Your Academic Profile</h2>
+          <p class="form-sub">Set up your student identity and degree</p>
+
+          <!-- Profile Photo Selector & Preview -->
+          <div class="field" style="text-align: center; margin-bottom: 20px;">
+            <label style="display:block; margin-bottom:8px; font-weight:700;">Profile Photo</label>
+            <div style="display:flex; align-items:center; justify-content:center; gap:16px;">
+              <div id="authPhotoPreview" style="width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg, #8b5cf6, #06b6d4); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:#fff; overflow:hidden; border:2px solid rgba(139,92,246,0.6); box-shadow:0 6px 18px rgba(0,0,0,0.4); flex-shrink:0;">
+                📸
+              </div>
+              <div style="text-align:left;">
+                <input type="file" id="regPhotoFile" accept="image/*" style="display:none;" onchange="handleAuthPhotoUpload(this)" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('regPhotoFile').click()" style="padding:6px 14px; font-size:12px; border-radius:8px; margin-bottom:4px;">
+                  📁 Upload Photo
+                </button>
+                <div style="font-size:11px; color:var(--text-muted);">JPG, PNG or WebP (Max 5MB)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Username <span style="color:var(--text-muted);font-weight:400;">(your @handle)</span></label>
+            <div class="username-wrap">
+              <span class="username-at">@</span>
+              <input type="text" id="regUsername" placeholder="yourhandle" oninput="checkUsername(this)" />
+            </div>
+            <div class="username-status" id="usernameStatus"></div>
+            <div class="field-err" id="errUsername">Choose a username (min 3 characters)</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>College / University</label>
+              <input type="text" id="regCollege" placeholder="e.g. BLDEA Campus Jamkhandi" />
+            </div>
+            <div class="field">
+              <label>USN / Roll Number</label>
+              <input type="text" id="regUSN" placeholder="e.g. 2BL22CS045" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Degree / Program</label>
+              <select id="regProgram">
+                <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                <option value="BSc">BSc (Bachelor of Science)</option>
+                <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+                <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+                <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+                <option value="BBA">BBA (Bachelor of Business Admin)</option>
+                <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+                <option value="BA">BA (Bachelor of Arts)</option>
+                <option value="MCA">MCA (Master of Computer Applications)</option>
+                <option value="M.Tech">M.Tech (Master of Technology)</option>
+                <option value="MSc">MSc (Master of Science)</option>
+                <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
+                <option value="MBA">MBA (Master of Business Admin)</option>
+                <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
+                <option value="Diploma">Diploma / Polytechnic</option>
+                <option value="Other">Other Degree</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Branch / Department</label>
+              <select id="regDept">
+                <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+                <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+                <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+                <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+                <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
+                <option value="Biotechnology">Biotechnology</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Mathematics & Statistics">Mathematics & Statistics</option>
+                <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+                <option value="Business Administration">Business Administration</option>
+                <option value="Arts & Humanities">Arts & Humanities</option>
+                <option value="General">General / Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Current Semester / Year</label>
+            <select id="regSem">
+              <option value="1">1st Semester (Year 1)</option>
+              <option value="2">2nd Semester (Year 1)</option>
+              <option value="3">3rd Semester (Year 2)</option>
+              <option value="4">4th Semester (Year 2)</option>
+              <option value="5" selected>5th Semester (Year 3)</option>
+              <option value="6">6th Semester (Year 3)</option>
+              <option value="7">7th Semester (Year 4)</option>
+              <option value="8">8th Semester (Year 4)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Short Bio <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <input type="text" id="regBio" placeholder="e.g. BCA Student | Web Development & Cloud enthusiast" />
+          </div>
+
+          <button class="btn-auth" id="createBtn" onclick="doRegister()">🚀 Create My Account</button>
+          <button class="btn-back" onclick="showPanel('step1')">← Back</button>
+        </div>
+
+        <!-- ========== SUCCESS ========== -->
+        <div class="panel" id="panelSuccess">
+          <div class="success-box">
+            <div class="success-icon">✓</div>
+            <div class="success-title">Account Created! 🎉</div>
+            <div class="success-sub" id="successMsg">Welcome to Campus OS. Your profile is ready.</div>
+            <div class="success-btns">
+              <a href="dashboard.html" class="btn btn-primary">Go to Dashboard →</a>
+              <a href="index.html"     class="btn btn-secondary">Explore Feed</a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.auth-card -->
+    </div><!-- /.auth-wrap -->
+  </div><!-- /.auth-page -->
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+  // =====================================================
+  // Panel switching
+  // =====================================================
+  function showPanel(name) {
+    // Hide all panels
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+
+    // Tab styling
+    const tabLogin    = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const tabs        = document.getElementById('authTabs');
+
+    if (name === 'login') {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      tabs.style.display = 'flex';
+      document.getElementById('panelLogin').classList.add('show');
+    } else if (name === 'step1') {
+      tabLogin.classList.remove('active');
+      tabRegister.classList.add('active');
+      tabs.style.display = 'flex';
+      document.getElementById('panelStep1').classList.add('show');
+    } else if (name === 'step2') {
+      tabs.style.display = 'none';
+      document.getElementById('panelStep2').classList.add('show');
+    } else if (name === 'success') {
+      tabs.style.display = 'none';
+      document.getElementById('panelSuccess').classList.add('show');
+    }
+  }
+
+  // =====================================================
+  // Password toggle
+  // =====================================================
+  function togglePass(inputId, btn) {
+    var inp = document.getElementById(inputId);
+    if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+    else                         { inp.type = 'password'; btn.textContent = '👁';  }
+  }
+
+  // =====================================================
+  // Validation helper
+  // =====================================================
+  function err(id, show) {
+    var el = document.getElementById(id);
+    if (el) el.className = 'field-err' + (show ? ' show' : '');
+  }
+
+  // =====================================================
+  // SIGN IN
+  // =====================================================
+  function doLogin() {
+    var email = (document.getElementById('loginEmail').value || '').trim();
+    var pass  = (document.getElementById('loginPass').value  || '').trim();
+
+    if (!email) { alert('Please enter your email address.'); return; }
+
+    var btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+
+    // Build local user from email
+    function localLogin() {
+      var name = email.split('@')[0]
+        .replace(/[._\-]/g, ' ')
+        .replace(/(\b\w)/g, function(c){ return c.toUpperCase(); });
+
+      var user = {
+        uid: 'user-' + Date.now(),
+        displayName: name,
+        email: email,
+        username: '@' + email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+        college: 'Central Institute of Technology',
+        department: 'Computer Science',
+        program: 'B.Tech',
+        semester: 5,
+        bio: '',
+        xp: 250,
+        skills: [],
+        interests: [],
+        role: 'STUDENT',
+        status: 'ACTIVE',
+        joinedAt: Date.now()
+      };
+      Storage.setUser(user);
+      window.location.href = 'dashboard.html';
+    }
+
+    // Try backend (max 3 s), always fall back to local
+    var done = false;
+    var timer = setTimeout(function() {
+      if (!done) { done = true; localLogin(); }
+    }, 3000);
+
+    fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: pass })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (done) return;
+      done = true; clearTimeout(timer);
+      if (data && data.user) {
+        Storage.setUser(data.user);
+        window.location.href = 'dashboard.html';
+      } else {
+        localLogin();
+      }
+    })
+    .catch(function() {
+      if (done) return;
+      done = true; clearTimeout(timer);
+      localLogin();
+    });
+  }
+
+  // =====================================================
+  // REGISTER — Step 1 → Step 2
+  // =====================================================
+  function goStep2() {
+    var name  = (document.getElementById('regName').value  || '').trim();
+    var email = (document.getElementById('regEmail').value || '').trim();
+    var pass  = (document.getElementById('regPass').value  || '');
+
+    var ok = true;
+    if (!name)                      { err('errName',  true); ok = false; } else { err('errName',  false); }
+    if (!email || !email.includes('@')) { err('errEmail', true); ok = false; } else { err('errEmail', false); }
+    if (pass.length < 6)            { err('errPass',  true); ok = false; } else { err('errPass',  false); }
+
+    if (!ok) return;
+
+    // Pre-fill username from email
+    var suggestedHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+    var uInput = document.getElementById('regUsername');
+    if (!uInput.value) {
+      uInput.value = suggestedHandle;
+      checkUsername(uInput);
+    }
+
+    showPanel('step2');
+  }
+
+  // =====================================================
+  // Username availability check
+  // =====================================================
+  var _uTimer;
+  function checkUsername(input) {
+    var val = input.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    input.value = val;
+    var status = document.getElementById('usernameStatus');
+    if (val.length < 3) { status.textContent = ''; status.className = 'username-status'; return; }
+    clearTimeout(_uTimer);
+    _uTimer = setTimeout(function() {
+      var taken = ['admin', 'campusos', 'test', 'student', 'root'];
+      if (taken.indexOf(val) !== -1) {
+        status.textContent = '✕ @' + val + ' is already taken';
+        status.className = 'username-status taken';
+      } else {
+        status.textContent = '✓ @' + val + ' is available!';
+        status.className = 'username-status ok';
+      }
+    }, 350);
+  }
+
+  // =====================================================
+  // Profile Photo Upload Handler
+  // =====================================================
+  var _selectedAuthPhotoBase64 = null;
+  function handleAuthPhotoUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo is too large (max 5MB). Please choose a smaller image.');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _selectedAuthPhotoBase64 = e.target.result;
+      var previewBox = document.getElementById('authPhotoPreview');
+      if (previewBox) {
+        previewBox.innerHTML = '<img src="' + _selectedAuthPhotoBase64 + '" alt="Preview" style="width:100%;height:100%;object-fit:cover;" />';
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // =====================================================
+  // REGISTER — Complete
+  // =====================================================
+  function doRegister() {
+    var username = (document.getElementById('regUsername').value || '').trim();
+    if (!username || username.length < 3) {
+      err('errUsername', true);
+      return;
+    }
+    err('errUsername', false);
+
+    var btn = document.getElementById('createBtn');
+    btn.disabled = true;
+    btn.textContent = '🚀 Creating account…';
+
+    var name  = (document.getElementById('regName').value  || '').trim();
+    var email = (document.getElementById('regEmail').value || '').trim();
+    var pass  = (document.getElementById('regPass').value  || '');
+    var handle = '@' + username.replace(/^@/, '');
+    var usn = (document.getElementById('regUSN')?.value || '').trim();
+
+    var user = {
+      uid:         'user-' + Date.now(),
+      displayName: name,
+      name:        name,
+      email:       email,
+      username:    handle,
+      handle:      handle,
+      usn:         usn || null,
+      college:     (document.getElementById('regCollege').value || '').trim() || 'BLDEA Campus Jamkhandi',
+      department:  document.getElementById('regDept').value,
+      program:     document.getElementById('regProgram').value,
+      semester:    parseInt(document.getElementById('regSem').value, 10),
+      bio:         (document.getElementById('regBio').value || '').trim(),
+      photo:       _selectedAuthPhotoBase64 || null,
+      xp:          150,
+      skills:      [],
+      interests:   [],
+      role:        'STUDENT',
+      status:      'ACTIVE',
+      joinedAt:    Date.now()
+    };
+
+    // Save locally to Storage & accounts directory
+    Storage.setUser(user);
+    if (_selectedAuthPhotoBase64) {
+      Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
+    }
+
+    // Update success message
+    document.getElementById('successMsg').textContent =
+      'Welcome, ' + name + '! Your ' + user.program + ' (' + user.department + ') student profile is ready.';
+
+    // Try backend API registration in background
+    if (window.PythonAPI && PythonAPI.saveAccount) {
+      PythonAPI.saveAccount(user).catch(function(e){ console.warn('Account sync note:', e); });
+    }
+
+    // Show success immediately
+    showPanel('success');
+  }
+
+  // =====================================================
+  // Init
+  // =====================================================
+  document.addEventListener('DOMContentLoaded', function() {
+    var existing = Storage.getUser ? Storage.getUser() : null;
+    if (existing) {
+      var banner = document.createElement('div');
+      banner.style.cssText = 'background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+      banner.innerHTML = '<span>👋 Signed in as <strong>' + (existing.displayName || existing.name || existing.email) + '</strong></span>' +
+        '<a href="dashboard.html" style="color:#a78bfa;font-weight:700;white-space:nowrap;">Go to Dashboard →</a>';
+      document.querySelector('.auth-wrap').insertBefore(banner, document.querySelector('.auth-card'));
+    }
+  });
+  </script>
+</body>
+</html>
