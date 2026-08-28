@@ -221,8 +221,8 @@ class PostCreateModel(BaseModel):
     subject: Optional[str] = "General"
     department: Optional[str] = "Computer Science & Engineering"
     desc: Optional[str] = ""
-    author: str
-    handle: str
+    author: Optional[str] = "Student"
+    handle: Optional[str] = "@student"
     fileName: Optional[str] = None
     fileSize: Optional[str] = None
     pdfData: Optional[str] = None
