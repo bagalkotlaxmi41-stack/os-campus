@@ -382,6 +382,18 @@ def create_or_update_account(acc: AccountModel):
     cursor = conn.cursor()
     now = int(time.time() * 1000)
 
+    # 1. Enforce Strict "One Email One Account" Uniqueness
+    if acc.email and acc.email.strip():
+        email_clean = acc.email.strip().lower()
+        cursor.execute("SELECT handle FROM accounts WHERE LOWER(email) = ? AND LOWER(handle) != ?", (email_clean, handle.lower()))
+        existing_email_row = cursor.fetchone()
+        if existing_email_row:
+            conn.close()
+            raise HTTPException(
+                status_code=400,
+                detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in or use another email."
+            )
+
     cursor.execute("SELECT created_at FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
     existing = cursor.fetchone()
     created_at = existing[0] if existing else now
@@ -429,6 +441,25 @@ def create_or_update_account(acc: AccountModel):
     }
 
 
+@app.delete("/api/accounts/{handle}")
+def delete_account(handle: str):
+    clean = handle.strip()
+    if not clean.startswith("@"): clean = "@" + clean
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Cascade delete student's data
+    cursor.execute("DELETE FROM accounts WHERE LOWER(handle) = ?", (clean.lower(),))
+    cursor.execute("DELETE FROM posts WHERE LOWER(handle) = ?", (clean.lower(),))
+    cursor.execute("DELETE FROM notes WHERE LOWER(handle) = ?", (clean.lower(),))
+    cursor.execute("DELETE FROM tasks WHERE LOWER(handle) = ?", (clean.lower(),))
+    cursor.execute("DELETE FROM attendance WHERE LOWER(handle) = ?", (clean.lower(),))
+
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": f"Account {clean} and all related study records permanently deleted."}
+
+
 @app.post("/api/accounts/{handle}/photo")
 def update_account_photo(handle: str, data: Dict[str, str]):
     clean = handle.strip()
@@ -441,6 +472,16 @@ def update_account_photo(handle: str, data: Dict[str, str]):
     conn.commit()
     conn.close()
     return {"status": "success", "handle": clean, "photo": photo}
+
+
+@app.post("/api/posts/{id}/view")
+def register_post_view(id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE posts SET saves = saves + 1 WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "id": id}
 
 
 # ============================================================

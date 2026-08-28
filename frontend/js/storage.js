@@ -97,6 +97,17 @@ const Storage = {
   setAccounts(accounts) {
     return this.set(KEYS.ACCOUNTS, accounts);
   },
+  isEmailTaken(email, excludeHandle = null) {
+    if (!email || !email.trim()) return false;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanExclude = excludeHandle ? excludeHandle.trim().toLowerCase() : '';
+    const accounts = this.getAccounts();
+    return accounts.some(a => {
+      const aEmail = (a.email || '').trim().toLowerCase();
+      const aHandle = (a.username || a.handle || '').trim().toLowerCase();
+      return aEmail === cleanEmail && aHandle !== cleanExclude;
+    });
+  },
   addAccount(account) {
     if (!account) return;
     const rawHandle = account.username || account.handle || (account.name ? '@' + account.name.toLowerCase().replace(/\s+/g, '_') : '@student');

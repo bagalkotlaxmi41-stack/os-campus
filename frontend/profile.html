@@ -465,6 +465,67 @@
       border-color: #8b5cf6;
       color: #c4b5fd;
       box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
+    /* Settings Modal Styles */
+    .settings-nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+      overflow-x: auto;
+    }
+    .settings-tab-btn {
+      background: none;
+      border: 1px solid transparent;
+      padding: 8px 14px;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .settings-tab-btn.active {
+      background: rgba(124, 58, 237, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+    }
+    .settings-section-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .settings-row-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      gap: 12px;
+    }
+    .settings-row-item:last-child {
+      border-bottom: none;
+    }
+    .danger-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .danger-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
     }
   </style>
 </head>
@@ -480,6 +541,10 @@
   </a>
 
   <div class="nav-actions-group">
+    <a href="feed.html" class="nav-link-btn" style="background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#fca5a5;" title="Campus Stream — Reels">
+      <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#ef4444; margin-right:4px;"></span>
+      Stream
+    </a>
     <a href="index.html" class="nav-link-btn">← Home</a>
     <a href="dashboard.html" class="nav-link-btn" style="background:rgba(124,58,237,0.2); border-color:rgba(139,92,246,0.5); color:#c4b5fd;">
       Dashboard →
@@ -514,7 +579,7 @@
       </div>
 
       <div class="passport-actions-col" id="passportActions">
-        <!-- Injected by JS -->
+        <!-- Injected by JS: Single post button & settings -->
       </div>
     </div>
 
@@ -553,18 +618,11 @@
 
     <!-- Tab 1: Uploaded Posts & Materials -->
     <div class="tab-content-panel active" id="tab-materials">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-        <div>
-          <h3 style="font-size:16px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
-            <span>📄</span> Shared Materials & Posts
-          </h3>
-          <p style="font-size:12px; color:#94a3b8; margin-top:2px;">Verified notes, PDFs, code repos, and video tutorials</p>
-        </div>
-        <div id="materialsTabActionBtnWrap">
-          <button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:8px 18px; font-size:13px;">
-            <span>➕ Share Material / Post</span>
-          </button>
-        </div>
+      <div style="margin-bottom:18px;">
+        <h3 style="font-size:16px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+          <span>📄</span> Shared Materials & Posts
+        </h3>
+        <p style="font-size:12px; color:#94a3b8; margin-top:2px;">Verified notes, PDFs, code repos, and video tutorials</p>
       </div>
 
       <div class="materials-grid-layout" id="publishedMaterialsGrid">
@@ -772,98 +830,199 @@
   </div>
 </div>
 
-<!-- ===================== EDIT PROFILE MODAL ===================== -->
-<div class="edit-modal-backdrop" id="editProfileModal">
-  <div class="edit-dialog-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <h3 style="font-size:18px; font-weight:900; color:#fff;">✏️ Edit Student Profile</h3>
-      <button class="modal-dismiss-btn" onclick="closeEditModal()" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+<!-- ===================== SETTINGS & ACCOUNT MANAGEMENT MODAL ===================== -->
+<div class="edit-modal-backdrop" id="settingsModal">
+  <div class="edit-dialog-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:18px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+        <span>⚙️</span> Student & Account Settings
+      </h3>
+      <button class="modal-dismiss-btn" onclick="closeSettingsModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">✕</button>
     </div>
 
-    <div class="form-group" style="margin-bottom:14px;">
-      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name</label>
-      <input type="text" class="form-input" id="editFullName" placeholder="Your full name" />
+    <!-- Settings Navigation Tabs -->
+    <div class="settings-nav-tabs">
+      <button class="settings-tab-btn active" id="btnTabSettingProfile" onclick="switchSettingsTab('profile')">
+        👤 Profile & Academics
+      </button>
+      <button class="settings-tab-btn" id="btnTabSettingApp" onclick="switchSettingsTab('app')">
+        🎨 App Preferences
+      </button>
+      <button class="settings-tab-btn" id="btnTabSettingData" onclick="switchSettingsTab('data')">
+        🔒 Data & Privacy
+      </button>
+      <button class="settings-tab-btn" id="btnTabSettingAccount" onclick="switchSettingsTab('account')" style="color:#fca5a5;">
+        ⚠️ Account Actions
+      </button>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-      <div class="form-group">
-        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
-        <input type="text" class="form-input" id="editUSN" placeholder="e.g. 2BL22CS045" />
+    <!-- Tab 1: Profile & Academics -->
+    <div id="settingsPanelProfile">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name *</label>
+        <input type="text" class="form-input" id="editFullName" placeholder="Your full name" />
       </div>
-      <div class="form-group">
-        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
-        <select class="form-select" id="editSemSelect">
-          <option value="1">1st Semester</option>
-          <option value="2">2nd Semester</option>
-          <option value="3">3rd Semester</option>
-          <option value="4">4th Semester</option>
-          <option value="5">5th Semester</option>
-          <option value="6">6th Semester</option>
-          <option value="7">7th Semester</option>
-          <option value="8">8th Semester</option>
-        </select>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
+          <input type="text" class="form-input" id="editUSN" placeholder="e.g. 2BL22CS045" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
+          <select class="form-select" id="editSemSelect">
+            <option value="1">1st Semester</option>
+            <option value="2">2nd Semester</option>
+            <option value="3">3rd Semester</option>
+            <option value="4">4th Semester</option>
+            <option value="5">5th Semester</option>
+            <option value="6">6th Semester</option>
+            <option value="7">7th Semester</option>
+            <option value="8">8th Semester</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
+          <select class="form-select" id="editProgramSelect">
+            <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+            <option value="BSc">BSc (Bachelor of Science)</option>
+            <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+            <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+            <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+            <option value="BBA">BBA (Bachelor of Business Admin)</option>
+            <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+            <option value="BA">BA (Bachelor of Arts)</option>
+            <option value="MCA">MCA (Master of Computer Applications)</option>
+            <option value="M.Tech">M.Tech (Master of Technology)</option>
+            <option value="MSc">MSc (Master of Science)</option>
+            <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
+            <option value="MBA">MBA (Master of Business Admin)</option>
+            <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
+            <option value="Diploma">Diploma / Polytechnic</option>
+            <option value="Other">Other Degree</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Branch / Department</label>
+          <select class="form-select" id="editDeptSelect">
+            <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+            <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+            <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+            <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+            <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            <option value="Civil Engineering">Civil Engineering</option>
+            <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+            <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
+            <option value="Biotechnology">Biotechnology</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Mathematics & Statistics">Mathematics & Statistics</option>
+            <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+            <option value="Business Administration">Business Administration</option>
+            <option value="Arts & Humanities">Arts & Humanities</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
+        <textarea class="form-textarea" id="editBioText" style="min-height:70px;" placeholder="Brief bio regarding subjects, projects or study goals..."></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Skills (comma separated)</label>
+        <input type="text" class="form-input" id="editSkillsInput" placeholder="Python, DSA, SQL, Web Dev" />
+      </div>
+
+      <button class="btn btn-primary btn-lg w-full" onclick="saveEditedProfile()">
+        💾 Save Profile Changes
+      </button>
+    </div>
+
+    <!-- Tab 2: App Preferences -->
+    <div id="settingsPanelApp" style="display:none;">
+      <div class="settings-section-card">
+        <div class="settings-row-item">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">Color Theme</div>
+            <div style="font-size:11px; color:#94a3b8;">Select your preferred visual style</div>
+          </div>
+          <select class="form-select" style="width:160px; padding:6px 10px; font-size:12px;" onchange="alert('Theme applied: ' + this.value)">
+            <option value="cyberpunk">🌌 Cyberpunk Purple</option>
+            <option value="midnight">🌑 Midnight OLED</option>
+            <option value="emerald">🌿 Emerald Academic</option>
+          </select>
+        </div>
+        <div class="settings-row-item">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">Sound Effects</div>
+            <div style="font-size:11px; color:#94a3b8;">Audio feedback on XP earnings and post publish</div>
+          </div>
+          <input type="checkbox" checked style="accent-color:#8b5cf6; width:18px; height:18px;" />
+        </div>
+        <div class="settings-row-item">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">Real-time Stream Auto-play</div>
+            <div style="font-size:11px; color:#94a3b8;">Automatically start lecture video reels on scroll</div>
+          </div>
+          <input type="checkbox" checked style="accent-color:#8b5cf6; width:18px; height:18px;" />
+        </div>
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-      <div class="form-group">
-        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
-        <select class="form-select" id="editProgramSelect">
-          <option value="BCA">BCA (Bachelor of Computer Applications)</option>
-          <option value="BSc">BSc (Bachelor of Science)</option>
-          <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
-          <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
-          <option value="B.E.">B.E. (Bachelor of Engineering)</option>
-          <option value="BBA">BBA (Bachelor of Business Admin)</option>
-          <option value="B.Com">B.Com (Bachelor of Commerce)</option>
-          <option value="BA">BA (Bachelor of Arts)</option>
-          <option value="MCA">MCA (Master of Computer Applications)</option>
-          <option value="M.Tech">M.Tech (Master of Technology)</option>
-          <option value="MSc">MSc (Master of Science)</option>
-          <option value="M.Pharm">M.Pharm (Master of Pharmacy)</option>
-          <option value="MBA">MBA (Master of Business Admin)</option>
-          <option value="Pharma.D">Pharma.D (Doctor of Pharmacy)</option>
-          <option value="Diploma">Diploma / Polytechnic</option>
-          <option value="Other">Other Degree</option>
-        </select>
+    <!-- Tab 3: Data & Privacy -->
+    <div id="settingsPanelData" style="display:none;">
+      <div class="settings-section-card">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:13px; font-weight:800; color:#fff; margin-bottom:4px;">Export Student Data</div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">Download a complete backup of your student profile, published notes, timetable slots, and tasks as a verified JSON file.</div>
+        </div>
+        <button class="passport-btn" style="width:100%; justify-content:center;" onclick="exportPassportDataBackup()">
+          <span>📥 Download Student Backup (JSON)</span>
+        </button>
       </div>
-      <div class="form-group">
-        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Branch / Department</label>
-        <select class="form-select" id="editDeptSelect">
-          <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
-          <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
-          <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
-          <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
-          <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
-          <option value="Mechanical Engineering">Mechanical Engineering</option>
-          <option value="Civil Engineering">Civil Engineering</option>
-          <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
-          <option value="Pharmacology & Clinical">Pharmacology & Clinical Pharmacy</option>
-          <option value="Biotechnology">Biotechnology</option>
-          <option value="Physics">Physics</option>
-          <option value="Chemistry">Chemistry</option>
-          <option value="Mathematics & Statistics">Mathematics & Statistics</option>
-          <option value="Commerce & Accountancy">Commerce & Accountancy</option>
-          <option value="Business Administration">Business Administration</option>
-          <option value="Arts & Humanities">Arts & Humanities</option>
-          <option value="General">General</option>
-        </select>
+
+      <div class="settings-section-card">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:13px; font-weight:800; color:#fff; margin-bottom:4px;">Clear Local Cache</div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">Purge offline stored cached files and refresh directly from cloud servers.</div>
+        </div>
+        <button class="passport-btn" style="width:100%; justify-content:center;" onclick="clearLocalCache()">
+          <span>🧹 Purge Cached Storage</span>
+        </button>
       </div>
     </div>
 
-    <div class="form-group" style="margin-bottom:14px;">
-      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
-      <textarea class="form-textarea" id="editBioText" style="min-height:75px;" placeholder="Brief bio regarding subjects, projects or study goals..."></textarea>
+    <!-- Tab 4: Account Actions & Danger Zone -->
+    <div id="settingsPanelAccount" style="display:none;">
+      <div class="settings-section-card" style="border-color:rgba(255,255,255,0.1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div>
+            <div style="font-size:14px; font-weight:800; color:#fff;">Sign Out of Session</div>
+            <div style="font-size:11px; color:#94a3b8;">Safely log out of your current device</div>
+          </div>
+          <button class="passport-btn" onclick="executeSignOut()" style="color:#cbd5e1; border-color:rgba(255,255,255,0.2);">
+            <span>🚪 Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-section-card" style="background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.3);">
+        <div style="font-size:14px; font-weight:900; color:#fca5a5; margin-bottom:4px;">⚠️ Danger Zone: Delete Account</div>
+        <div style="font-size:11px; color:#fca5a5; opacity:0.85; line-height:1.5; margin-bottom:16px;">
+          Permanently delete your student passport, uploaded study notes, attendance tracking records, and academic XP. This action is irreversible.
+        </div>
+        <button class="danger-btn" style="width:100%; justify-content:center;" onclick="executeDeleteAccount()">
+          <span>🗑️ Delete My Account Permanently</span>
+        </button>
+      </div>
     </div>
 
-    <div class="form-group" style="margin-bottom:24px;">
-      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Skills (comma separated)</label>
-      <input type="text" class="form-input" id="editSkillsInput" placeholder="Python, DSA, SQL, Web Dev" />
-    </div>
-
-    <button class="btn btn-primary btn-lg w-full" onclick="saveEditedProfile()">
-      💾 Save Changes
-    </button>
   </div>
 </div>
 
@@ -1197,15 +1356,11 @@ function renderStudentProfile(profile, isOwn) {
   if (isOwn) {
     actCol.innerHTML = `
       <button class="passport-btn primary" onclick="openCreatePostModal()">➕ Share Material / Post</button>
-      <button class="passport-btn" onclick="openEditModal()">✏️ Edit Profile</button>
+      <button class="passport-btn" onclick="openSettingsModal()">⚙️ Settings</button>
       <a href="dashboard.html" class="passport-btn">Dashboard →</a>
     `;
     if (materialsActionBtn) {
-      materialsActionBtn.innerHTML = `
-        <button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:8px 18px; font-size:13px;">
-          <span>➕ Share Material / Post</span>
-        </button>
-      `;
+      materialsActionBtn.innerHTML = '';
     }
   } else {
     actCol.innerHTML = `<span class="student-meta-chip" style="color:#38bdf8; border-color:rgba(6,182,212,0.4); padding:8px 16px;">✓ Verified Student</span>`;
@@ -1346,7 +1501,7 @@ function downloadStudentPDF(id, fileName) {
 function renderSkillsChips(skills, isOwn) {
   const container = document.getElementById('skillsChipsWrap');
   if (!skills || skills.length === 0) {
-    container.innerHTML = `<div style="color:#64748b; padding:20px 0;">${isOwn ? 'No skills listed. Click Edit Profile to add your tech stack!' : 'No skills specified.'}</div>`;
+    container.innerHTML = `<div style="color:#64748b; padding:20px 0;">${isOwn ? 'No skills listed. Click Settings to add your tech stack!' : 'No skills specified.'}</div>`;
     return;
   }
   container.innerHTML = skills.map(s => `<span class="tech-skill-pill"><span>⚡</span>${escapeHtml(s)}</span>`).join('');
@@ -1355,39 +1510,40 @@ function renderSkillsChips(skills, isOwn) {
 function renderAcademicPassportGrid(profile) {
   const grid = document.getElementById('academicInfoGrid');
   const items = [
-    { label: 'Academic Department', val: profile.department || 'Not set' },
-    { label: 'Current Semester', val: `Semester ${profile.semester || '?'}` },
-    { label: 'USN / Student ID', val: profile.usn || 'Not set' },
-    { label: 'Academic Program', val: profile.program || 'BCA' },
-    { label: 'Contribution XP', val: `${profile.xp || 100} XP` },
-    { label: 'Institutional Affiliation', val: profile.college || "BLDE Association's College, Jamakhandi" }
+    { label: 'Degree / Program', val: profile.program || 'BCA (Computer Applications)', icon: '🎓' },
+    { label: 'Department / Branch', val: profile.department || 'Computer Science & Engineering', icon: '🏛️' },
+    { label: 'Current Semester', val: `Semester ${profile.semester || 5} (Regular Batch)`, icon: '📅' },
+    { label: 'University Seat Number (USN)', val: profile.usn || '2BL22CS045 (Verified)', icon: '🆔' },
+    { label: 'Institution / Campus', val: profile.college || "BLDE Association's Commerce, BHS Arts & TGP Science College", icon: '📍' },
+    { label: 'Academic Standing', val: `${profile.xp || 150} XP Points · Verified Active Scholar`, icon: '⭐' }
   ];
-  grid.innerHTML = items.map(it => `
+
+  grid.innerHTML = items.map(item => `
     <div class="academic-info-card">
-      <div class="academic-card-label">${it.label}</div>
-      <div class="academic-card-val">${escapeHtml(it.val)}</div>
+      <div class="acad-card-label">${item.icon} ${item.label}</div>
+      <div class="acad-card-value">${escapeHtml(item.val)}</div>
     </div>
   `).join('');
 }
 
-// Tab Switching
+// Passport Tab Switching
 document.querySelectorAll('.passport-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.passport-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
   });
 });
 
-// Photo Upload Logic
-document.getElementById('photoUploadTrigger').addEventListener('click', () => {
+// Photo Upload Trigger
+document.getElementById('photoUploadTrigger')?.addEventListener('click', () => {
   document.getElementById('profilePhotoFileInput').click();
 });
 
-document.getElementById('profilePhotoFileInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+document.getElementById('profilePhotoFileInput')?.addEventListener('change', function() {
+  if (!this.files || !this.files[0]) return;
+  const file = this.files[0];
   if (!file.type.startsWith('image/')) { alert('Please choose an image.'); return; }
   if (file.size > 3 * 1024 * 1024) { alert('Max 3MB.'); return; }
 
@@ -1408,9 +1564,11 @@ document.getElementById('profilePhotoFileInput').addEventListener('change', func
   reader.readAsDataURL(file);
 });
 
-// Edit Profile Modal
-function openEditModal() {
-  const user = Storage.getUser() || {};
+// =====================================================
+// SETTINGS MODAL CONTROLLERS & DATA ACTIONS
+// =====================================================
+function openSettingsModal(tab = 'profile') {
+  const user = Storage.getUser() || currentUser || {};
   document.getElementById('editFullName').value = user.displayName || user.name || '';
   document.getElementById('editUSN').value = user.usn || '';
   document.getElementById('editBioText').value = user.bio || '';
@@ -1420,15 +1578,27 @@ function openEditModal() {
   document.getElementById('editDeptSelect').value = user.department || 'Computer Science & Engineering';
   document.getElementById('editSemSelect').value = user.semester || 5;
   document.getElementById('editSkillsInput').value = (user.skills || []).join(', ');
-  document.getElementById('editProfileModal').classList.add('open');
+  
+  switchSettingsTab(tab);
+  document.getElementById('settingsModal').classList.add('open');
 }
 
-function closeEditModal() {
-  document.getElementById('editProfileModal').classList.remove('open');
+function closeSettingsModal() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function switchSettingsTab(tabName) {
+  const tabs = ['profile', 'app', 'data', 'account'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('btnTabSetting' + t.charAt(0).toUpperCase() + t.slice(1));
+    const panel = document.getElementById('settingsPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tabName);
+    if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
+  });
 }
 
 function saveEditedProfile() {
-  const user = Storage.getUser() || {};
+  const user = Storage.getUser() || currentUser || {};
   user.displayName = document.getElementById('editFullName').value.trim() || user.displayName;
   user.name = user.displayName;
   user.usn = document.getElementById('editUSN').value.trim();
@@ -1449,8 +1619,91 @@ function saveEditedProfile() {
     FirebaseService.createAccount(user).catch(err => console.warn('Firebase sync:', err));
   }
   currentUser = user;
-  closeEditModal();
+  closeSettingsModal();
   renderStudentProfile(user, true);
+  alert('🎉 Profile settings updated successfully!');
+}
+
+function exportPassportDataBackup() {
+  const user = Storage.getUser() || {};
+  const handle = user.username || user.handle || '@student';
+  const allPosts = Storage.getPosts().filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
+  const notes = Storage.getNotes();
+  const tasks = Storage.getTasks();
+  const attendance = Storage.getAttendance();
+
+  const backupData = {
+    exportDate: new Date().toISOString(),
+    platform: 'Campus OS',
+    profile: user,
+    posts: allPosts,
+    notes: notes,
+    tasks: tasks,
+    attendance: attendance
+  };
+
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute('href', dataStr);
+  downloadAnchor.setAttribute('download', `campus_os_backup_${handle.replace('@', '')}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  alert('📥 Student data backup exported successfully!');
+}
+
+function clearLocalCache() {
+  if (confirm('Are you sure you want to clear your local cache? Fresh data will be downloaded on next reload.')) {
+    localStorage.removeItem('cos_cleared_seed_v2');
+    alert('🧹 Local cache cleared. Reloading page...');
+    window.location.reload();
+  }
+}
+
+function executeSignOut() {
+  if (confirm('Are you sure you want to sign out of your Campus OS session?')) {
+    Storage.clearUser();
+    alert('🚪 Signed out safely.');
+    window.location.href = 'index.html';
+  }
+}
+
+async function executeDeleteAccount() {
+  const user = Storage.getUser();
+  if (!user) {
+    alert('No active account found to delete.');
+    return;
+  }
+  const handle = user.username || user.handle || '@student';
+  const confirmFirst = confirm(`⚠️ DANGER: Are you absolutely sure you want to permanently delete your account (${handle}) and all your uploaded posts? This CANNOT be undone!`);
+  if (!confirmFirst) return;
+
+  const confirmSecond = prompt(`Please type your handle "${handle}" to confirm permanent deletion:`);
+  if (confirmSecond !== handle) {
+    alert('Handle did not match. Account deletion cancelled.');
+    return;
+  }
+
+  // 1. Delete from backend
+  if (window.PythonAPI) {
+    try {
+      await fetch(`http://localhost:8000/api/accounts/${encodeURIComponent(handle)}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Backend delete notification:', e);
+    }
+  }
+
+  // 2. Delete from Storage
+  const accounts = Storage.getAccounts().filter(a => (a.username || a.handle || '').toLowerCase() !== handle.toLowerCase());
+  Storage.setAccounts(accounts);
+
+  const posts = Storage.getPosts().filter(p => (p.handle || '').toLowerCase() !== handle.toLowerCase());
+  Storage.setPosts(posts);
+
+  Storage.clearUser();
+
+  alert('🗑️ Your account and all associated study materials have been permanently deleted.');
+  window.location.href = 'index.html';
 }
 </script>
 </body>

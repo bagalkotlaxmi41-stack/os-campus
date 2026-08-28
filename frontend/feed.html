@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Campus Stream — Student Reels & Academic Shorts | Campus OS</title>
+  <meta name="description" content="Infinite reels-style student academic feed. Real-time verified study notes, lecture videos, and academic showcases on Campus OS." />
+  <meta name="theme-color" content="#06050e" />
+
+  <!-- Favicon / Browser Icon -->
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="apple-touch-icon" href="img/logo.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --bg-stream: #05040b;
+      --primary: #8b5cf6;
+      --primary-light: #a78bfa;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-stream);
+      font-family: var(--font-sans);
+      color: #f1f5f9;
+    }
+
+    /* ---- TOP FLOATING HEADER ---- */
+    .stream-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: linear-gradient(180deg, rgba(5, 4, 11, 0.9) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .stream-header * {
+      pointer-events: auto;
+    }
+
+    .stream-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .stream-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(139, 92, 246, 0.6);
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.5);
+    }
+
+    .stream-title-text {
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stream-live-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+      border-radius: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .stream-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stream-icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(18, 14, 38, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .stream-icon-btn:hover {
+      background: rgba(124, 58, 237, 0.6);
+      transform: scale(1.06);
+    }
+
+    /* ---- MAIN STREAM VIEWPORT (VERTICAL REELS SNAP) ---- */
+    .stream-viewport {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .stream-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ---- INDIVIDUAL REEL ITEM / SLIDE ---- */
+    .reel-slide {
+      width: 100%;
+      height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 70px 16px 80px;
+    }
+
+    .reel-content-container {
+      width: 100%;
+      max-width: 540px;
+      height: 100%;
+      max-height: 780px;
+      background: #0f0c22;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 28px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 600px) {
+      .reel-slide {
+        padding: 60px 0 64px;
+      }
+      .reel-content-container {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    /* Media Viewport Inside Reel */
+    .reel-media-box {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(124, 58, 237, 0.15) 0%, #080612 100%);
+      overflow: hidden;
+    }
+
+    .reel-media-video {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* PDF Card Preview */
+    .reel-pdf-card {
+      padding: 30px 24px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      background: rgba(20, 16, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(139, 92, 246, 0.4);
+      border-radius: 22px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .pdf-icon-ring {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(124, 58, 237, 0.3));
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Text Note Preview */
+    .reel-note-card {
+      padding: 28px 24px;
+      max-width: 420px;
+      width: 90%;
+      background: rgba(20, 16, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 22px;
+      color: #e2e8f0;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    /* Floating Right Actions Rail */
+    .reel-action-rail {
+      position: absolute;
+      right: 14px;
+      bottom: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      z-index: 20;
+    }
+
+    .rail-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .rail-btn:hover {
+      transform: scale(1.12);
+    }
+
+    .rail-icon-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(14, 11, 28, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .rail-btn-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: #cbd5e1;
+      font-family: var(--font-mono);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Bottom Info Overlay */
+    .reel-bottom-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 40px 20px 20px;
+      background: linear-gradient(0deg, rgba(7, 5, 16, 0.98) 0%, rgba(7, 5, 16, 0.8) 60%, transparent 100%);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .reel-bottom-overlay * {
+      pointer-events: auto;
+    }
+
+    .reel-author-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      text-decoration: none;
+    }
+
+    .reel-author-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      border: 2px solid #a78bfa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.5);
+    }
+
+    .reel-author-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .reel-author-name {
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reel-author-meta {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .reel-title-text {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .reel-desc-text {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      max-height: 52px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .reel-tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #c4b5fd;
+      margin-top: 8px;
+    }
+
+    /* ---- DESKTOP FLOATING CONTROLS ---- */
+    .stream-nav-controls {
+      position: fixed;
+      right: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 50;
+    }
+
+    @media (max-width: 900px) {
+      .stream-nav-controls { display: none; }
+    }
+
+    .nav-arrow-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(18, 14, 38, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .nav-arrow-btn:hover {
+      background: rgba(124, 58, 237, 0.7);
+      transform: scale(1.1);
+    }
+
+    /* ---- TOAST ---- */
+    .stream-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(15, 12, 32, 0.95);
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      padding: 10px 22px;
+      border-radius: 30px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+
+    .stream-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Header -->
+  <header class="stream-header">
+    <a href="index.html" class="stream-brand" title="Back to Home">
+      <img src="img/logo.png" alt="Campus OS" class="stream-logo" />
+      <div class="stream-title-text">
+        Campus<span>Stream</span>
+        <span class="stream-live-tag">🔴 LIVE</span>
+      </div>
+    </a>
+
+    <div class="stream-header-actions">
+      <button class="stream-icon-btn" onclick="shuffleAndReloadPosts()" title="Shuffle / Fresh Posts">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      </button>
+      <a href="profile.html" class="stream-icon-btn" title="Open My Passport">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+      <a href="index.html" class="stream-icon-btn" title="Back to Home">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- Desktop Arrow Controls -->
+  <div class="stream-nav-controls">
+    <button class="nav-arrow-btn" onclick="scrollReels(-1)" title="Previous Reel (Up Arrow)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+    <button class="nav-arrow-btn" onclick="scrollReels(1)" title="Next Reel (Down Arrow)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
+
+  <!-- Vertical Snapping Viewport -->
+  <main class="stream-viewport" id="streamViewport">
+    <div style="height:100vh; display:flex; align-items:center; justify-content:center;">
+      <div class="loading-spinner"></div>
+    </div>
+  </main>
+
+  <!-- Floating Toast -->
+  <div class="stream-toast" id="streamToast">Link copied to clipboard!</div>
+
+  <!-- Core Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+
+  <script>
+    let streamPosts = [];
+    const seenPostIds = new Set();
+
+    function showToast(msg) {
+      const toast = document.getElementById('streamToast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function extractYoutubeId(url) {
+      if (!url) return null;
+      const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      return m ? m[1] : null;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function loadStreamPosts() {
+      // 1. Get from Storage
+      let posts = Storage.getPosts() || [];
+
+      // 2. Fetch fresh real-time posts from Python API
+      if (window.PythonAPI) {
+        try {
+          const remote = await PythonAPI.getPosts();
+          if (remote && remote.length > 0) {
+            posts = remote;
+            Storage.setPosts(remote);
+          }
+        } catch (e) {
+          console.warn('Remote stream fetch note:', e);
+        }
+      }
+
+      // 3. If no posts exist yet, add engaging academic seed items
+      if (!posts || posts.length === 0) {
+        posts = [
+          {
+            id: 'stream_seed_1',
+            type: 'youtube',
+            title: 'Operating System Full Course — Process & Memory Management',
+            subject: 'Operating Systems',
+            department: 'Computer Science & Engineering',
+            desc: 'Complete high-yield walkthrough of CPU Scheduling, Virtual Memory, and Deadlock algorithms.',
+            author: 'Channabasava Patil',
+            handle: '@channu_cs',
+            youtubeUrl: 'https://www.youtube.com/watch?v=26QPDBe-NB8',
+            saves: 142
+          },
+          {
+            id: 'stream_seed_2',
+            type: 'pdf',
+            title: 'Database Management Systems (DBMS) Verified Handwritten Notes',
+            subject: 'DBMS',
+            department: 'Computer Science & Engineering',
+            desc: 'Full SQL query cheat sheet, Normalization (1NF to BCNF) proofs, and Relational Algebra examples.',
+            author: 'Laxmi Bagalkot',
+            handle: '@laxmi_cs',
+            fileName: 'DBMS_Verified_Notes_Module1-5.pdf',
+            fileSize: '4.8 MB',
+            saves: 98
+          },
+          {
+            id: 'stream_seed_3',
+            type: 'text',
+            title: 'Top 5 Placement Coding Tips for Technical Interviews',
+            subject: 'Career & Placement',
+            department: 'Placement Cell',
+            desc: '1. Master Two-Pointer and Sliding Window.\n2. Write clean modular code.\n3. Always state time/space complexity before coding.\n4. Ask clarifying questions on edge cases.\n5. Test with empty/single-element arrays.',
+            author: 'Placement Cell BLDEA',
+            handle: '@placement_bldea',
+            saves: 230
+          }
+        ];
+      }
+
+      // Shuffle posts for fresh infinity experience
+      streamPosts = [...posts].sort(() => Math.random() - 0.5);
+      renderStream();
+    }
+
+    function renderStream() {
+      const viewport = document.getElementById('streamViewport');
+      if (!viewport) return;
+
+      if (streamPosts.length === 0) {
+        viewport.innerHTML = `
+          <div class="reel-slide">
+            <div class="reel-content-container" style="display:flex; align-items:center; justify-content:center; text-align:center; padding:40px;">
+              <div style="font-size:48px; margin-bottom:16px;">📚</div>
+              <h2 style="font-size:20px; font-weight:900; margin-bottom:8px;">No Posts Yet!</h2>
+              <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Be the first student to share lecture notes, PDFs, or videos.</p>
+              <a href="profile.html" class="hero-btn-primary" style="padding:10px 20px; font-size:13px; text-decoration:none;">
+                <span>➕ Share First Note</span>
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      viewport.innerHTML = streamPosts.map((post, idx) => {
+        const authorName = post.author || 'Student';
+        const rawHandle = post.handle || '@student';
+        const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+        const photo = Storage.getUserPhoto(handle) || post.authorPhoto;
+        const ytId = extractYoutubeId(post.youtubeUrl);
+        const seenCount = (post.saves || 0) + (seenPostIds.has(post.id) ? 1 : 0);
+
+        let mediaHtml = '';
+
+        if (post.type === 'youtube' && ytId) {
+          mediaHtml = `
+            <iframe 
+              class="reel-media-video" 
+              src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&playsinline=1" 
+              title="${escapeHtml(post.title)}" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen>
+            </iframe>
+          `;
+        } else if (post.type === 'pdf' || post.pdfData || post.fileName) {
+          mediaHtml = `
+            <div class="reel-pdf-card">
+              <div class="pdf-icon-ring">📄</div>
+              <div>
+                <div style="font-size:15px; font-weight:900; color:#fff; margin-bottom:4px;">${escapeHtml(post.fileName || post.title + '.pdf')}</div>
+                <div style="font-size:12px; color:#a78bfa; font-family:var(--font-mono);">${post.fileSize || 'Verified PDF Document'}</div>
+              </div>
+              <button class="hero-btn-primary" style="padding:10px 24px; font-size:12px; width:100%; justify-content:center;" onclick="downloadReelPDF('${post.id}')">
+                <span>📥 Download & Read PDF</span>
+              </button>
+            </div>
+          `;
+        } else {
+          mediaHtml = `
+            <div class="reel-note-card">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span style="font-size:18px;">💡</span>
+                <span style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em;">Verified Student Note</span>
+              </div>
+              <div style="white-space:pre-line; color:#cbd5e1; font-size:13.5px;">${escapeHtml(post.desc || post.title)}</div>
+            </div>
+          `;
+        }
+
+        const avatarContent = photo 
+          ? `<img src="${photo}" alt="${escapeHtml(authorName)}" />` 
+          : authorName[0].toUpperCase();
+
+        return `
+          <div class="reel-slide" data-post-id="${post.id}" data-idx="${idx}">
+            <div class="reel-content-container">
+              
+              <!-- Media Box -->
+              <div class="reel-media-box">
+                ${mediaHtml}
+              </div>
+
+              <!-- Floating Right Action Rail -->
+              <div class="reel-action-rail">
+                <button class="rail-btn" title="Views / Seen count">
+                  <div class="rail-icon-circle" style="color:#38bdf8;">👁️</div>
+                  <span class="rail-btn-label" id="seen_badge_${post.id}">${seenCount}</span>
+                </button>
+
+                <button class="rail-btn" onclick="sharePostLink('${handle}', '${post.id}')" title="Share Post Link">
+                  <div class="rail-icon-circle" style="color:#a78bfa;">🔗</div>
+                  <span class="rail-btn-label">Share</span>
+                </button>
+
+                <a href="profile.html?handle=${encodeURIComponent(handle)}" class="rail-btn" title="View Student Passport" style="text-decoration:none;">
+                  <div class="rail-icon-circle" style="color:#10b981;">👤</div>
+                  <span class="rail-btn-label">Passport</span>
+                </a>
+              </div>
+
+              <!-- Bottom Info Overlay -->
+              <div class="reel-bottom-overlay">
+                <a href="profile.html?handle=${encodeURIComponent(handle)}" class="reel-author-row">
+                  <div class="reel-author-avatar">
+                    ${avatarContent}
+                  </div>
+                  <div>
+                    <div class="reel-author-name">
+                      ${escapeHtml(authorName)}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#8b5cf6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    </div>
+                    <div class="reel-author-meta">${escapeHtml(handle)} · ${escapeHtml(post.department || 'BLDEA Campus')}</div>
+                  </div>
+                </a>
+
+                <div class="reel-title-text">${escapeHtml(post.title)}</div>
+                ${post.desc ? `<div class="reel-desc-text">${escapeHtml(post.desc)}</div>` : ''}
+
+                <div>
+                  <span class="reel-tag-pill">📚 ${escapeHtml(post.subject || 'Academic Study')}</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      initIntersectionObserver();
+    }
+
+    function initIntersectionObserver() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const pid = entry.target.dataset.postId;
+            if (pid && !seenPostIds.has(pid)) {
+              seenPostIds.add(pid);
+              const badge = document.getElementById('seen_badge_' + pid);
+              if (badge) {
+                const current = parseInt(badge.textContent, 10) || 0;
+                badge.textContent = current + 1;
+              }
+              // Sync seen view count to backend
+              if (window.PythonAPI && PythonAPI.checkHealth) {
+                fetch(`http://localhost:8000/api/posts/${encodeURIComponent(pid)}/view`, { method: 'POST' }).catch(() => {});
+              }
+            }
+          }
+        });
+      }, { threshold: 0.6 });
+
+      document.querySelectorAll('.reel-slide').forEach(slide => observer.observe(slide));
+    }
+
+    function scrollReels(direction) {
+      const viewport = document.getElementById('streamViewport');
+      const height = window.innerHeight;
+      viewport.scrollBy({ top: direction * height, behavior: 'smooth' });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'j') { scrollReels(1); }
+      if (e.key === 'ArrowUp' || e.key === 'k') { scrollReels(-1); }
+    });
+
+    function sharePostLink(handle, postId) {
+      const url = `${window.location.origin}/profile.html?handle=${encodeURIComponent(handle)}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast(`🔗 Link to ${handle}'s post copied!`);
+      }).catch(() => {
+        showToast(`Profile: ${url}`);
+      });
+    }
+
+    function downloadReelPDF(postId) {
+      const post = streamPosts.find(p => p.id === postId);
+      if (!post) return;
+      if (post.pdfData) {
+        const link = document.createElement('a');
+        link.href = post.pdfData;
+        link.download = post.fileName || 'CampusOS_Study_Notes.pdf';
+        link.click();
+        showToast('📥 Download started!');
+      } else {
+        showToast('📄 Opening Verified PDF Vault...');
+        setTimeout(() => window.location.href = 'notes.html', 500);
+      }
+    }
+
+    function shuffleAndReloadPosts() {
+      showToast('🔄 Shuffling fresh stream...');
+      loadStreamPosts();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStreamPosts();
+    });
+  </script>
+</body>
+</html>

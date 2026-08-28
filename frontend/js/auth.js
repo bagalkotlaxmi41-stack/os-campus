@@ -108,6 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!name || !email || !pass) { showToast('Missing fields', 'Name, email, and password are required', 'error'); return; }
     if (pass.length < 6) { showToast('Weak password', 'Password must be at least 6 characters', 'warning'); return; }
 
+    // Enforce Strict One Email One Account
+    if (Storage.isEmailTaken(email)) {
+      showToast('Email in use', 'An account with this email is already registered. Please sign in.', 'error');
+      return;
+    }
+
     const rawHandle = name.toLowerCase().replace(/[^a-z0-9_]/g, '') || ('student_' + Date.now().toString(36));
     const handle = '@' + rawHandle;
 
