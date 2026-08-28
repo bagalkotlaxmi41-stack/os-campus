@@ -1038,6 +1038,7 @@
   margin-bottom: var(--space-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1048,6 +1049,7 @@
   margin-bottom: var(--space-3);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1628,6 +1630,15 @@
 @media (max-width: 768px) {
   .profile-hero { padding: var(--space-8) var(--space-4); }
   .profile-name { font-size: 22px; }
+  .profile-stats { gap: var(--space-4); }
+  .profile-stat-value { font-size: 20px; }
+  .profile-info-grid { grid-template-columns: 1fr; }
+  .auth-stepper { flex-wrap: wrap; gap: var(--space-2); }
+  .auth-step-divider { width: 20px; }
+  .otp-input { width: 44px; height: 52px; font-size: 20px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+}
+
 /* ============================================================
    CAMPUS OS NOTIFICATIONS SYSTEM (GLASSMORPHISM & SVG BELL)
    ============================================================ */
@@ -1941,6 +1952,7 @@
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
