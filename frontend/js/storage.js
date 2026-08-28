@@ -52,10 +52,19 @@ const Storage = {
 
     if (window.PythonAPI) {
       try {
-        // Sync Accounts from Backend
-        const accounts = await PythonAPI.getAccounts();
-        if (accounts && accounts.length > 0) {
-          this.setAccounts(accounts);
+        // Sync Accounts from Backend and merge with local
+        const remoteAccounts = await PythonAPI.getAccounts();
+        if (remoteAccounts && Array.isArray(remoteAccounts)) {
+          const localAccs = this.getAccounts();
+          const handles = new Set(localAccs.map(a => (a.username || a.handle || '').toLowerCase()));
+          remoteAccounts.forEach(acc => {
+            const h = (acc.username || acc.handle || '').toLowerCase();
+            if (!handles.has(h)) {
+              localAccs.push(acc);
+              handles.add(h);
+            }
+          });
+          this.setAccounts(localAccs);
         }
 
         // Sync Posts from Backend

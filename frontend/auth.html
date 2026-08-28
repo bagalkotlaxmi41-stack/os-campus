@@ -765,8 +765,11 @@
       joinedAt:    Date.now()
     };
 
+    user.password = pass;
+
     // Save locally to Storage & accounts directory
     Storage.setUser(user);
+    Storage.addAccount(user);
     if (_selectedAuthPhotoBase64) {
       Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
     }
@@ -776,7 +779,9 @@
       'Welcome, ' + name + '! Your ' + user.program + ' (' + user.department + ') student profile is ready.';
 
     // Try backend API registration in background
-    if (window.PythonAPI && PythonAPI.saveAccount) {
+    if (window.PythonAPI && PythonAPI.register) {
+      PythonAPI.register(user).catch(function(e){ console.warn('Account register note:', e); });
+    } else if (window.PythonAPI && PythonAPI.saveAccount) {
       PythonAPI.saveAccount(user).catch(function(e){ console.warn('Account sync note:', e); });
     }
 
