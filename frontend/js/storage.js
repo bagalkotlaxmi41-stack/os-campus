@@ -69,6 +69,17 @@ const Storage = {
   // ============================================================
   getUser() { return this.get(KEYS.USER); },
   setUser(u) {
+    if (u) {
+      const rawHandle = u.username || u.handle || (u.name ? '@' + u.name.toLowerCase().replace(/\s+/g, '_') : '@student');
+      const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+      u.username = handle;
+      u.handle = handle;
+      u.displayName = u.displayName || u.name || 'Student';
+      u.name = u.displayName;
+      if (u.photo) {
+        try { localStorage.setItem('cos_photo_' + handle, u.photo); } catch (e) {}
+      }
+    }
     this.set(KEYS.USER, u);
     if (u && (u.username || u.handle)) {
       this.addAccount(u);

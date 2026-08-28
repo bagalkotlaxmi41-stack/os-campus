@@ -37,18 +37,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Demo login
   document.getElementById('demo-btn')?.addEventListener('click', () => {
+    const demoHandle = '@alex_cs';
     const demoUser = {
+      uid: 'user_demo',
+      displayName: 'Alex Student',
       name: 'Alex Student',
+      username: demoHandle,
+      handle: demoHandle,
       email: 'demo@collegeos.app',
-      college: 'IIT Demo',
-      branch: 'Computer Science',
-      semester: '5',
-      avatar: '',
-      joinedAt: Date.now(),
+      college: "BLDE Association's Campus, Jamakhandi",
+      department: 'Computer Science & Engineering',
+      program: 'BCA',
+      semester: 5,
+      xp: 150,
+      bio: 'Student at Campus OS exploring software engineering and AI.',
+      skills: ['Python', 'Web Dev', 'Data Structures'],
+      role: 'STUDENT',
+      status: 'ACTIVE',
+      joinedAt: Date.now()
     };
     Storage.setUser(demoUser);
+    Storage.addAccount(demoUser);
+    if (window.PythonAPI && PythonAPI.saveAccount) PythonAPI.saveAccount(demoUser).catch(() => {});
+    if (window.FirebaseService && FirebaseService.createAccount) FirebaseService.createAccount(demoUser).catch(() => {});
     showToast('Welcome!', 'Logged in as demo user 🎉', 'success');
-    setTimeout(() => window.location.href = 'dashboard.html', 600);
+    setTimeout(() => window.location.href = 'profile.html', 600);
   });
 
   // Login
@@ -60,14 +73,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!email || !pass) { showToast('Missing fields', 'Please fill in all fields', 'error'); return; }
 
-    // Check stored user
-    const user = Storage.getUser();
-    if (user && user.email === email) {
+    // Check stored user or accounts directory
+    const allAccs = Storage.getAccounts();
+    const matchedAcc = allAccs.find(a => 
+      (a.email && a.email.toLowerCase() === email.toLowerCase()) || 
+      (a.handle && a.handle.toLowerCase() === email.toLowerCase()) || 
+      (a.username && a.username.toLowerCase() === email.toLowerCase())
+    );
+    const user = matchedAcc || Storage.getUser();
+
+    if (user && (user.email === email || (user.handle && user.handle.toLowerCase() === email.toLowerCase()) || (user.username && user.username.toLowerCase() === email.toLowerCase()) || (user.name && user.name.toLowerCase() === email.toLowerCase()))) {
+      Storage.setUser(user);
       setLoading(btn, true);
       setTimeout(() => {
-        showToast('Welcome back!', `Good to see you, ${user.name.split(' ')[0]} 👋`, 'success');
-        setTimeout(() => window.location.href = 'dashboard.html', 500);
-      }, 800);
+        showToast('Welcome back!', `Good to see you, ${(user.displayName || user.name || 'Student').split(' ')[0]} 👋`, 'success');
+        setTimeout(() => window.location.href = 'profile.html', 500);
+      }, 600);
     } else {
       showToast('Account not found', 'Please sign up first or use Demo mode', 'error');
     }
@@ -87,13 +108,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!name || !email || !pass) { showToast('Missing fields', 'Name, email, and password are required', 'error'); return; }
     if (pass.length < 6) { showToast('Weak password', 'Password must be at least 6 characters', 'warning'); return; }
 
+    const rawHandle = name.toLowerCase().replace(/[^a-z0-9_]/g, '') || ('student_' + Date.now().toString(36));
+    const handle = '@' + rawHandle;
+
+    const user = {
+      uid: 'user_' + Date.now().toString(36),
+      displayName: name,
+      name: name,
+      username: handle,
+      handle: handle,
+      email: email,
+      college: college || "BLDE Association's Campus, Jamakhandi",
+      department: branch || 'Computer Science & Engineering',
+      program: 'BCA',
+      semester: parseInt(semester, 10) || 5,
+      xp: 150,
+      bio: `Student at Campus OS studying ${branch || 'Computer Science'}.`,
+      skills: ['Academic Learner'],
+      role: 'STUDENT',
+      status: 'ACTIVE',
+      joinedAt: Date.now()
+    };
+
     setLoading(btn, true);
     setTimeout(() => {
-      const user = { name, email, college, branch, semester, avatar: '', joinedAt: Date.now() };
       Storage.setUser(user);
-      showToast('Account created!', `Welcome to College OS, ${name.split(' ')[0]}! 🎉`, 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 600);
-    }, 1000);
+      Storage.addAccount(user);
+      if (window.PythonAPI && PythonAPI.saveAccount) PythonAPI.saveAccount(user).catch(() => {});
+      if (window.FirebaseService && FirebaseService.createAccount) FirebaseService.createAccount(user).catch(() => {});
+      showToast('Account created!', `Welcome to Campus OS, ${name.split(' ')[0]}! 🎉`, 'success');
+      setTimeout(() => window.location.href = 'profile.html', 600);
+    }, 800);
   });
 
   // Password toggle

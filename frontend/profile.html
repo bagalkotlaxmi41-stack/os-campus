@@ -937,6 +937,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     renderStudentProfile(currentUser, true);
   }
+});
+
 // =====================================================
 // POST CREATION STATE & HANDLERS
 // =====================================================
@@ -1141,6 +1143,13 @@ function saveNewProfile() {
   };
 
   Storage.setUser(newUser);
+  Storage.addAccount(newUser);
+  if (window.PythonAPI && PythonAPI.saveAccount) {
+    PythonAPI.saveAccount(newUser).catch(err => console.warn('Account sync API:', err));
+  }
+  if (window.FirebaseService && FirebaseService.createAccount) {
+    FirebaseService.createAccount(newUser).catch(err => console.warn('Firebase sync:', err));
+  }
   currentUser = newUser;
 
   document.getElementById('createProfileModal').classList.remove('open');
@@ -1432,6 +1441,13 @@ function saveEditedProfile() {
   user.skills = document.getElementById('editSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
 
   Storage.setUser(user);
+  Storage.addAccount(user);
+  if (window.PythonAPI && PythonAPI.saveAccount) {
+    PythonAPI.saveAccount(user).catch(err => console.warn('Account sync API:', err));
+  }
+  if (window.FirebaseService && FirebaseService.createAccount) {
+    FirebaseService.createAccount(user).catch(err => console.warn('Firebase sync:', err));
+  }
   currentUser = user;
   closeEditModal();
   renderStudentProfile(user, true);

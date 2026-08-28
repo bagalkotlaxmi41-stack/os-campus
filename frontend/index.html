@@ -1677,6 +1677,112 @@
   </div>
 </div>
 
+<!-- ===================== CREATE / UPDATE ACCOUNT MODAL ===================== -->
+<div class="search-overlay-backdrop" id="accountModalBackdrop">
+  <div class="search-dialog-card" style="max-width: 540px; max-height: 90vh; overflow-y: auto; padding: 26px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;" id="modalAccountHeading">
+        <span>🎓</span> Create Student Account
+      </h3>
+      <button onclick="closeAccountModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; line-height:1;">✕</button>
+    </div>
+
+    <!-- Photo Picker -->
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+      <div id="modalPhotoPreview" style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; overflow:hidden; border:2px solid #a78bfa; flex-shrink:0;">
+        👤
+      </div>
+      <div>
+        <button type="button" class="hero-btn-secondary" style="padding:6px 14px; font-size:11px;" onclick="document.getElementById('modalPhotoInput').click()">
+          📸 Choose Photo
+        </button>
+        <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Upload avatar from device (JPG/PNG, Max 5MB)</div>
+      </div>
+      <input type="file" id="modalPhotoInput" accept="image/*" style="display:none;" onchange="handleModalPhotoUpload(this)" />
+    </div>
+
+    <form onsubmit="executeModalAccountSave(event)">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Full Name *</label>
+        <input type="text" id="modalFullName" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" placeholder="e.g. Channabasava Patil" required />
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Username / Handle *</label>
+          <input type="text" id="modalUsername" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" placeholder="channu_cs" required />
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">USN / Roll Number</label>
+          <input type="text" id="modalUSN" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" placeholder="2BL22CS045" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Degree / Program *</label>
+          <select id="modalProgram" style="width:100%; background:#110e24; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;">
+            <option value="BCA">BCA (Computer Apps)</option>
+            <option value="BSc">BSc (Science)</option>
+            <option value="B.Pharm">B.Pharm (Pharmacy)</option>
+            <option value="B.Tech">B.Tech (Technology)</option>
+            <option value="B.E.">B.E. (Engineering)</option>
+            <option value="BBA">BBA (Business Admin)</option>
+            <option value="B.Com">B.Com (Commerce)</option>
+            <option value="BA">BA (Arts)</option>
+            <option value="MCA">MCA (Master Apps)</option>
+            <option value="M.Tech">M.Tech (Master Tech)</option>
+            <option value="MSc">MSc (Master Science)</option>
+            <option value="MBA">MBA (Master Admin)</option>
+            <option value="Other">Other Degree</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Semester *</label>
+          <select id="modalSem" style="width:100%; background:#110e24; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;">
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+            <option value="3">Semester 3</option>
+            <option value="4">Semester 4</option>
+            <option value="5" selected>Semester 5</option>
+            <option value="6">Semester 6</option>
+            <option value="7">Semester 7</option>
+            <option value="8">Semester 8</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Branch / Department</label>
+        <select id="modalDept" style="width:100%; background:#110e24; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;">
+          <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+          <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+          <option value="Information Science & Tech">Information Science & Tech</option>
+          <option value="Electronics & Communication">Electronics & Communication</option>
+          <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+          <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+          <option value="Arts & Humanities">Arts & Humanities</option>
+          <option value="General Science">General Science</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">College Name</label>
+        <input type="text" id="modalCollege" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" value="BLDEA Campus Jamkhandi" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Bio / Study Focus</label>
+        <textarea id="modalBio" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 14px; color:#fff; font-size:13px; outline:none; min-height:60px;" placeholder="What are you studying or building?"></textarea>
+      </div>
+
+      <button type="submit" class="hero-btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;">
+        <span>🚀 Activate Profile & Enter Campus OS</span>
+      </button>
+    </form>
+  </div>
+</div>
+
 <!-- ===================== SEARCH OVERLAY MODAL ===================== -->
 <div class="search-overlay-backdrop" id="searchBackdrop">
   <div class="search-dialog-card">
