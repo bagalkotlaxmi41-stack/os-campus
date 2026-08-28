@@ -93,6 +93,23 @@ const Storage = {
   },
   clearUser() { this.remove(KEYS.USER); },
 
+  authenticate(identifier, password) {
+    if (!identifier || !password) return null;
+    const clean = identifier.trim().toLowerCase();
+    const accounts = this.getAccounts();
+    const found = accounts.find(a => 
+      ((a.email || '').toLowerCase() === clean) ||
+      ((a.username || a.handle || '').toLowerCase() === clean) ||
+      ((a.username || a.handle || '').toLowerCase() === ('@' + clean))
+    );
+    if (!found) return null;
+    if (found.password && found.password !== password) {
+      return null;
+    }
+    this.setUser(found);
+    return found;
+  },
+
   // ============================================================
   // REAL STUDENT ACCOUNTS DIRECTORY (Like Instagram / FB)
   // ============================================================

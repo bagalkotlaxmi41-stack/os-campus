@@ -59,6 +59,7 @@ def init_database():
         handle TEXT PRIMARY KEY,
         display_name TEXT NOT NULL,
         email TEXT,
+        password_hash TEXT,
         department TEXT DEFAULT 'Computer Science & Engineering',
         semester INTEGER DEFAULT 5,
         usn TEXT,
@@ -71,6 +72,10 @@ def init_database():
         updated_at INTEGER
     )
     """)
+    try:
+        cursor.execute("ALTER TABLE accounts ADD COLUMN password_hash TEXT")
+    except Exception:
+        pass
 
     # 2. Posts Table
     cursor.execute("""
@@ -196,6 +201,19 @@ def init_database():
 init_database()
 
 
+import hashlib
+
+def hash_password(password: str) -> str:
+    if not password:
+        return ""
+    salt = "campus_os_auth_v1"
+    return hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
+
+def verify_password(password: str, password_hash: str) -> bool:
+    if not password_hash:
+        return True
+    return hash_password(password) == password_hash
+
 # ============================================================
 # PYDANTIC DATA MODELS
 # ============================================================
@@ -204,6 +222,7 @@ class AccountModel(BaseModel):
     handle: str
     displayName: str
     email: Optional[str] = None
+    password: Optional[str] = None
     department: Optional[str] = "Computer Science & Engineering"
     semester: Optional[int] = 5
     usn: Optional[str] = None
@@ -212,6 +231,11 @@ class AccountModel(BaseModel):
     photo: Optional[str] = None
     role: Optional[str] = "STUDENT"
     xp: Optional[int] = 150
+
+
+class LoginModel(BaseModel):
+    identifier: str
+    password: str
 
 
 class PostCreateModel(BaseModel):
@@ -373,6 +397,7 @@ def get_account_by_handle(handle: str):
     }
 
 
+@app.post("/api/auth/register")
 @app.post("/api/accounts")
 def create_or_update_account(acc: AccountModel):
     handle = acc.handle.strip()
@@ -391,21 +416,23 @@ def create_or_update_account(acc: AccountModel):
             conn.close()
             raise HTTPException(
                 status_code=400,
-                detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in or use another email."
+                detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in with your password."
             )
 
-    cursor.execute("SELECT created_at FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
+    cursor.execute("SELECT created_at, password_hash FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
     existing = cursor.fetchone()
     created_at = existing[0] if existing else now
+    pwd_hash = hash_password(acc.password) if acc.password else (existing[1] if existing else None)
 
     cursor.execute("""
     INSERT OR REPLACE INTO accounts
-    (handle, display_name, email, department, semester, usn, bio, skills, photo, role, xp, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (handle, display_name, email, password_hash, department, semester, usn, bio, skills, photo, role, xp, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         handle,
         acc.displayName,
         acc.email,
+        pwd_hash,
         acc.department or "Computer Science & Engineering",
         acc.semester or 5,
         acc.usn,
@@ -437,6 +464,44 @@ def create_or_update_account(acc: AccountModel):
             "photo": acc.photo,
             "role": acc.role,
             "xp": acc.xp,
+        }
+    }
+
+
+@app.post("/api/auth/login")
+def auth_login(data: LoginModel):
+    ident = data.identifier.strip().lower()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM accounts WHERE LOWER(email) = ? OR LOWER(handle) = ?", (ident, ident if ident.startswith("@") else "@" + ident))
+    r = cursor.fetchone()
+    conn.close()
+
+    if not r:
+        raise HTTPException(status_code=404, detail="Account not found. Please check your email/handle or sign up.")
+
+    stored_hash = r["password_hash"]
+    if stored_hash and not verify_password(data.password, stored_hash):
+        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+
+    return {
+        "status": "success",
+        "message": "Login successful",
+        "account": {
+            "username": r["handle"],
+            "handle": r["handle"],
+            "displayName": r["display_name"],
+            "name": r["display_name"],
+            "email": r["email"],
+            "department": r["department"],
+            "semester": r["semester"],
+            "usn": r["usn"],
+            "bio": r["bio"],
+            "skills": json.loads(r["skills"] or "[]"),
+            "photo": r["photo"],
+            "role": r["role"],
+            "xp": r["xp"],
+            "createdAt": r["created_at"]
         }
     }
 

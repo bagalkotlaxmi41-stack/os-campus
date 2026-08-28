@@ -65,54 +65,82 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Login
-  loginForm?.addEventListener('submit', e => {
+  loginForm?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-password').value;
     const btn = loginForm.querySelector('.btn-primary');
 
-    if (!email || !pass) { showToast('Missing fields', 'Please fill in all fields', 'error'); return; }
+    if (!email || !pass) { 
+      showToast('Missing fields', 'Please enter your email/handle and password', 'error'); 
+      return; 
+    }
 
-    // Check stored user or accounts directory
-    const allAccs = Storage.getAccounts();
-    const matchedAcc = allAccs.find(a => 
-      (a.email && a.email.toLowerCase() === email.toLowerCase()) || 
-      (a.handle && a.handle.toLowerCase() === email.toLowerCase()) || 
-      (a.username && a.username.toLowerCase() === email.toLowerCase())
-    );
-    const user = matchedAcc || Storage.getUser();
+    setLoading(btn, true);
 
-    if (user && (user.email === email || (user.handle && user.handle.toLowerCase() === email.toLowerCase()) || (user.username && user.username.toLowerCase() === email.toLowerCase()) || (user.name && user.name.toLowerCase() === email.toLowerCase()))) {
-      Storage.setUser(user);
-      setLoading(btn, true);
-      setTimeout(() => {
+    try {
+      let user = null;
+      // 1. Try Backend API Auth
+      if (window.PythonAPI && PythonAPI.login) {
+        try {
+          user = await PythonAPI.login(email, pass);
+        } catch (apiErr) {
+          console.warn('Backend login attempt note:', apiErr);
+          // If backend returned explicit 401 or 404, capture message
+          if (apiErr.message && (apiErr.message.includes('password') || apiErr.message.includes('not found'))) {
+            setLoading(btn, false);
+            showToast('Authentication Error', apiErr.message, 'error');
+            return;
+          }
+        }
+      }
+
+      // 2. Fallback to Local Directory Auth
+      if (!user) {
+        user = Storage.authenticate(email, pass);
+      }
+
+      if (user) {
+        Storage.setUser(user);
         showToast('Welcome back!', `Good to see you, ${(user.displayName || user.name || 'Student').split(' ')[0]} 👋`, 'success');
         setTimeout(() => window.location.href = 'profile.html', 500);
-      }, 600);
-    } else {
-      showToast('Account not found', 'Please sign up first or use Demo mode', 'error');
+      } else {
+        setLoading(btn, false);
+        showToast('Invalid Credentials', 'Incorrect password or email. Please check and try again.', 'error');
+      }
+    } catch (err) {
+      setLoading(btn, false);
+      showToast('Login Failed', err.message || 'Unable to sign in. Please try again.', 'error');
     }
   });
 
   // Signup
-  signupForm?.addEventListener('submit', e => {
+  signupForm?.addEventListener('submit', async e => {
     e.preventDefault();
     const name = document.getElementById('signup-name').value.trim();
     const email = document.getElementById('signup-email').value.trim();
     const pass = document.getElementById('signup-password').value;
-    const college = document.getElementById('signup-college').value.trim();
-    const branch = document.getElementById('signup-branch').value.trim();
-    const semester = document.getElementById('signup-semester').value;
+    const college = document.getElementById('signup-college')?.value.trim();
+    const branch = document.getElementById('signup-branch')?.value.trim();
+    const semester = document.getElementById('signup-semester')?.value;
     const btn = signupForm.querySelector('.btn-primary');
 
-    if (!name || !email || !pass) { showToast('Missing fields', 'Name, email, and password are required', 'error'); return; }
-    if (pass.length < 6) { showToast('Weak password', 'Password must be at least 6 characters', 'warning'); return; }
+    if (!name || !email || !pass) { 
+      showToast('Missing fields', 'Full name, email, and password are required', 'error'); 
+      return; 
+    }
+    if (pass.length < 6) { 
+      showToast('Weak password', 'Password must be at least 6 characters', 'warning'); 
+      return; 
+    }
 
     // Enforce Strict One Email One Account
     if (Storage.isEmailTaken(email)) {
-      showToast('Email in use', 'An account with this email is already registered. Please sign in.', 'error');
+      showToast('Email in use', 'An account with this email is already registered. Please sign in with your password.', 'error');
       return;
     }
+
+    setLoading(btn, true);
 
     const rawHandle = name.toLowerCase().replace(/[^a-z0-9_]/g, '') || ('student_' + Date.now().toString(36));
     const handle = '@' + rawHandle;
@@ -124,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
       username: handle,
       handle: handle,
       email: email,
+      password: pass,
       college: college || "BLDE Association's Campus, Jamakhandi",
       department: branch || 'Computer Science & Engineering',
       program: 'BCA',
@@ -136,15 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
       joinedAt: Date.now()
     };
 
-    setLoading(btn, true);
-    setTimeout(() => {
+    try {
+      if (window.PythonAPI && PythonAPI.register) {
+        await PythonAPI.register(user).catch(e => console.warn('Backend register note:', e));
+      }
       Storage.setUser(user);
       Storage.addAccount(user);
-      if (window.PythonAPI && PythonAPI.saveAccount) PythonAPI.saveAccount(user).catch(() => {});
-      if (window.FirebaseService && FirebaseService.createAccount) FirebaseService.createAccount(user).catch(() => {});
+      if (window.FirebaseService && FirebaseService.createAccount) {
+        FirebaseService.createAccount(user).catch(() => {});
+      }
       showToast('Account created!', `Welcome to Campus OS, ${name.split(' ')[0]}! 🎉`, 'success');
       setTimeout(() => window.location.href = 'profile.html', 600);
-    }, 800);
+    } catch (err) {
+      setLoading(btn, false);
+      showToast('Registration Error', err.message || 'Failed to create account.', 'error');
+    }
   });
 
   // Password toggle

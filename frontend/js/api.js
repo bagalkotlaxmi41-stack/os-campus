@@ -84,6 +84,7 @@ const PythonAPI = {
           handle: handle,
           displayName: account.displayName || account.name || 'Student',
           email: account.email || null,
+          password: account.password || null,
           department: account.department || 'Computer Science & Engineering',
           semester: Number(account.semester) || 5,
           usn: account.usn || null,
@@ -94,13 +95,39 @@ const PythonAPI = {
           xp: Number(account.xp) || 150
         })
       });
-      if (!res.ok) throw new Error('Failed to save account to backend');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to save account to backend');
+      }
       const data = await res.json();
       return data.account;
     } catch (err) {
       console.warn('API saveAccount fallback:', err);
-      return account;
+      throw err;
     }
+  },
+
+  login: async function(identifier, password) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Login failed');
+      }
+      const data = await res.json();
+      return data.account;
+    } catch (err) {
+      console.warn('API login error:', err);
+      throw err;
+    }
+  },
+
+  register: async function(account) {
+    return this.saveAccount(account);
   },
 
   updateAccountPhoto: async function(handle, photoBase64) {
