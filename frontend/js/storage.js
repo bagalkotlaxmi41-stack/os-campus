@@ -155,7 +155,12 @@ const Storage = {
     const local = localStorage.getItem('cos_photo_' + cleanHandle);
     if (local) return local;
     const acc = this.getAccountByHandle(cleanHandle);
-    return acc ? acc.photo : null;
+    if (acc && acc.photo) return acc.photo;
+    const u = this.getUser();
+    if (u && ((u.username || u.handle || '').toLowerCase() === cleanHandle.toLowerCase())) {
+      return u.photo || null;
+    }
+    return null;
   },
   setUserPhoto(handle, base64) {
     if (!handle) return;
@@ -163,7 +168,7 @@ const Storage = {
     try {
       localStorage.setItem('cos_photo_' + cleanHandle, base64);
       const u = this.getUser();
-      if (u && ((u.username || u.handle) === cleanHandle || (u.username || u.handle) === handle)) {
+      if (u && ((u.username || u.handle || '').toLowerCase() === cleanHandle.toLowerCase() || (u.username || u.handle) === handle)) {
         u.photo = base64;
         this.set(KEYS.USER, u);
       }
@@ -174,6 +179,9 @@ const Storage = {
       }
       if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
         PythonAPI.updateAccountPhoto(cleanHandle, base64).catch(e => console.warn('Photo API sync:', e));
+      }
+      if (window.FirebaseService && FirebaseService.updateStudentPhoto) {
+        FirebaseService.updateStudentPhoto(cleanHandle, base64).catch(e => console.warn('Firebase Photo sync:', e));
       }
     } catch (e) {
       console.warn('Photo storage error:', e);
@@ -191,7 +199,10 @@ const Storage = {
   },
   addPost(post) {
     const posts = this.getPosts();
-    const handle = (post.handle || '@student').startsWith('@') ? post.handle : '@' + post.handle;
+    const rawHandle = post.handle || (this.getUser() ? this.getUser().username || this.getUser().handle : '@student');
+    const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+    const authorPhoto = this.getUserPhoto(handle) || post.authorPhoto || post.photo || null;
+
     const newPost = {
       id: post.id || ('post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
       type: post.type || 'text',
@@ -199,8 +210,9 @@ const Storage = {
       subject: post.subject || 'General',
       department: post.department || 'Computer Science & Engineering',
       desc: post.desc || '',
-      author: post.author || 'Student',
+      author: post.author || (this.getUser() ? this.getUser().displayName || this.getUser().name : 'Student'),
       handle: handle,
+      authorPhoto: authorPhoto,
       fileName: post.fileName || null,
       fileSize: post.fileSize || null,
       pdfData: post.pdfData || null,
@@ -222,6 +234,11 @@ const Storage = {
     // Sync with Python API
     if (window.PythonAPI && PythonAPI.createPost) {
       PythonAPI.createPost(newPost).catch(e => console.warn('API createPost sync:', e));
+    }
+
+    // Sync with Firebase Firestore
+    if (window.FirebaseService && FirebaseService.createPost) {
+      FirebaseService.createPost(newPost).catch(e => console.warn('Firebase createPost sync:', e));
     }
 
     return newPost;

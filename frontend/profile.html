@@ -443,6 +443,29 @@
       border: none;
       background: #000;
     }
+
+    .post-type-select-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 10px 8px;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .post-type-select-btn.active {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #8b5cf6;
+      color: #c4b5fd;
+      box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -530,6 +553,20 @@
 
     <!-- Tab 1: Uploaded Posts & Materials -->
     <div class="tab-content-panel active" id="tab-materials">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h3 style="font-size:16px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+            <span>📄</span> Shared Materials & Posts
+          </h3>
+          <p style="font-size:12px; color:#94a3b8; margin-top:2px;">Verified notes, PDFs, code repos, and video tutorials</p>
+        </div>
+        <div id="materialsTabActionBtnWrap">
+          <button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:8px 18px; font-size:13px;">
+            <span>➕ Share Material / Post</span>
+          </button>
+        </div>
+      </div>
+
       <div class="materials-grid-layout" id="publishedMaterialsGrid">
         <!-- Rendered by JS -->
       </div>
@@ -551,6 +588,88 @@
 
   </div>
 </section>
+
+<!-- ===================== CREATE POST & SHARE MATERIAL MODAL ===================== -->
+<div class="edit-modal-backdrop" id="createPostModal">
+  <div class="edit-dialog-card" style="max-width: 560px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px; margin:0;">
+        <span>📝</span> Share Academic Material / Post
+      </h3>
+      <button onclick="closeCreatePostModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; line-height:1;">×</button>
+    </div>
+
+    <!-- Post Type Selector -->
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px;">
+      <button type="button" class="post-type-select-btn active" id="btnTypePdf" onclick="selectPostType('pdf')">
+        <span>📄 PDF Document</span>
+      </button>
+      <button type="button" class="post-type-select-btn" id="btnTypeYoutube" onclick="selectPostType('youtube')">
+        <span>🎥 Video Lecture</span>
+      </button>
+      <button type="button" class="post-type-select-btn" id="btnTypeText" onclick="selectPostType('text')">
+        <span>💬 Notes / Question</span>
+      </button>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Post Title *</label>
+      <input type="text" class="form-input" id="postTitleInput" placeholder="e.g. Module 3 Handwritten Formula Sheets & PYQs" required />
+    </div>
+
+    <!-- Subject & Department -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Subject / Course *</label>
+        <input type="text" class="form-input" id="postSubjectInput" placeholder="e.g. Database Management" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Department</label>
+        <select class="form-select" id="postDeptSelect">
+          <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+          <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+          <option value="Information Science & Tech">Information Science & Tech</option>
+          <option value="Electronics & Communication">Electronics & Communication</option>
+          <option value="Electrical & Electronics">Electrical & Electronics</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+          <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+          <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+          <option value="General Academic">General Academic</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Description / Summary *</label>
+      <textarea class="form-textarea" id="postDescInput" style="min-height:80px;" placeholder="Summarize key topics covered, formulas, or academic questions..."></textarea>
+    </div>
+
+    <!-- PDF Upload Field (Visible when type == 'pdf') -->
+    <div id="pdfUploadFieldWrap" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Attach PDF Document (Max 10MB)</label>
+      <div style="border: 2px dashed rgba(139, 92, 246, 0.4); border-radius: 14px; padding: 18px; text-align: center; background: rgba(139, 92, 246, 0.05); cursor: pointer;" onclick="document.getElementById('postPDFFileInput').click()">
+        <div style="font-size: 28px; margin-bottom: 6px;">📄</div>
+        <div style="font-size: 13px; font-weight: 700; color: #c4b5fd;" id="pdfFilePromptText">Click to select PDF notes file from device</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;" id="pdfFileInfoText">Supports .pdf files up to 10MB</div>
+      </div>
+      <input type="file" id="postPDFFileInput" accept=".pdf,application/pdf" style="display:none;" onchange="handlePDFFileSelection(this)" />
+    </div>
+
+    <!-- YouTube Link Field (Visible when type == 'youtube') -->
+    <div id="youtubeLinkFieldWrap" style="margin-bottom:16px; display:none;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">YouTube Video URL</label>
+      <input type="url" class="form-input" id="postYoutubeUrlInput" placeholder="https://www.youtube.com/watch?v=..." />
+    </div>
+
+    <!-- Submit Button -->
+    <button class="btn btn-primary btn-lg w-full" id="submitPostBtn" onclick="submitNewPost()" style="display:flex; justify-content:center; align-items:center; gap:8px;">
+      <span>🚀 Publish Material & Earn +30 XP</span>
+    </button>
+  </div>
+</div>
 
 <!-- ===================== CREATE PROFILE MODAL ===================== -->
 <div class="edit-modal-backdrop" id="createProfileModal">
@@ -818,8 +937,173 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     renderStudentProfile(currentUser, true);
   }
-});
+// =====================================================
+// POST CREATION STATE & HANDLERS
+// =====================================================
+let currentPostType = 'pdf';
+let currentUploadedPDF = null; // { fileName, fileSize, pdfData }
 
+function selectPostType(type) {
+  currentPostType = type;
+  document.getElementById('btnTypePdf')?.classList.toggle('active', type === 'pdf');
+  document.getElementById('btnTypeYoutube')?.classList.toggle('active', type === 'youtube');
+  document.getElementById('btnTypeText')?.classList.toggle('active', type === 'text');
+
+  const pdfWrap = document.getElementById('pdfUploadFieldWrap');
+  const ytWrap = document.getElementById('youtubeLinkFieldWrap');
+
+  if (pdfWrap) pdfWrap.style.display = type === 'pdf' ? 'block' : 'none';
+  if (ytWrap) ytWrap.style.display = type === 'youtube' ? 'block' : 'none';
+}
+
+function handlePDFFileSelection(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+    alert('Please select a valid PDF file.');
+    input.value = '';
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('PDF file size exceeds 10MB limit.');
+    input.value = '';
+    return;
+  }
+
+  const sizeKb = Math.round(file.size / 1024);
+  const sizeText = sizeKb > 1024 ? (sizeKb / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentUploadedPDF = {
+      fileName: file.name,
+      fileSize: sizeText,
+      pdfData: e.target.result
+    };
+    document.getElementById('pdfFilePromptText').textContent = `✓ ${file.name}`;
+    document.getElementById('pdfFileInfoText').textContent = `Ready to publish (${sizeText})`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openCreatePostModal() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) {
+    document.getElementById('createProfileModal').classList.add('open');
+    return;
+  }
+  document.getElementById('createPostModal').classList.add('open');
+  selectPostType('pdf');
+}
+
+function closeCreatePostModal() {
+  document.getElementById('createPostModal').classList.remove('open');
+  // Reset form
+  document.getElementById('postTitleInput').value = '';
+  document.getElementById('postSubjectInput').value = '';
+  document.getElementById('postDescInput').value = '';
+  if (document.getElementById('postYoutubeUrlInput')) document.getElementById('postYoutubeUrlInput').value = '';
+  if (document.getElementById('postPDFFileInput')) document.getElementById('postPDFFileInput').value = '';
+  document.getElementById('pdfFilePromptText').textContent = 'Click to select PDF notes file from device';
+  document.getElementById('pdfFileInfoText').textContent = 'Supports .pdf files up to 10MB';
+  currentUploadedPDF = null;
+}
+
+function submitNewPost() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) {
+    alert('Please set up your student profile first.');
+    openCreatePostModal();
+    return;
+  }
+
+  const title = document.getElementById('postTitleInput').value.trim();
+  const subject = document.getElementById('postSubjectInput').value.trim();
+  const dept = document.getElementById('postDeptSelect').value;
+  const desc = document.getElementById('postDescInput').value.trim();
+
+  if (!title || !subject) {
+    alert('Please provide both Post Title and Subject/Course.');
+    return;
+  }
+
+  const handle = user.username || user.handle || '@student';
+  const authorName = user.displayName || user.name || 'Student';
+  const authorPhoto = Storage.getUserPhoto(handle) || user.photo || null;
+
+  let postPayload = {
+    id: 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    type: currentPostType,
+    title: title,
+    subject: subject,
+    department: dept,
+    desc: desc || '',
+    author: authorName,
+    handle: handle,
+    authorPhoto: authorPhoto,
+    likes: 0,
+    saves: 0,
+    createdAt: Date.now()
+  };
+
+  if (currentPostType === 'pdf' && currentUploadedPDF) {
+    postPayload.fileName = currentUploadedPDF.fileName;
+    postPayload.fileSize = currentUploadedPDF.fileSize;
+    postPayload.pdfData = currentUploadedPDF.pdfData;
+  } else if (currentPostType === 'youtube') {
+    const ytUrl = document.getElementById('postYoutubeUrlInput').value.trim();
+    postPayload.youtubeUrl = ytUrl || null;
+  }
+
+  // Save to Storage
+  Storage.addPost(postPayload);
+
+  // Reward XP points (+30 XP for sharing academic material)
+  user.xp = (user.xp || 100) + 30;
+  Storage.setUser(user);
+  currentUser = user;
+
+  // Refresh profile UI
+  closeCreatePostModal();
+  renderStudentProfile(user, true);
+
+  alert(`🎉 Post published! You earned +30 Academic XP.`);
+}
+
+function togglePostLike(postId) {
+  const user = Storage.getUser() || currentUser;
+  const handle = user ? user.username || user.handle : '@student';
+  Storage.likePost(postId, handle);
+  
+  // Re-render posts grid for current view
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewHandle = urlParams.get('handle');
+  const targetHandle = viewHandle || (user ? user.username : '@student');
+  const allPosts = Storage.getPosts();
+  const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === targetHandle.toLowerCase());
+  const isOwn = !viewHandle || (user && viewHandle.toLowerCase() === (user.username || '').toLowerCase());
+  renderPostsGrid(userPosts, isOwn);
+}
+
+function deletePostHandler(postId) {
+  if (!confirm('Are you sure you want to delete this post?')) return;
+  Storage.deletePost(postId);
+  
+  const user = Storage.getUser() || currentUser;
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewHandle = urlParams.get('handle');
+  const targetHandle = viewHandle || (user ? user.username : '@student');
+  const allPosts = Storage.getPosts();
+  const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === targetHandle.toLowerCase());
+  const isOwn = !viewHandle || (user && viewHandle.toLowerCase() === (user.username || '').toLowerCase());
+  renderPostsGrid(userPosts, isOwn);
+}
+
+// =====================================================
+// PROFILE RENDERING
+// =====================================================
 function saveNewProfile() {
   const name = document.getElementById('createFullName').value.trim();
   let username = document.getElementById('createUsername').value.trim();
@@ -865,13 +1149,13 @@ function saveNewProfile() {
 
 function renderStudentProfile(profile, isOwn) {
   const name = profile.displayName || profile.name || 'Student';
-  const handle = profile.username || '@student';
+  const handle = profile.username || profile.handle || '@student';
   const initial = name[0].toUpperCase();
-  const photo = Storage.getUserPhoto(handle);
+  const photo = Storage.getUserPhoto(handle) || profile.photo;
 
   const avatarEl = document.getElementById('passportAvatar');
   if (photo) {
-    avatarEl.innerHTML = `<img src="${photo}" alt="${name}" />`;
+    avatarEl.innerHTML = `<img src="${photo}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />`;
   } else {
     avatarEl.textContent = initial;
   }
@@ -899,13 +1183,26 @@ function renderStudentProfile(profile, isOwn) {
   document.getElementById('statSemesterLevel').textContent = `Sem ${profile.semester || '?'}`;
 
   const actCol = document.getElementById('passportActions');
+  const materialsActionBtn = document.getElementById('materialsTabActionBtnWrap');
+
   if (isOwn) {
     actCol.innerHTML = `
+      <button class="passport-btn primary" onclick="openCreatePostModal()">➕ Share Material / Post</button>
       <button class="passport-btn" onclick="openEditModal()">✏️ Edit Profile</button>
-      <a href="dashboard.html" class="passport-btn primary">Dashboard →</a>
+      <a href="dashboard.html" class="passport-btn">Dashboard →</a>
     `;
+    if (materialsActionBtn) {
+      materialsActionBtn.innerHTML = `
+        <button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:8px 18px; font-size:13px;">
+          <span>➕ Share Material / Post</span>
+        </button>
+      `;
+    }
   } else {
     actCol.innerHTML = `<span class="student-meta-chip" style="color:#38bdf8; border-color:rgba(6,182,212,0.4); padding:8px 16px;">✓ Verified Student</span>`;
+    if (materialsActionBtn) {
+      materialsActionBtn.innerHTML = '';
+    }
   }
 
   renderPostsGrid(userPosts, isOwn);
@@ -919,52 +1216,96 @@ function renderPostsGrid(posts, isOwn) {
     grid.innerHTML = `
       <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; color:#64748b;">
         <div style="font-size:42px; margin-bottom:10px;">📌</div>
-        <div style="font-size:15px; font-weight:800; color:#cbd5e1; margin-bottom:6px;">${isOwn ? 'You have not created any posts yet' : 'No posts published yet'}</div>
-        <div style="font-size:13px;">${isOwn ? '<a href="index.html" style="color:#a78bfa; font-weight:800;">Create your first post on Home →</a>' : ''}</div>
+        <div style="font-size:15px; font-weight:800; color:#cbd5e1; margin-bottom:6px;">${isOwn ? 'You have not shared any academic materials or posts yet' : 'No materials shared yet'}</div>
+        <div style="font-size:13px; margin-top:8px;">${isOwn ? '<button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:6px 16px; font-size:12px;">➕ Share Your First PDF / Note</button>' : ''}</div>
       </div>
     `;
     return;
   }
 
+  const currentUserHandle = (Storage.getUser() ? Storage.getUser().username || Storage.getUser().handle : '').toLowerCase();
+
   grid.innerHTML = posts.map(post => {
-    const typeIcon = post.type === 'youtube' ? '🎥' : post.type === 'pdf' ? '📄' : '💬';
-    const typeBg = post.type === 'youtube' ? 'rgba(239,68,68,0.15)' : post.type === 'pdf' ? 'rgba(239,68,68,0.15)' : 'rgba(6,182,212,0.15)';
-    const typeColor = post.type === 'youtube' ? '#f87171' : post.type === 'pdf' ? '#f87171' : '#67e8f9';
+    const typeLabel = post.type === 'youtube' ? '🎥 Video Lecture' : post.type === 'pdf' ? '📄 PDF Document' : '💬 Academic Note';
+    const authorHandle = post.handle || '@student';
+    const authorName = post.author || 'Student';
+    const authorPhoto = Storage.getUserPhoto(authorHandle) || post.authorPhoto || post.photo || null;
+    const authorInitial = authorName[0].toUpperCase();
+
+    const authorAvatarHtml = authorPhoto
+      ? `<img src="${authorPhoto}" alt="${escapeHtml(authorName)}" style="width:100%;height:100%;object-fit:cover;" />`
+      : authorInitial;
 
     let mediaEmbed = '';
     if (post.type === 'youtube' && post.youtubeUrl) {
       const ytId = extractYoutubeId(post.youtubeUrl);
       if (ytId) {
         mediaEmbed = `
-          <div style="margin: 10px 0; border-radius:10px; overflow:hidden;">
+          <div style="margin: 12px 0; border-radius:12px; overflow:hidden;">
             <iframe class="youtube-embed-frame" src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>
           </div>
         `;
       }
     } else if (post.type === 'pdf' && post.fileName) {
       mediaEmbed = `
-        <div style="margin: 10px 0; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:12px; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📄 ${post.fileName} (${post.fileSize || 'PDF'})</div>
-          <button class="passport-btn" style="padding:4px 10px; font-size:11px;" onclick="downloadStudentPDF('${post.id}', '${post.fileName || 'note.pdf'}')">📥 Download</button>
+        <div style="margin: 12px 0; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <div style="font-size:13px; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700;">
+            📄 ${escapeHtml(post.fileName)} <span style="font-size:11px; color:#94a3b8; font-weight:400;">(${escapeHtml(post.fileSize || 'PDF')})</span>
+          </div>
+          <button class="passport-btn primary" style="padding:6px 14px; font-size:11px; white-space:nowrap;" onclick="downloadStudentPDF('${post.id}', '${post.fileName || 'note.pdf'}')">📥 Download</button>
         </div>
       `;
     }
 
+    const isAuthor = isOwn || (currentUserHandle && authorHandle.toLowerCase() === currentUserHandle);
+
     return `
     <div class="material-card-item">
-      <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-        <div style="width:40px; height:40px; border-radius:10px; background:${typeBg}; color:${typeColor}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
-          ${typeIcon}
+      <!-- Author Info Header with Profile Photo -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+          <a href="profile.html?handle=${encodeURIComponent(authorHandle)}" style="text-decoration:none;">
+            <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; overflow:hidden; border:1.5px solid #a78bfa; flex-shrink:0;">
+              ${authorAvatarHtml}
+            </div>
+          </a>
+          <div style="overflow:hidden;">
+            <a href="profile.html?handle=${encodeURIComponent(authorHandle)}" style="font-size:13px; font-weight:800; color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px;">
+              <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(authorName)}</span>
+              <span style="font-size:11px; color:#a78bfa; font-weight:600;">${escapeHtml(authorHandle)}</span>
+            </a>
+            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${escapeHtml(post.subject || 'General')} · ${new Date(post.createdAt || Date.now()).toLocaleDateString()}</div>
+          </div>
         </div>
-        <div style="min-width:0; flex:1;">
-          <h4 style="font-size:14px; font-weight:800; color:#fff;">${post.title || 'Untitled Post'}</h4>
-          <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${post.subject || 'General'} · ${new Date(post.createdAt || Date.now()).toLocaleDateString()}</div>
-        </div>
+        <span class="student-meta-chip" style="font-size:10px; padding:3px 8px; margin:0; flex-shrink:0;">${typeLabel}</span>
       </div>
-      <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin-bottom:8px;">${post.desc || ''}</p>
+
+      <!-- Post Title & Body -->
+      <h4 style="font-size:15px; font-weight:800; color:#fff; margin-bottom:6px;">${escapeHtml(post.title || 'Untitled Post')}</h4>
+      ${post.desc ? `<p style="font-size:13px; color:#94a3b8; line-height:1.5; margin-bottom:10px;">${escapeHtml(post.desc)}</p>` : ''}
+      
+      <!-- Media Embed (PDF or YouTube) -->
       ${mediaEmbed}
+
+      <!-- Bottom Actions Bar: Likes & Delete -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
+        <button class="passport-btn" onclick="togglePostLike('${post.id}')" style="padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:6px; color:#f43f5e; border-color:rgba(244,63,94,0.25);">
+          <span>❤️</span> <span>${post.likes || 0}</span>
+        </button>
+
+        ${isAuthor ? `
+          <button class="passport-btn" onclick="deletePostHandler('${post.id}')" style="padding:4px 10px; font-size:11px; color:#ef4444; border-color:rgba(239,68,68,0.2);">
+            🗑️ Delete
+          </button>
+        ` : ''}
+      </div>
     </div>
   `}).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 function downloadStudentPDF(id, fileName) {
@@ -978,7 +1319,7 @@ function downloadStudentPDF(id, fileName) {
     a.click();
     document.body.removeChild(a);
   } else {
-    const pdfs = Storage.getPDFMaterials();
+    const pdfs = Storage.getPDFMaterials ? Storage.getPDFMaterials() : [];
     const item = pdfs.find(p => p.id === id);
     if (item && item.pdfData) {
       const a = document.createElement('a');
@@ -999,7 +1340,7 @@ function renderSkillsChips(skills, isOwn) {
     container.innerHTML = `<div style="color:#64748b; padding:20px 0;">${isOwn ? 'No skills listed. Click Edit Profile to add your tech stack!' : 'No skills specified.'}</div>`;
     return;
   }
-  container.innerHTML = skills.map(s => `<span class="tech-skill-pill"><span>⚡</span>${s}</span>`).join('');
+  container.innerHTML = skills.map(s => `<span class="tech-skill-pill"><span>⚡</span>${escapeHtml(s)}</span>`).join('');
 }
 
 function renderAcademicPassportGrid(profile) {
@@ -1008,14 +1349,14 @@ function renderAcademicPassportGrid(profile) {
     { label: 'Academic Department', val: profile.department || 'Not set' },
     { label: 'Current Semester', val: `Semester ${profile.semester || '?'}` },
     { label: 'USN / Student ID', val: profile.usn || 'Not set' },
-    { label: 'Academic Program', val: profile.program || 'B.Tech' },
+    { label: 'Academic Program', val: profile.program || 'BCA' },
     { label: 'Contribution XP', val: `${profile.xp || 100} XP` },
     { label: 'Institutional Affiliation', val: profile.college || "BLDE Association's College, Jamakhandi" }
   ];
   grid.innerHTML = items.map(it => `
     <div class="academic-info-card">
       <div class="academic-card-label">${it.label}</div>
-      <div class="academic-card-val">${it.val}</div>
+      <div class="academic-card-val">${escapeHtml(it.val)}</div>
     </div>
   `).join('');
 }
@@ -1045,11 +1386,15 @@ document.getElementById('profilePhotoFileInput').addEventListener('change', func
   reader.onload = function(ev) {
     const data = ev.target.result;
     const user = Storage.getUser() || currentUser;
-    if (user && user.username) {
-      Storage.setUserPhoto(user.username, data);
+    if (user) {
+      const handle = user.username || user.handle || '@student';
+      Storage.setUserPhoto(handle, data);
+      user.photo = data;
+      Storage.setUser(user);
+      currentUser = user;
     }
-    document.getElementById('passportAvatar').innerHTML = `<img src="${data}" alt="${user ? user.displayName : 'Student'}" />`;
-    alert('🎉 Profile photo updated from device!');
+    renderStudentProfile(user, true);
+    alert('🎉 Profile photo updated across all your posts and passport!');
   };
   reader.readAsDataURL(file);
 });
