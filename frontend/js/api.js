@@ -4,7 +4,7 @@
 // ============================================
 
 // Dynamic Environment-Aware API Base URL
-const getPythonApiBaseUrl = () => {
+const getPythonApiBaseUrl = function() {
   if (typeof localStorage !== 'undefined') {
     const custom = localStorage.getItem('cos_api_url');
     if (custom) return custom.replace(/\/+$/, '');
@@ -26,13 +26,13 @@ const PythonAPI = {
   /**
    * Health Check
    */
-  async checkHealth() {
+  checkHealth: async function() {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/health`);
       if (!res.ok) return false;
       const data = await res.json();
       return data.status === 'online';
-    } catch {
+    } catch (e) {
       return false;
     }
   },
@@ -40,7 +40,7 @@ const PythonAPI = {
   // ============================================================
   // ACCOUNTS & STUDENT DIRECTORY (Like Instagram / FB)
   // ============================================================
-  async getAccounts() {
+  getAccounts: async function() {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts`);
       if (!res.ok) return [];
@@ -51,7 +51,7 @@ const PythonAPI = {
     }
   },
 
-  async searchAccounts(query) {
+  searchAccounts: async function(query) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts/search?q=${encodeURIComponent(query)}`);
       if (!res.ok) return [];
@@ -62,7 +62,7 @@ const PythonAPI = {
     }
   },
 
-  async getAccount(handle) {
+  getAccount: async function(handle) {
     try {
       const clean = handle.startsWith('@') ? handle : '@' + handle;
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}`);
@@ -74,7 +74,7 @@ const PythonAPI = {
     }
   },
 
-  async saveAccount(account) {
+  saveAccount: async function(account) {
     try {
       const handle = (account.username || account.handle || '').startsWith('@') ? (account.username || account.handle) : '@' + (account.username || account.handle);
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts`, {
@@ -103,7 +103,7 @@ const PythonAPI = {
     }
   },
 
-  async updateAccountPhoto(handle, photoBase64) {
+  updateAccountPhoto: async function(handle, photoBase64) {
     try {
       const clean = handle.startsWith('@') ? handle : '@' + handle;
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}/photo`, {
@@ -121,7 +121,8 @@ const PythonAPI = {
   // ============================================================
   // POSTS FEED & SOCIAL INTERACTIONS
   // ============================================================
-  async getPosts(filter = {}) {
+  getPosts: async function(filter) {
+    filter = filter || {};
     try {
       let url = `${PYTHON_API_BASE_URL}/api/posts?`;
       if (filter.handle) url += `handle=${encodeURIComponent(filter.handle)}&`;
@@ -136,7 +137,7 @@ const PythonAPI = {
     }
   },
 
-  async createPost(postData) {
+  createPost: async function(postData) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts`, {
         method: 'POST',
@@ -152,7 +153,7 @@ const PythonAPI = {
     }
   },
 
-  async deletePost(postId) {
+  deletePost: async function(postId) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}`, {
         method: 'DELETE'
@@ -164,7 +165,7 @@ const PythonAPI = {
     }
   },
 
-  async toggleLike(postId, userHandle) {
+  toggleLike: async function(postId, userHandle) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}/like`, {
         method: 'POST',
@@ -179,7 +180,7 @@ const PythonAPI = {
     }
   },
 
-  async addComment(postId, author, handle, text) {
+  addComment: async function(postId, author, handle, text) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}/comments`, {
         method: 'POST',
@@ -195,7 +196,7 @@ const PythonAPI = {
     }
   },
 
-  async getLiveStats() {
+  getLiveStats: async function() {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/stats/live`);
       if (!res.ok) return null;
@@ -208,16 +209,16 @@ const PythonAPI = {
   // ============================================================
   // ACADEMIC VAULT (Notes, Tasks, Attendance, Prediction)
   // ============================================================
-  async getNotes(handle) {
+  getNotes: async function(handle) {
     try {
       const url = handle ? `${PYTHON_API_BASE_URL}/api/notes?handle=${encodeURIComponent(handle)}` : `${PYTHON_API_BASE_URL}/api/notes`;
       const res = await fetch(url);
       if (!res.ok) return null;
       return await res.json();
-    } catch { return null; }
+    } catch (e) { return null; }
   },
 
-  async saveNote(note) {
+  saveNote: async function(note) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/notes`, {
         method: 'POST',
@@ -225,26 +226,26 @@ const PythonAPI = {
         body: JSON.stringify(note)
       });
       return res.ok;
-    } catch { return false; }
+    } catch (e) { return false; }
   },
 
-  async deleteNote(id) {
+  deleteNote: async function(id) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/notes/${encodeURIComponent(id)}`, { method: 'DELETE' });
       return res.ok;
-    } catch { return false; }
+    } catch (e) { return false; }
   },
 
-  async getTasks(handle) {
+  getTasks: async function(handle) {
     try {
       const url = handle ? `${PYTHON_API_BASE_URL}/api/tasks?handle=${encodeURIComponent(handle)}` : `${PYTHON_API_BASE_URL}/api/tasks`;
       const res = await fetch(url);
       if (!res.ok) return null;
       return await res.json();
-    } catch { return null; }
+    } catch (e) { return null; }
   },
 
-  async saveTask(task) {
+  saveTask: async function(task) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/tasks`, {
         method: 'POST',
@@ -252,26 +253,26 @@ const PythonAPI = {
         body: JSON.stringify(task)
       });
       return res.ok;
-    } catch { return false; }
+    } catch (e) { return false; }
   },
 
-  async deleteTask(id) {
+  deleteTask: async function(id) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/tasks/${encodeURIComponent(id)}`, { method: 'DELETE' });
       return res.ok;
-    } catch { return false; }
+    } catch (e) { return false; }
   },
 
-  async getAttendance(handle) {
+  getAttendance: async function(handle) {
     try {
       const url = handle ? `${PYTHON_API_BASE_URL}/api/attendance?handle=${encodeURIComponent(handle)}` : `${PYTHON_API_BASE_URL}/api/attendance`;
       const res = await fetch(url);
       if (!res.ok) return null;
       return await res.json();
-    } catch { return null; }
+    } catch (e) { return null; }
   },
 
-  async saveAttendance(att) {
+  saveAttendance: async function(att) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/attendance`, {
         method: 'POST',
@@ -279,13 +280,14 @@ const PythonAPI = {
         body: JSON.stringify(att)
       });
       return res.ok;
-    } catch { return false; }
+    } catch (e) { return false; }
   },
 
   // ============================================================
   // AI TOOLS
   // ============================================================
-  async summarizeNote(title, content, subject = 'General') {
+  summarizeNote: async function(title, content, subject) {
+    subject = subject || 'General';
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/ai/summarize-note`, {
         method: 'POST',
@@ -306,7 +308,8 @@ const PythonAPI = {
     }
   },
 
-  async predictAttendance(subject, present, total, targetPercentage = 75) {
+  predictAttendance: async function(subject, present, total, targetPercentage) {
+    targetPercentage = targetPercentage || 75;
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/attendance/predict`, {
         method: 'POST',
