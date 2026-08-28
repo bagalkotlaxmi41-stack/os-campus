@@ -7,6 +7,15 @@
   <meta name="description" content="Infinite reels-style student academic feed. Real-time verified study notes, lecture videos, and academic showcases on Campus OS." />
   <meta name="theme-color" content="#06050e" />
 
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('cos_theme') || 'cyberpunk';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Favicon / Browser Icon -->
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="apple-touch-icon" href="img/logo.png" />

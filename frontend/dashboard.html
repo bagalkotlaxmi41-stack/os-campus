@@ -7,6 +7,16 @@
   <title>Student Academic Dashboard — Campus OS</title>
   <meta name="description"
     content="Your Campus OS student command center — view today's schedule, pending tasks, attendance radar, and recent study notes." />
+
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('cos_theme') || 'cyberpunk';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="apple-touch-icon" href="img/logo.png" />
   <link rel="stylesheet" href="css/base.css" />

@@ -7,6 +7,15 @@
   <meta name="description" content="Student identity passport, published study materials, verified PDF documents, and academic metrics on Campus OS." />
   <meta name="theme-color" content="#7c3aed" />
 
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('cos_theme') || 'cyberpunk';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Favicon / Browser Icon -->
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="apple-touch-icon" href="img/logo.png" />
@@ -952,25 +961,26 @@
             <div style="font-size:13px; font-weight:800; color:#fff;">Color Theme</div>
             <div style="font-size:11px; color:#94a3b8;">Select your preferred visual style</div>
           </div>
-          <select class="form-select" style="width:160px; padding:6px 10px; font-size:12px;" onchange="alert('Theme applied: ' + this.value)">
+          <select id="settingsThemeSelect" class="form-select" style="width:170px; padding:8px 12px; font-size:12px; background:#110e24; color:#fff; border-radius:10px;" onchange="applyAppTheme(this.value)">
             <option value="cyberpunk">🌌 Cyberpunk Purple</option>
             <option value="midnight">🌑 Midnight OLED</option>
             <option value="emerald">🌿 Emerald Academic</option>
+            <option value="titanium">🪐 Titanium Azure</option>
           </select>
         </div>
         <div class="settings-row-item">
           <div>
-            <div style="font-size:13px; font-weight:800; color:#fff;">Sound Effects</div>
-            <div style="font-size:11px; color:#94a3b8;">Audio feedback on XP earnings and post publish</div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">Sound Effects & Audio</div>
+            <div style="font-size:11px; color:#94a3b8;">Audio cues on XP gains and note publication</div>
           </div>
-          <input type="checkbox" checked style="accent-color:#8b5cf6; width:18px; height:18px;" />
+          <input type="checkbox" id="settingsSoundToggle" checked style="accent-color:#8b5cf6; width:18px; height:18px; cursor:pointer;" />
         </div>
         <div class="settings-row-item">
           <div>
-            <div style="font-size:13px; font-weight:800; color:#fff;">Real-time Stream Auto-play</div>
-            <div style="font-size:11px; color:#94a3b8;">Automatically start lecture video reels on scroll</div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">Stream Video Auto-play</div>
+            <div style="font-size:11px; color:#94a3b8;">Automatically start lecture videos in Reels feed</div>
           </div>
-          <input type="checkbox" checked style="accent-color:#8b5cf6; width:18px; height:18px;" />
+          <input type="checkbox" id="settingsAutoplayToggle" checked style="accent-color:#8b5cf6; width:18px; height:18px; cursor:pointer;" />
         </div>
       </div>
     </div>
@@ -1036,6 +1046,23 @@
 <script src="js/api.js"></script>
 
 <script>
+function showToast(msg) {
+  let toast = document.getElementById('profileToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'profileToast';
+    toast.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(18,14,38,0.95); backdrop-filter:blur(20px); border:1.5px solid rgba(139,92,246,0.6); color:#fff; padding:12px 24px; border-radius:14px; font-weight:800; font-size:13px; z-index:9999; box-shadow:0 12px 40px rgba(0,0,0,0.8); transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity:0; pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2800);
+}
+
 function extractYoutubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -1579,6 +1606,11 @@ function openSettingsModal(tab = 'profile') {
   document.getElementById('editSemSelect').value = user.semester || 5;
   document.getElementById('editSkillsInput').value = (user.skills || []).join(', ');
   
+  const currentTheme = localStorage.getItem('cos_theme') || 'cyberpunk';
+  if (document.getElementById('settingsThemeSelect')) {
+    document.getElementById('settingsThemeSelect').value = currentTheme;
+  }
+
   switchSettingsTab(tab);
   document.getElementById('settingsModal').classList.add('open');
 }
@@ -1595,6 +1627,12 @@ function switchSettingsTab(tabName) {
     if (btn) btn.classList.toggle('active', t === tabName);
     if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
   });
+}
+
+function applyAppTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('cos_theme', themeName);
+  showToast('🎨 Theme switched to ' + themeName.toUpperCase());
 }
 
 function saveEditedProfile() {

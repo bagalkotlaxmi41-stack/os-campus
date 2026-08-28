@@ -36,13 +36,18 @@ const Storage = {
   // INITIALIZATION & REALTIME BACKGROUND SYNC
   // ============================================================
   async init() {
-    // One-time migration: clear old fake/seeded accounts & posts
-    // so only real user-created data shows up
-    if (!localStorage.getItem('cos_cleared_seed_v2')) {
+    // Fresh clean slate migration: clear old accounts & posts
+    if (!localStorage.getItem('cos_clean_v3')) {
       this.remove(KEYS.ACCOUNTS);
       this.remove(KEYS.POSTS);
-      localStorage.setItem('cos_cleared_seed_v2', '1');
-      console.log('[CampusOS] Cleared old seeded demo data. Fresh start! 🚀');
+      this.remove(KEYS.USER);
+      this.remove(KEYS.NOTES);
+      this.remove(KEYS.TASKS);
+      this.remove(KEYS.ATTENDANCE);
+      this.remove(KEYS.TIMETABLE);
+      this.remove(KEYS.RESOURCES);
+      localStorage.setItem('cos_clean_v3', '1');
+      console.log('[CampusOS] Clean slate active — ready for real student registrations & posts! 🚀');
     }
 
     if (window.PythonAPI) {

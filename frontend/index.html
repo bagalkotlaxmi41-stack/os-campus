@@ -7,6 +7,15 @@
   <meta name="description" content="Next-generation student operating system. Real-time academic workspace, verified timetables, attendance radar, and authentic student profiles." />
   <meta name="theme-color" content="#7c3aed" />
 
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('cos_theme') || 'cyberpunk';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Favicon / Browser Icon -->
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="apple-touch-icon" href="img/logo.png" />
