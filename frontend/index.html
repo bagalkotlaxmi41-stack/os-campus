@@ -1205,6 +1205,54 @@
       <span>🔴 Stream</span>
     </a>
 
+    <!-- Notification Button with SVG icon (Not Emoji) & Glassmorphic Drawer -->
+    <div class="nav-notification-wrapper" id="navNotificationWrapper">
+      <button class="nav-notification-btn" id="navNotificationBtn" onclick="toggleNotificationDropdown(event)" aria-label="Notifications" title="Student & Campus Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon-svg">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge-dot" id="notificationBadgeDot" style="display:none;">0</span>
+      </button>
+
+      <!-- Glassmorphic Dropdown Popover -->
+      <div class="notification-dropdown-popover" id="notificationDropdown">
+        <div class="notif-header">
+          <div class="notif-title-row">
+            <div class="notif-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span>Live Campus Alerts</span>
+            </div>
+            <span class="notif-live-pill">🔴 LIVE</span>
+          </div>
+          <div class="notif-actions-sub">
+            <span class="notif-unread-count" id="notifUnreadCountText">0 unread alerts</span>
+            <button class="notif-clear-btn" onclick="markAllNotificationsRead(event)">Mark all read</button>
+          </div>
+        </div>
+
+        <!-- Filter tabs: All Alerts, New Posts, Circulars -->
+        <div class="notif-tabs-bar">
+          <button class="notif-tab active" data-tab="all" onclick="switchNotifTab('all', this)">All</button>
+          <button class="notif-tab" data-tab="posts" onclick="switchNotifTab('posts', this)">Posts</button>
+          <button class="notif-tab" data-tab="circulars" onclick="switchNotifTab('circulars', this)">Circulars</button>
+        </div>
+
+        <!-- Notification List -->
+        <div class="notif-list-scroll" id="notificationListContainer">
+          <!-- Dynamically populated from real-time posts & updates -->
+        </div>
+
+        <!-- Dropdown Footer -->
+        <div class="notif-footer-row">
+          <a href="feed.html" class="notif-footer-link">Open Campus Stream Reels →</a>
+        </div>
+      </div>
+    </div>
+
     <a href="dashboard.html" class="nav-dashboard-link" title="Open Student Workspace Dashboard">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       <span>Dashboard</span>
@@ -1852,6 +1900,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
 
 <script>
 // =====================================================

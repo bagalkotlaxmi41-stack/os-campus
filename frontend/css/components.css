@@ -1628,11 +1628,365 @@
 @media (max-width: 768px) {
   .profile-hero { padding: var(--space-8) var(--space-4); }
   .profile-name { font-size: 22px; }
-  .profile-stats { gap: var(--space-4); }
-  .profile-stat-value { font-size: 20px; }
-  .profile-info-grid { grid-template-columns: 1fr; }
-  .auth-stepper { flex-wrap: wrap; gap: var(--space-2); }
-  .auth-step-divider { width: 20px; }
-  .otp-input { width: 44px; height: 52px; font-size: 20px; }
-  .section-header { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+/* ============================================================
+   CAMPUS OS NOTIFICATIONS SYSTEM (GLASSMORPHISM & SVG BELL)
+   ============================================================ */
+.nav-notification-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
+
+.nav-notification-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(12px);
+}
+
+.nav-notification-btn:hover {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.35);
+}
+
+.bell-icon-svg {
+  transition: transform 0.2s ease;
+}
+
+@keyframes bellRingKeyframes {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-14deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-10deg); }
+  75% { transform: rotate(6deg); }
+  90% { transform: rotate(-4deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell-ring-active {
+  animation: bellRingKeyframes 0.85s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  color: #f43f5e !important;
+}
+
+.notification-badge-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444, #f43f5e);
+  border: 2px solid #0b0817;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+  animation: pulseBadge 2s infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); box-shadow: 0 0 16px rgba(239, 68, 68, 0.9); }
+}
+
+/* Glassmorphic Dropdown Popover */
+.notification-dropdown-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 380px;
+  max-width: 90vw;
+  background: rgba(13, 10, 26, 0.95);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 40px rgba(124, 58, 237, 0.2);
+  z-index: 1000;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.96);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-dropdown-popover.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.notif-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.12) 0%, transparent 100%);
+}
+
+.notif-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.notif-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.notif-live-pill {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  letter-spacing: 0.04em;
+}
+
+.notif-actions-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.notif-unread-count {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.notif-clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.notif-clear-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Tabs */
+.notif-tabs-bar {
+  display: flex;
+  padding: 8px 14px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notif-tab {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.notif-tab.active {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #ffffff;
+}
+
+/* Scroll List */
+.notif-list-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notif-list-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.notif-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.notif-item:hover {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.notif-item.unread {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.notif-avatar-col {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.notif-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  color: #ffffff;
+  overflow: hidden;
+  border: 1.5px solid rgba(139, 92, 246, 0.4);
+}
+
+.notif-avatar-circle.circular-icon {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(139, 92, 246, 0.3);
+  font-size: 16px;
+}
+
+.notif-unread-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.notif-body-col {
+  flex: 1;
+  overflow: hidden;
+}
+
+.notif-author-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.notif-author-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.notif-handle {
+  font-size: 11px;
+  color: #a78bfa;
+}
+
+.notif-time-badge {
+  font-size: 10px;
+  color: #64748b;
+  margin-left: auto;
+}
+
+.notif-item-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.3;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item-desc {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notif-footer-row {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.notif-footer-link {
+  font-size: 12px;
+  font-weight: 800;
+  color: #a78bfa;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.notif-footer-link:hover {
+  color: #c4b5fd;
+  text-decoration: underline;
+}
+
+/* Floating Real-Time Campus Notification Toast */
+.campus-live-notif-toast {
+  position: fixed;
+  top: 76px;
+  right: 24px;
+  background: rgba(13, 10, 28, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 16px;
+  padding: 12px 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(124, 58, 237, 0.35);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.campus-live-notif-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
