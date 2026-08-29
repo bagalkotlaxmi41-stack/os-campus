@@ -919,8 +919,14 @@
           <span>⚡ Unlock Control Center</span>
         </button>
 
-        <div class="gatekeeper-demo-tip">
-          <strong>💡 Owner Quick Access Key:</strong> Use master key <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">AdminMaster#2026</code> to manage platform settings.
+        <div style="margin-top:14px; text-align:center;">
+          <a href="index.html" style="color:#94a3b8; font-size:12px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
+            <span>← Return to Student Portal</span>
+          </a>
+        </div>
+
+        <div class="gatekeeper-demo-tip" style="margin-top:16px;">
+          <strong>🔒 High-Security Master Key:</strong> Enter master key <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">AdminMaster#2026</code> or registered administrator password to unlock.
         </div>
       </form>
     </div>
@@ -1331,8 +1337,18 @@
       }
     }
 
+    let failedAdminAttempts = 0;
+    let adminLockoutUntil = 0;
+
     async function handleGatekeeperAuth(e) {
       e.preventDefault();
+      const now = Date.now();
+      if (now < adminLockoutUntil) {
+        const remaining = Math.ceil((adminLockoutUntil - now) / 1000);
+        alert(`🔒 Security Lockdown: Too many failed attempts. Please wait ${remaining} seconds.`);
+        return;
+      }
+
       const key = document.getElementById('adminKeyInput').value.trim();
       const email = document.getElementById('adminEmailInput').value.trim();
       const submitBtn = document.getElementById('gatekeeperSubmitBtn');
@@ -1353,6 +1369,7 @@
         // Master key local verification fallback
         const validMasterKeys = ['AdminMaster#2026', 'blde_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
         if (authResult || validMasterKeys.includes(key)) {
+          failedAdminAttempts = 0;
           const adminData = authResult?.admin || {
             displayName: 'Platform Owner / Administrator',
             email: email || 'admin@campusos.edu',
@@ -1366,7 +1383,13 @@
           showAdminToast('👑 Welcome, System Administrator!');
           loadAllAdminData();
         } else {
-          alert('❌ Access Denied: Invalid Master Access Key or Administrator Password.');
+          failedAdminAttempts++;
+          if (failedAdminAttempts >= 3) {
+            adminLockoutUntil = Date.now() + 20000;
+            alert('❌ Access Denied: 3 incorrect attempts. Security locked for 20 seconds.');
+          } else {
+            alert(`❌ Access Denied: Invalid Master Access Key or Administrator Password (${3 - failedAdminAttempts} attempts remaining).`);
+          }
         }
       } catch (err) {
         alert('❌ Authentication failed: ' + (err.message || 'Access denied'));
