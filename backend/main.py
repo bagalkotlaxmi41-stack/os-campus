@@ -1630,8 +1630,64 @@ def health():
     }
 
 
-# Mount Frontend for Single-Port Production Deployments (Render / Railway / Docker)
+# Mount Frontend for Single-Port Production Deployments (Render / Railway / Docker / Local)
+from fastapi.responses import FileResponse
+
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+
+@app.get("/admin", include_in_schema=False)
+@app.get("/admin/", include_in_schema=False)
+def serve_admin():
+    p = os.path.join(frontend_dir, "admin.html")
+    if os.path.isfile(p):
+        return FileResponse(p)
+    raise HTTPException(status_code=404, detail="admin.html not found")
+
+@app.get("/dashboard", include_in_schema=False)
+def serve_dashboard():
+    p = os.path.join(frontend_dir, "dashboard.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/feed", include_in_schema=False)
+def serve_feed():
+    p = os.path.join(frontend_dir, "feed.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/profile", include_in_schema=False)
+def serve_profile():
+    p = os.path.join(frontend_dir, "profile.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/notes", include_in_schema=False)
+def serve_notes():
+    p = os.path.join(frontend_dir, "notes.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/tasks", include_in_schema=False)
+def serve_tasks():
+    p = os.path.join(frontend_dir, "tasks.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/attendance", include_in_schema=False)
+def serve_attendance():
+    p = os.path.join(frontend_dir, "attendance.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/timetable", include_in_schema=False)
+def serve_timetable():
+    p = os.path.join(frontend_dir, "timetable.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/resources", include_in_schema=False)
+def serve_resources():
+    p = os.path.join(frontend_dir, "resources.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
+@app.get("/auth", include_in_schema=False)
+def serve_auth():
+    p = os.path.join(frontend_dir, "auth.html")
+    return FileResponse(p) if os.path.isfile(p) else health()
+
 if os.path.isdir(frontend_dir):
     from fastapi.staticfiles import StaticFiles
     app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
@@ -1639,3 +1695,4 @@ else:
     @app.get("/")
     def root():
         return health()
+
