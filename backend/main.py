@@ -1,3 +1,4 @@
+import hashlib
 import json
 import math
 import os
@@ -47,6 +48,18 @@ def get_db():
     conn = sqlite3.connect(DB_FILE, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def hash_password(password: str) -> str:
+    if not password:
+        return ""
+    salt = "campus_os_auth_v1"
+    return hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
+
+def verify_password(password: str, password_hash: str) -> bool:
+    if not password_hash:
+        return True
+    return hash_password(password) == password_hash
 
 
 def init_database():
@@ -228,6 +241,32 @@ def init_database():
     )
     """)
 
+    # Seed Official Owner Admin Account (campus0012@gmail.com / campus@#1974)
+    admin_pass_hash = hash_password("campus@#1974")
+    cursor.execute("SELECT COUNT(*) as cnt FROM accounts WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'")
+    if cursor.fetchone()["cnt"] == 0:
+        cursor.execute("""
+        INSERT INTO accounts (handle, display_name, email, password_hash, department, semester, usn, bio, skills, photo, role, xp, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "@campus_admin",
+            "BLDE Campus Administrator",
+            "campus0012@gmail.com",
+            admin_pass_hash,
+            "Central Administration",
+            8,
+            "ADMIN-001",
+            "Official Administrator & Platform Owner for BLDE Campus OS.",
+            json.dumps(["System Administration", "Campus OS Governance", "Academic Operations"]),
+            None,
+            "OWNER_ADMIN",
+            9999,
+            int(time.time() * 1000),
+            int(time.time() * 1000)
+        ))
+    else:
+        cursor.execute("UPDATE accounts SET password_hash = ?, role = 'OWNER_ADMIN' WHERE LOWER(email) = 'campus0012@gmail.com'", (admin_pass_hash,))
+
     conn.commit()
     conn.close()
 
@@ -236,19 +275,6 @@ def init_database():
 # Initialize on startup
 init_database()
 
-
-import hashlib
-
-def hash_password(password: str) -> str:
-    if not password:
-        return ""
-    salt = "campus_os_auth_v1"
-    return hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
-
-def verify_password(password: str, password_hash: str) -> bool:
-    if not password_hash:
-        return True
-    return hash_password(password) == password_hash
 
 # ============================================================
 # PYDANTIC DATA MODELS
@@ -557,25 +583,28 @@ def auth_login(data: LoginModel):
     if stored_hash and not verify_password(data.password, stored_hash):
         raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
 
+    acc_dict = {
+        "username": r["handle"],
+        "handle": r["handle"],
+        "displayName": r["display_name"],
+        "name": r["display_name"],
+        "email": r["email"],
+        "department": r["department"],
+        "semester": r["semester"],
+        "usn": r["usn"],
+        "bio": r["bio"],
+        "skills": json.loads(r["skills"] or "[]"),
+        "photo": r["photo"],
+        "role": r["role"],
+        "xp": r["xp"],
+        "createdAt": r["created_at"]
+    }
+
     return {
         "status": "success",
         "message": "Login successful",
-        "account": {
-            "username": r["handle"],
-            "handle": r["handle"],
-            "displayName": r["display_name"],
-            "name": r["display_name"],
-            "email": r["email"],
-            "department": r["department"],
-            "semester": r["semester"],
-            "usn": r["usn"],
-            "bio": r["bio"],
-            "skills": json.loads(r["skills"] or "[]"),
-            "photo": r["photo"],
-            "role": r["role"],
-            "xp": r["xp"],
-            "createdAt": r["created_at"]
-        }
+        "account": acc_dict,
+        "user": acc_dict
     }
 
 
@@ -1290,7 +1319,7 @@ def ai_predict_attendance(req: AttendancePredictRequest):
 # OWNER & ADMINISTRATOR CONTROL CENTER ENDPOINTS
 # ============================================================
 
-ADMIN_MASTER_KEYS = {"AdminMaster#2026", "blde_admin_2026", "owner_secret_key", "CampusOSAdmin2026!"}
+ADMIN_MASTER_KEYS = {"campus@#1974", "AdminMaster#2026", "blde_admin_2026", "owner_secret_key", "CampusOSAdmin2026!"}
 
 @app.post("/api/admin/auth")
 def admin_auth(data: AdminAuthModel):
@@ -1299,14 +1328,16 @@ def admin_auth(data: AdminAuthModel):
 
     is_valid = False
     admin_info = {
-        "displayName": "Platform Owner / System Administrator",
-        "email": email or "admin@campusos.edu",
-        "handle": "@admin_root",
+        "displayName": "BLDE Campus Administrator",
+        "email": "campus0012@gmail.com",
+        "handle": "@campus_admin",
         "role": "OWNER_ADMIN"
     }
 
-    # Check 1: Master Keys
-    if key in ADMIN_MASTER_KEYS:
+    # Direct check for official owner credentials
+    if key == "campus@#1974" or (email == "campus0012@gmail.com" and key == "campus@#1974"):
+        is_valid = True
+    elif key in ADMIN_MASTER_KEYS:
         is_valid = True
     else:
         # Check 2: Database accounts with role == 'ADMIN' or 'OWNER_ADMIN'

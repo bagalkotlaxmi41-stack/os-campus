@@ -926,7 +926,7 @@
         </div>
 
         <div class="gatekeeper-demo-tip" style="margin-top:16px;">
-          <strong>🔒 High-Security Master Key:</strong> Enter master key <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">AdminMaster#2026</code> or registered administrator password to unlock.
+          <strong>🔒 Administrator Credentials:</strong> Email: <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">campus0012@gmail.com</code> | Password: <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">campus@#1974</code>
         </div>
       </form>
     </div>
@@ -1366,15 +1366,17 @@
           }
         }
 
-        // Master key local verification fallback
-        const validMasterKeys = ['AdminMaster#2026', 'blde_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
-        if (authResult || validMasterKeys.includes(key)) {
+        // Master key & official admin local verification fallback
+        const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'blde_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
+        const isOwnerCreds = (email === 'campus0012@gmail.com' && key === 'campus@#1974') || validMasterKeys.includes(key);
+
+        if (authResult || isOwnerCreds) {
           failedAdminAttempts = 0;
           const adminData = authResult?.admin || {
-            displayName: 'Platform Owner / Administrator',
-            email: email || 'admin@campusos.edu',
+            displayName: 'BLDE Campus Administrator',
+            email: email || 'campus0012@gmail.com',
             role: 'OWNER_ADMIN',
-            handle: '@admin_root'
+            handle: '@campus_admin'
           };
           const token = authResult?.token || 'adm_token_' + Date.now();
           Storage.setAdminSession(token, adminData, true);
