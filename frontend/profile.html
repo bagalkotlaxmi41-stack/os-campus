@@ -1781,23 +1781,8 @@ async function executeDeleteAccount() {
     return;
   }
 
-  // 1. Delete from backend
-  if (window.PythonAPI) {
-    try {
-      await fetch(`http://localhost:8000/api/accounts/${encodeURIComponent(handle)}`, { method: 'DELETE' });
-    } catch (e) {
-      console.warn('Backend delete notification:', e);
-    }
-  }
-
-  // 2. Delete from Storage
-  const accounts = Storage.getAccounts().filter(a => (a.username || a.handle || '').toLowerCase() !== handle.toLowerCase());
-  Storage.setAccounts(accounts);
-
-  const posts = Storage.getPosts().filter(p => (p.handle || '').toLowerCase() !== handle.toLowerCase());
-  Storage.setPosts(posts);
-
-  Storage.clearUser();
+  // Permanently delete account and all data
+  Storage.deleteAccount(handle);
 
   alert('🗑️ Your account and all associated study materials have been permanently deleted.');
   window.location.href = 'index.html';

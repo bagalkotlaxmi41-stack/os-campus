@@ -586,86 +586,84 @@
   // =====================================================
   // SIGN IN
   // =====================================================
-  function doLogin() {
+  async function doLogin() {
     var email = (document.getElementById('loginEmail').value || '').trim();
     var pass  = (document.getElementById('loginPass').value  || '').trim();
 
-    if (!email) { alert('Please enter your email address.'); return; }
+    if (!email) { alert('Please enter your email address or @handle.'); return; }
+    if (!pass) { alert('Please enter your password.'); return; }
 
     var btn = document.getElementById('loginBtn');
     btn.disabled = true;
     btn.textContent = 'Signing in…';
 
-    // Build local user from email
-    function localLogin() {
-      var name = email.split('@')[0]
-        .replace(/[._\-]/g, ' ')
-        .replace(/(\b\w)/g, function(c){ return c.toUpperCase(); });
-
-      var user = {
-        uid: 'user-' + Date.now(),
-        displayName: name,
-        email: email,
-        username: '@' + email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
-        college: 'Central Institute of Technology',
-        department: 'Computer Science',
-        program: 'B.Tech',
-        semester: 5,
-        bio: '',
-        xp: 250,
-        skills: [],
-        interests: [],
-        role: 'STUDENT',
-        status: 'ACTIVE',
-        joinedAt: Date.now()
-      };
-      Storage.setUser(user);
-      window.location.href = 'dashboard.html';
-    }
-
-    // Try backend (max 3 s), always fall back to local
-    var done = false;
-    var timer = setTimeout(function() {
-      if (!done) { done = true; localLogin(); }
-    }, 3000);
-
-    fetch('http://localhost:8000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pass })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (done) return;
-      done = true; clearTimeout(timer);
-      if (data && data.user) {
-        Storage.setUser(data.user);
-        window.location.href = 'dashboard.html';
-      } else {
-        localLogin();
+    try {
+      let user = null;
+      if (window.PythonAPI && PythonAPI.login) {
+        try {
+          user = await PythonAPI.login(email, pass);
+        } catch (apiErr) {
+          console.warn('API login note:', apiErr);
+          if (apiErr.message && apiErr.message.includes('password')) {
+            btn.disabled = false;
+            btn.textContent = 'Sign In →';
+            alert('❌ Incorrect password. Please try again.');
+            return;
+          }
+        }
       }
-    })
-    .catch(function() {
-      if (done) return;
-      done = true; clearTimeout(timer);
-      localLogin();
-    });
+
+      if (!user) {
+        user = Storage.authenticate(email, pass);
+      }
+
+      if (user) {
+        Storage.setUser(user);
+        window.location.href = 'profile.html';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Sign In →';
+        alert('❌ Account not found or incorrect credentials. Please register or check your password.');
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Sign In →';
+      alert('Login error: ' + (e.message || 'Unable to sign in'));
+    }
   }
 
   // =====================================================
   // REGISTER — Step 1 → Step 2
   // =====================================================
-  function goStep2() {
+  async function goStep2() {
     var name  = (document.getElementById('regName').value  || '').trim();
     var email = (document.getElementById('regEmail').value || '').trim();
     var pass  = (document.getElementById('regPass').value  || '');
 
     var ok = true;
-    if (!name)                      { err('errName',  true); ok = false; } else { err('errName',  false); }
+    if (!name)                          { err('errName',  true); ok = false; } else { err('errName',  false); }
     if (!email || !email.includes('@')) { err('errEmail', true); ok = false; } else { err('errEmail', false); }
-    if (pass.length < 6)            { err('errPass',  true); ok = false; } else { err('errPass',  false); }
+    if (pass.length < 6)                { err('errPass',  true); ok = false; } else { err('errPass',  false); }
 
     if (!ok) return;
+
+    // Check if account with this email already exists
+    const existingAcc = Storage.getAccounts().find(a => (a.email || '').toLowerCase() === email.toLowerCase());
+    if (existingAcc) {
+      // Check if password matches
+      if (existingAcc.password === pass || !existingAcc.password) {
+        Storage.setUser(existingAcc);
+        alert(`👋 Welcome back, ${existingAcc.displayName || existingAcc.name}! Your account was already registered. Signed you in automatically.`);
+        window.location.href = 'profile.html';
+        return;
+      } else {
+        alert(`⚠️ An account with email "${email}" is already registered. Please sign in with your password.`);
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPass').value = '';
+        showPanel('login');
+        return;
+      }
+    }
 
     // Pre-fill username from email
     var suggestedHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -725,7 +723,7 @@
   // =====================================================
   // REGISTER — Complete
   // =====================================================
-  function doRegister() {
+  async function doRegister() {
     var username = (document.getElementById('regUsername').value || '').trim();
     if (!username || username.length < 3) {
       err('errUsername', true);
@@ -742,6 +740,11 @@
     var pass  = (document.getElementById('regPass').value  || '');
     var handle = '@' + username.replace(/^@/, '');
     var usn = (document.getElementById('regUSN')?.value || '').trim();
+    var college = (document.getElementById('regCollege')?.value || '').trim() || 'BLDEA Campus Jamkhandi';
+    var dept = document.getElementById('regDept').value;
+    var program = document.getElementById('regProgram').value;
+    var sem = parseInt(document.getElementById('regSem').value, 10) || 5;
+    var bio = (document.getElementById('regBio')?.value || '').trim() || `${program} Student studying ${dept}`;
 
     var user = {
       uid:         'user-' + Date.now(),
@@ -751,21 +754,20 @@
       username:    handle,
       handle:      handle,
       usn:         usn || null,
-      college:     (document.getElementById('regCollege').value || '').trim() || 'BLDEA Campus Jamkhandi',
-      department:  document.getElementById('regDept').value,
-      program:     document.getElementById('regProgram').value,
-      semester:    parseInt(document.getElementById('regSem').value, 10),
-      bio:         (document.getElementById('regBio').value || '').trim(),
+      college:     college,
+      department:  dept,
+      program:     program,
+      semester:    sem,
+      bio:         bio,
       photo:       _selectedAuthPhotoBase64 || null,
       xp:          150,
-      skills:      [],
+      skills:      ['Academic Learner'],
       interests:   [],
       role:        'STUDENT',
       status:      'ACTIVE',
-      joinedAt:    Date.now()
+      joinedAt:    Date.now(),
+      password:    pass
     };
-
-    user.password = pass;
 
     // Save locally to Storage & accounts directory
     Storage.setUser(user);
@@ -774,16 +776,18 @@
       Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
     }
 
+    // Try backend API registration
+    if (window.PythonAPI && PythonAPI.register) {
+      try {
+        await PythonAPI.register(user);
+      } catch (e) {
+        console.warn('Account register API note:', e);
+      }
+    }
+
     // Update success message
     document.getElementById('successMsg').textContent =
       'Welcome, ' + name + '! Your ' + user.program + ' (' + user.department + ') student profile is ready.';
-
-    // Try backend API registration in background
-    if (window.PythonAPI && PythonAPI.register) {
-      PythonAPI.register(user).catch(function(e){ console.warn('Account register note:', e); });
-    } else if (window.PythonAPI && PythonAPI.saveAccount) {
-      PythonAPI.saveAccount(user).catch(function(e){ console.warn('Account sync note:', e); });
-    }
 
     // Show success immediately
     showPanel('success');

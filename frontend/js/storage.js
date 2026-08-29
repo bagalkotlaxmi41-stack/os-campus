@@ -150,6 +150,7 @@ const Storage = {
     if (!account) return;
     const rawHandle = account.username || account.handle || (account.name ? '@' + account.name.toLowerCase().replace(/\s+/g, '_') : '@student');
     const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+    const emailClean = (account.email || '').trim().toLowerCase();
     
     const accounts = this.getAccounts();
     const updatedAccount = {
@@ -158,16 +159,23 @@ const Storage = {
       handle: handle,
       displayName: account.displayName || account.name || 'Student',
       name: account.displayName || account.name || 'Student',
+      email: account.email || '',
       department: account.department || 'Computer Science & Engineering',
       semester: Number(account.semester) || 5,
       updatedAt: Date.now()
     };
 
-    const index = accounts.findIndex(a => (a.username || a.handle || '').toLowerCase() === handle.toLowerCase());
+    // Match existing by handle OR email to prevent duplicate accounts
+    const index = accounts.findIndex(a => {
+      const aHandle = (a.username || a.handle || '').toLowerCase();
+      const aEmail = (a.email || '').trim().toLowerCase();
+      return aHandle === handle.toLowerCase() || (emailClean && aEmail === emailClean);
+    });
+
     if (index >= 0) {
       accounts[index] = { ...accounts[index], ...updatedAccount };
     } else {
-      accounts.push({ ...updatedAccount, createdAt: Date.now() });
+      accounts.push({ ...updatedAccount, createdAt: account.createdAt || Date.now() });
     }
     this.setAccounts(accounts);
 
@@ -178,10 +186,59 @@ const Storage = {
 
     return updatedAccount;
   },
+  deleteAccount(handle) {
+    if (!handle) return false;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    
+    // 1. Remove from accounts array
+    const accounts = this.getAccounts().filter(a => (a.username || a.handle || '').toLowerCase() !== clean);
+    this.setAccounts(accounts);
+
+    // 2. Remove all posts by this account
+    const posts = this.getPosts().filter(p => (p.handle || '').toLowerCase() !== clean);
+    this.setPosts(posts);
+
+    // 3. Remove photo
+    try {
+      localStorage.removeItem('cos_photo_' + clean);
+    } catch (e) {}
+
+    // 4. If current user is this account, clear user
+    const u = this.getUser();
+    if (u && (u.username || u.handle || '').toLowerCase() === clean) {
+      this.clearUser();
+    }
+
+    // 5. Sync deletion with Backend API
+    if (window.PythonAPI && PythonAPI.deleteAccount) {
+      PythonAPI.deleteAccount(clean).catch(e => console.warn('Delete account API sync:', e));
+    }
+
+    return true;
+  },
   getAccountByHandle(handle) {
     if (!handle) return null;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
     return this.getAccounts().find(a => (a.username || a.handle || '').toLowerCase() === clean) || null;
+  },
+  authenticate(identifier, password) {
+    if (!identifier || !password) return null;
+    const cleanIdent = identifier.trim().toLowerCase();
+    const cleanHandle = cleanIdent.startsWith('@') ? cleanIdent : '@' + cleanIdent;
+    const accounts = this.getAccounts();
+    
+    const acc = accounts.find(a => {
+      const aEmail = (a.email || '').trim().toLowerCase();
+      const aHandle = (a.username || a.handle || '').trim().toLowerCase();
+      return aEmail === cleanIdent || aHandle === cleanHandle;
+    });
+
+    if (acc) {
+      if (!acc.password || acc.password === password) {
+        return acc;
+      }
+    }
+    return null;
   },
   searchAccounts(query) {
     const list = [...this.getAccounts()];

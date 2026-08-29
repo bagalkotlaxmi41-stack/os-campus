@@ -134,10 +134,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return; 
     }
 
-    // Enforce Strict One Email One Account
-    if (Storage.isEmailTaken(email)) {
-      showToast('Email in use', 'An account with this email is already registered. Please sign in with your password.', 'error');
-      return;
+    // Check if account already exists
+    const existingAcc = Storage.getAccounts().find(a => (a.email || '').toLowerCase() === email.toLowerCase());
+    if (existingAcc) {
+      if (existingAcc.password === pass || !existingAcc.password) {
+        Storage.setUser(existingAcc);
+        showToast('Welcome back!', `Account exists — logged in automatically as ${(existingAcc.displayName || existingAcc.name || 'Student').split(' ')[0]} 👋`, 'success');
+        setTimeout(() => window.location.href = 'profile.html', 500);
+        return;
+      } else {
+        showToast('Account Exists', 'An account with this email already exists. Please sign in with your password.', 'warning');
+        switchTab('login');
+        const loginEmailInput = document.getElementById('login-email');
+        if (loginEmailInput) loginEmailInput.value = email;
+        return;
+      }
     }
 
     setLoading(btn, true);

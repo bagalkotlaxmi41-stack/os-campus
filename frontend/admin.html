@@ -954,6 +954,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         <span>Dashboard</span>
       </a>
+      <button class="admin-nav-btn" onclick="loadAllAdminData(true)" title="Refresh data now" style="border-color:rgba(139,92,246,0.3); background:rgba(124,58,237,0.15);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <span>Live Sync 🔄</span>
+      </button>
       <button class="admin-exit-btn" onclick="exitAdminSession()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         <span>Exit Session</span>
@@ -1659,17 +1663,14 @@
     async function confirmDeleteAccount(handle) {
       if (!confirm(`⚠️ Are you sure you want to permanently delete student account (${handle}) and all their materials?`)) return;
 
-      if (window.PythonAPI) {
-        try {
-          await fetch(`http://localhost:8000/api/accounts/${encodeURIComponent(handle)}`, { method: 'DELETE' });
-        } catch (e) {}
-      }
+      // 1. Permanently delete from Storage (handles posts, photos, and API sync)
+      Storage.deleteAccount(handle);
 
+      // 2. Remove from active in-memory admin list
       allAdminAccounts = allAdminAccounts.filter(a => (a.handle || a.username || '').toLowerCase() !== handle.toLowerCase());
-      Storage.setAccounts(allAdminAccounts);
 
-      showAdminToast(`Account ${handle} deleted successfully.`);
-      loadAllAdminData();
+      showAdminToast(`Account ${handle} deleted permanently.`);
+      await loadAllAdminData();
     }
 
     function exportAccountsCSV() {
@@ -1967,9 +1968,23 @@
       }).join('');
     }
 
-    // Initialize on load
+    // Initialize on load & setup auto-refresh
     document.addEventListener('DOMContentLoaded', () => {
       checkAdminAuth();
+
+      // Automatic live data polling every 10 seconds
+      setInterval(() => {
+        if (Storage.isAdmin && Storage.isAdmin()) {
+          loadAllAdminData();
+        }
+      }, 10000);
+
+      // Refresh on tab focus
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && Storage.isAdmin && Storage.isAdmin()) {
+          loadAllAdminData();
+        }
+      });
     });
   </script>
 </body>
