@@ -901,32 +901,31 @@
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
       </div>
-      <h2 class="gatekeeper-title">Owner & Admin Control Suite</h2>
-      <p class="gatekeeper-subtitle">Restricted access portal for BLDE Campus OS administrators. Please enter your Master Key to authenticate.</p>
+      <h2 class="gatekeeper-title">Owner & Admin Access</h2>
+      <p class="gatekeeper-subtitle">Restricted authentication portal for BLDE Campus OS administrators. Please sign in with your administrative credentials.</p>
 
       <form id="gatekeeperForm" onsubmit="handleGatekeeperAuth(event)">
         <div class="gatekeeper-input-group">
-          <label class="gatekeeper-label">MASTER ACCESS KEY / ADMIN PASSWORD</label>
-          <input type="password" class="gatekeeper-input" id="adminKeyInput" placeholder="Enter owner master key..." required autocomplete="current-password" />
+          <label class="gatekeeper-label">ADMINISTRATOR EMAIL</label>
+          <input type="email" class="gatekeeper-input" id="adminEmailInput" placeholder="admin@domain.com" required autocomplete="email" />
         </div>
 
         <div class="gatekeeper-input-group">
-          <label class="gatekeeper-label">ADMINISTRATOR EMAIL (OPTIONAL)</label>
-          <input type="email" class="gatekeeper-input" id="adminEmailInput" placeholder="admin@campusos.edu" />
+          <label class="gatekeeper-label">ADMIN PASSWORD / MASTER KEY</label>
+          <div style="position:relative;">
+            <input type="password" class="gatekeeper-input" id="adminKeyInput" placeholder="••••••••••••" required autocomplete="current-password" style="padding-right:42px;" />
+            <button type="button" onclick="toggleAdminPasswordVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#a78bfa; cursor:pointer; font-size:14px; padding:4px;" title="Show/Hide password">👁️</button>
+          </div>
         </div>
 
         <button type="submit" class="gatekeeper-submit-btn" id="gatekeeperSubmitBtn">
-          <span>⚡ Unlock Control Center</span>
+          <span>⚡ Sign In to Admin Console</span>
         </button>
 
         <div style="margin-top:14px; text-align:center;">
           <a href="index.html" style="color:#94a3b8; font-size:12px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
             <span>← Return to Student Portal</span>
           </a>
-        </div>
-
-        <div class="gatekeeper-demo-tip" style="margin-top:16px;">
-          <strong>🔒 Administrator Credentials:</strong> Email: <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">campus0012@gmail.com</code> | Password: <code style="color:#fff;background:rgba(0,0,0,0.4);padding:2px 5px;border-radius:4px;">campus@#1974</code>
         </div>
       </form>
     </div>
@@ -1337,6 +1336,12 @@
       }
     }
 
+    function toggleAdminPasswordVisibility() {
+      const input = document.getElementById('adminKeyInput');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
     let failedAdminAttempts = 0;
     let adminLockoutUntil = 0;
 
@@ -1350,7 +1355,7 @@
       }
 
       const key = document.getElementById('adminKeyInput').value.trim();
-      const email = document.getElementById('adminEmailInput').value.trim();
+      const email = document.getElementById('adminEmailInput').value.trim().toLowerCase();
       const submitBtn = document.getElementById('gatekeeperSubmitBtn');
 
       submitBtn.innerHTML = '<span>Verifying credentials...</span>';
@@ -1390,13 +1395,13 @@
             adminLockoutUntil = Date.now() + 20000;
             alert('❌ Access Denied: 3 incorrect attempts. Security locked for 20 seconds.');
           } else {
-            alert(`❌ Access Denied: Invalid Master Access Key or Administrator Password (${3 - failedAdminAttempts} attempts remaining).`);
+            alert(`❌ Access Denied: Invalid Administrator Email or Password (${3 - failedAdminAttempts} attempts remaining).`);
           }
         }
       } catch (err) {
         alert('❌ Authentication failed: ' + (err.message || 'Access denied'));
       } finally {
-        submitBtn.innerHTML = '<span>⚡ Unlock Control Center</span>';
+        submitBtn.innerHTML = '<span>⚡ Sign In to Admin Console</span>';
         submitBtn.disabled = false;
       }
     }

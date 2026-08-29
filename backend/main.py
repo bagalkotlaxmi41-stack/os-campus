@@ -265,7 +265,7 @@ def init_database():
             int(time.time() * 1000)
         ))
     else:
-        cursor.execute("UPDATE accounts SET password_hash = ?, role = 'OWNER_ADMIN' WHERE LOWER(email) = 'campus0012@gmail.com'", (admin_pass_hash,))
+        cursor.execute("UPDATE accounts SET password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
     conn.commit()
     conn.close()
