@@ -395,16 +395,17 @@ def get_all_accounts():
 
 
 @app.get("/api/accounts/search")
-def search_accounts(q: str = Query("", description="Search term for name, handle, department, USN, skill")):
+def search_accounts(q: str = Query("", description="Search term for name, handle, department, USN, skill, email")):
     conn = get_db()
     cursor = conn.cursor()
-    term = f"%{q.lower().strip()}%"
+    clean_q = q.lower().strip().replace("@", "")
+    term = f"%{clean_q}%"
     cursor.execute("""
     SELECT * FROM accounts
-    WHERE LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ? OR LOWER(department) LIKE ? OR LOWER(usn) LIKE ? OR LOWER(skills) LIKE ?
-    ORDER BY xp DESC
-    LIMIT 20
-    """, (term, term, term, term, term))
+    WHERE LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ? OR LOWER(department) LIKE ? OR LOWER(usn) LIKE ? OR LOWER(skills) LIKE ? OR LOWER(email) LIKE ? OR LOWER(bio) LIKE ?
+    ORDER BY xp DESC, created_at DESC
+    LIMIT 50
+    """, (term, term, term, term, term, term, term))
     rows = cursor.fetchall()
     conn.close()
 
@@ -424,6 +425,8 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
             "photo": r["photo"],
             "role": r["role"],
             "xp": r["xp"],
+            "createdAt": r["created_at"],
+            "updatedAt": r["updated_at"]
         })
     return result
 

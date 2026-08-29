@@ -59,15 +59,19 @@ const Storage = {
         const remoteAccounts = await PythonAPI.getAccounts();
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           const localAccs = this.getAccounts();
-          const handles = new Set(localAccs.map(a => (a.username || a.handle || '').toLowerCase()));
+          const map = new Map();
+          localAccs.forEach(a => {
+            const h = (a.username || a.handle || '').toLowerCase();
+            if (h) map.set(h, a);
+          });
           remoteAccounts.forEach(acc => {
             const h = (acc.username || acc.handle || '').toLowerCase();
-            if (!handles.has(h)) {
-              localAccs.push(acc);
-              handles.add(h);
+            if (h) {
+              const existing = map.get(h) || {};
+              map.set(h, { ...existing, ...acc });
             }
           });
-          this.setAccounts(localAccs);
+          this.setAccounts(Array.from(map.values()));
         }
 
         // Sync Posts from Backend
@@ -190,15 +194,18 @@ const Storage = {
     }
     if (!query || !query.trim()) return list;
     const q = query.toLowerCase().trim().replace(/^@/, '');
+    const tokens = q.split(/\s+/).filter(Boolean);
     return list.filter(a => {
       const name = (a.displayName || a.name || '').toLowerCase();
       const handle = (a.username || a.handle || '').toLowerCase().replace(/^@/, '');
+      const email = (a.email || '').toLowerCase();
       const dept = (a.department || '').toLowerCase();
       const prog = (a.program || '').toLowerCase();
       const usn = (a.usn || '').toLowerCase();
       const bio = (a.bio || '').toLowerCase();
       const skills = (Array.isArray(a.skills) ? a.skills : []).map(s => String(s).toLowerCase()).join(' ');
-      return name.includes(q) || handle.includes(q) || dept.includes(q) || prog.includes(q) || usn.includes(q) || bio.includes(q) || skills.includes(q);
+      const text = `${name} ${handle} ${email} ${dept} ${prog} ${usn} ${bio} ${skills}`;
+      return tokens.every(tok => text.includes(tok));
     });
   },
 
