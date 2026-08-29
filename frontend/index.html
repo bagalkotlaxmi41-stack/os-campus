@@ -1078,6 +1078,28 @@
       padding: 16px;
     }
 
+    .search-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #c4b5fd;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .search-chip:hover {
+      background: rgba(124, 58, 237, 0.25);
+      border-color: rgba(139, 92, 246, 0.5);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
     /* ---- FOOTER ---- */
     .campus-mega-footer {
       background: #04030a;
@@ -2264,6 +2286,15 @@ async function executeModalAccountLogin(e) {
 // =====================================================
 // GLOBAL LIVE SEARCH OVERLAY
 // =====================================================
+function applySearchQuery(str) {
+  const input = document.getElementById('globalLiveSearchInput');
+  if (input) {
+    input.value = str;
+    input.focus();
+    executeLiveSearch(str);
+  }
+}
+
 async function openSearchOverlay() {
   const backdrop = document.getElementById('searchBackdrop');
   if (backdrop) {
@@ -2274,14 +2305,16 @@ async function openSearchOverlay() {
       input.focus();
     }
     
-    // Instantly display all created accounts & background sync
+    // Start clean with interactive quick search suggestions
     executeLiveSearch('');
 
+    // Background sync fresh accounts from cloud
     if (window.PythonAPI && PythonAPI.getAccounts) {
       PythonAPI.getAccounts().then(remoteAccounts => {
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           remoteAccounts.forEach(acc => Storage.addAccount(acc));
-          executeLiveSearch(document.getElementById('globalLiveSearchInput')?.value || '');
+          const curVal = document.getElementById('globalLiveSearchInput')?.value || '';
+          if (curVal.trim()) executeLiveSearch(curVal);
         }
       }).catch(e => console.warn('Search background sync:', e));
     }
@@ -2304,12 +2337,36 @@ function renderSearchResults(accounts, posts, tools, query) {
   const resultsBox = document.getElementById('globalSearchResults');
   if (!resultsBox) return;
 
+  const q = (query || '').trim();
+
+  // If search query is empty, render clean initial state
+  if (!q) {
+    resultsBox.innerHTML = `
+      <div style="padding:28px 16px; text-align:center;">
+        <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+        <div style="font-size:15px; font-weight:800; color:#fff; margin-bottom:6px;">Search Across Campus OS</div>
+        <div style="font-size:12.5px; color:#94a3b8; max-width:420px; margin:0 auto 20px; line-height:1.5;">
+          Search real registered students, peer @handles, verified USNs, study notes, formula sheets, and academic tools.
+        </div>
+        <div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">Quick Suggestions</div>
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+          <span class="search-chip" onclick="applySearchQuery('Computer Science')">💻 Computer Science</span>
+          <span class="search-chip" onclick="applySearchQuery('BCA')">🎓 BCA</span>
+          <span class="search-chip" onclick="applySearchQuery('Notes')">📝 Study Notes</span>
+          <span class="search-chip" onclick="applySearchQuery('Timetable')">📅 Timetable</span>
+          <span class="search-chip" onclick="applySearchQuery('Attendance')">📈 Attendance Radar</span>
+          <span class="search-chip" onclick="applySearchQuery('VTU')">📚 Question Bank</span>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   let html = '';
 
   // 1. Registered Students & Peers
   if (accounts.length > 0) {
-    const title = query ? `Matching Registered Students (${accounts.length})` : `All Registered Students & Peers (${accounts.length})`;
-    html += `<div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">${title}</div>`;
+    html += `<div style="font-size:11px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; padding:0 8px;">Matching Registered Students (${accounts.length})</div>`;
     html += accounts.map(acc => {
       const name = acc.displayName || acc.name || 'Student';
       const rawHandle = acc.username || acc.handle || '@student';
@@ -2377,7 +2434,14 @@ function renderSearchResults(accounts, posts, tools, query) {
   }
 
   if (!html) {
-    html = `<div style="text-align:center; padding:30px 20px; color:#64748b; font-size:13px;">No matching registered students found for "${escapeHtml(query)}".</div>`;
+    html = `
+      <div style="text-align:center; padding:36px 20px;">
+        <div style="font-size:28px; margin-bottom:8px;">🔭</div>
+        <div style="font-size:14px; font-weight:800; color:#fff; margin-bottom:4px;">No results found for "${escapeHtml(query)}"</div>
+        <div style="font-size:12px; color:#94a3b8; max-width:360px; margin:0 auto 16px;">Try searching by student name, @handle, USN roll number, or department.</div>
+        <button class="search-chip" onclick="applySearchQuery('')" style="color:#a78bfa;">Clear Search</button>
+      </div>
+    `;
   }
 
   resultsBox.innerHTML = html;
@@ -2385,9 +2449,15 @@ function renderSearchResults(accounts, posts, tools, query) {
 
 async function executeLiveSearch(query) {
   const q = (query || '').trim().toLowerCase();
+  
+  if (!q) {
+    renderSearchResults([], [], [], '');
+    return;
+  }
+
   let accounts = Storage.searchAccounts(q);
   const allPosts = Storage.getPosts();
-  const matchingPosts = q ? allPosts.filter(p => (p.title || '').toLowerCase().includes(q) || (p.desc || '').toLowerCase().includes(q) || (p.subject || '').toLowerCase().includes(q)) : [];
+  const matchingPosts = allPosts.filter(p => (p.title || '').toLowerCase().includes(q) || (p.desc || '').toLowerCase().includes(q) || (p.subject || '').toLowerCase().includes(q));
 
   const tools = [
     { name: 'Academic Dashboard', desc: 'GPA targets & semester tracker', url: 'dashboard.html', icon: '📊' },
@@ -2397,12 +2467,12 @@ async function executeLiveSearch(query) {
     { name: 'Tasks & Deadlines', desc: 'Kanban assignment planner', url: 'tasks.html', icon: '✅' },
     { name: 'VTU Question Bank', desc: 'Previous years papers & syllabus', url: 'resources.html', icon: '📚' },
     { name: 'Student Passport', desc: 'Digital ID passport & badges', url: 'profile.html', icon: '👤' }
-  ].filter(t => !q || t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+  ].filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
 
   // Render instant local results
-  renderSearchResults(accounts, matchingPosts, q ? tools : [], query);
+  renderSearchResults(accounts, matchingPosts, tools, query);
 
-  // Asynchronously query backend API and merge
+  // Asynchronously query backend API and merge fresh accounts
   if (window.PythonAPI && PythonAPI.searchAccounts) {
     try {
       const remote = await PythonAPI.searchAccounts(q);
@@ -2416,11 +2486,10 @@ async function executeLiveSearch(query) {
             handles.add(h);
             added = true;
           }
-          // Cache to local Storage
           Storage.addAccount(r);
         });
         if (added) {
-          renderSearchResults(accounts, matchingPosts, q ? tools : [], query);
+          renderSearchResults(accounts, matchingPosts, tools, query);
         }
       }
     } catch (err) {
@@ -2435,7 +2504,7 @@ document.getElementById('globalLiveSearchInput')?.addEventListener('input', func
   clearTimeout(liveSearchDebounce);
   liveSearchDebounce = setTimeout(() => {
     executeLiveSearch(query);
-  }, 60);
+  }, 40);
 });
 
 // =====================================================
