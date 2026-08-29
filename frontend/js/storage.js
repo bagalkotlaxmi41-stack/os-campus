@@ -15,7 +15,10 @@ const KEYS = {
   ATTENDANCE: 'cos_attendance',
   RESOURCES: 'cos_resources',
   SETTINGS: 'cos_settings',
-  PDF_DOCS: 'cos_pdf_documents'
+  PDF_DOCS: 'cos_pdf_documents',
+  BANNERS: 'cos_banners',
+  ADMIN_TOKEN: 'cos_admin_token',
+  ADMIN_USER: 'cos_admin_user'
 };
 
 const Storage = {
@@ -576,6 +579,79 @@ const Storage = {
     const list = this.getResources().filter(r => r.id !== id);
     this.setResources(list);
     return true;
+  },
+
+  // ---- Dynamic Hero Banners ----
+  getBanners() {
+    const fallback = [
+      {
+        id: "banner_1",
+        title: "Commerce, BHS Arts &<br /><span class=\"text-hero-gradient\">TGP Science College</span>",
+        subtitle: "Stay ahead with academic roadmaps, timetables, and VTU resource hubs.",
+        badge: "✨ BLDE Association's Campus · Jamkhandi",
+        cta_text: "📊 Open Dashboard →",
+        cta_url: "dashboard.html",
+        secondary_text: "🚀 Create Account",
+        secondary_url: "javascript:openAccountModal()",
+        image_url: "img/banner1.jpg",
+        active: 1
+      },
+      {
+        id: "banner_2",
+        title: "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>",
+        subtitle: "Check live timetable periods, room locations, and lab schedule allocations.",
+        badge: "📅 Class Timetables",
+        cta_text: "📅 View Timetable →",
+        cta_url: "timetable.html",
+        secondary_text: null,
+        secondary_url: null,
+        image_url: "img/banner2.jpg",
+        active: 1
+      },
+      {
+        id: "banner_3",
+        title: "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>",
+        subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access handwritten notes.",
+        badge: "🌟 75% Attendance Radar",
+        cta_text: "📈 Check Attendance",
+        cta_url: "attendance.html",
+        secondary_text: "📝 Notes Vault",
+        secondary_url: "notes.html",
+        image_url: "img/banner3.jpg",
+        active: 1
+      }
+    ];
+    return this.get(KEYS.BANNERS, fallback);
+  },
+  setBanners(banners) {
+    return this.set(KEYS.BANNERS, banners);
+  },
+
+  // ---- Admin Gatekeeper & Session ----
+  getAdminToken() {
+    return sessionStorage.getItem(KEYS.ADMIN_TOKEN) || localStorage.getItem(KEYS.ADMIN_TOKEN);
+  },
+  getAdminUser() {
+    return this.get(KEYS.ADMIN_USER, null);
+  },
+  setAdminSession(token, adminData, persist = false) {
+    if (persist) {
+      localStorage.setItem(KEYS.ADMIN_TOKEN, token);
+    } else {
+      sessionStorage.setItem(KEYS.ADMIN_TOKEN, token);
+    }
+    this.set(KEYS.ADMIN_USER, adminData);
+  },
+  clearAdminSession() {
+    sessionStorage.removeItem(KEYS.ADMIN_TOKEN);
+    localStorage.removeItem(KEYS.ADMIN_TOKEN);
+    this.remove(KEYS.ADMIN_USER);
+  },
+  isAdmin() {
+    const user = this.getUser();
+    if (user && (user.role === 'ADMIN' || user.role === 'OWNER_ADMIN')) return true;
+    const token = this.getAdminToken();
+    return !!token;
   },
 
   // ============================================================

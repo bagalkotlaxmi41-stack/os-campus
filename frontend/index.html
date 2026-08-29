@@ -1689,6 +1689,7 @@
         </span>
         <a href="profile.html" style="color:#64748b; text-decoration:none;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#64748b'">Student Passport</a>
         <a href="auth.html" style="color:#64748b; text-decoration:none;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#64748b'">Sign In / Register</a>
+        <a href="admin.html" style="color:#a78bfa; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" onmouseover="this.style.color='#c4b5fd'" onmouseout="this.style.color='#a78bfa'">👑 Owner Suite</a>
       </div>
     </div>
 
@@ -1904,27 +1905,78 @@
 
 <script>
 // =====================================================
-// HERO SLIDER
+// DYNAMIC HERO BANNER SLIDER ENGINE
 // =====================================================
 let currentHeroSlide = 0;
 let heroSlideTimer = null;
-const totalHeroSlides = 3;
+let activeHeroBanners = [];
+
+async function renderDynamicHeroSlider() {
+  let banners = Storage.getBanners();
+  if (window.PythonAPI && PythonAPI.getBanners) {
+    try {
+      const remote = await PythonAPI.getBanners();
+      if (remote && remote.length > 0) banners = remote;
+    } catch (e) {}
+  }
+
+  activeHeroBanners = banners.filter(b => b.active !== 0);
+  if (activeHeroBanners.length === 0) activeHeroBanners = banners;
+
+  const slidesWrapper = document.querySelector('.hero-slides-wrapper');
+  const dotsBar = document.getElementById('sliderDotsBar');
+  if (!slidesWrapper || !dotsBar) return;
+
+  slidesWrapper.innerHTML = activeHeroBanners.map((b, idx) => {
+    const isFirst = idx === 0 ? 'active' : '';
+    const secondaryBtnHtml = b.secondary_text
+      ? `<a href="${b.secondary_url || 'javascript:void(0)'}" class="hero-btn-secondary" ${b.secondary_url && b.secondary_url.startsWith('javascript:') ? `onclick="${b.secondary_url.replace('javascript:', '')}"` : ''}><span>${b.secondary_text}</span></a>`
+      : '';
+
+    return `
+      <div class="hero-slide ${isFirst}" data-slide="${idx}">
+        <div class="hero-slide-bg" style="background-image: url('${b.image_url || 'img/banner1.jpg'}');"></div>
+        <div class="hero-slide-overlay">
+          <div class="hero-slide-content">
+            <div class="hero-glow-badge">${b.badge || '✨ Campus Update'}</div>
+            <h1 class="hero-title-text">${b.title}</h1>
+            ${b.subtitle ? `<p style="font-size:14px;color:#cbd5e1;margin-bottom:18px;max-width:550px;line-height:1.5;">${b.subtitle}</p>` : ''}
+            <div class="hero-cta-group">
+              <a href="${b.cta_url || 'dashboard.html'}" class="hero-btn-primary">
+                <span>${b.cta_text || 'Explore Now →'}</span>
+              </a>
+              ${secondaryBtnHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  dotsBar.innerHTML = activeHeroBanners.map((_, idx) => `
+    <div class="slider-indicator-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>
+  `).join('');
+
+  setHeroSlide(0);
+  startHeroSlideTimer();
+}
 
 function setHeroSlide(idx) {
+  const total = activeHeroBanners.length || 3;
   const slides = document.querySelectorAll('.hero-slide');
   const dots = document.querySelectorAll('.slider-indicator-dot');
-  currentHeroSlide = (idx + totalHeroSlides) % totalHeroSlides;
+  currentHeroSlide = (idx + total) % total;
   slides.forEach((s, i) => s.classList.toggle('active', i === currentHeroSlide));
   dots.forEach((d, i) => d.classList.toggle('active', i === currentHeroSlide));
   const counter = document.getElementById('sliderCounterText');
   if (counter) {
-    counter.textContent = `0${currentHeroSlide + 1} / 0${totalHeroSlides}`;
+    counter.textContent = `0${currentHeroSlide + 1} / 0${total}`;
   }
 }
 
 function startHeroSlideTimer() {
   clearInterval(heroSlideTimer);
-  heroSlideTimer = setInterval(() => setHeroSlide(currentHeroSlide + 1), 5000);
+  heroSlideTimer = setInterval(() => setHeroSlide(currentHeroSlide + 1), 5500);
 }
 
 document.getElementById('sliderNextBtn')?.addEventListener('click', () => { setHeroSlide(currentHeroSlide + 1); startHeroSlideTimer(); });
@@ -2383,7 +2435,7 @@ window.addEventListener('scroll', () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
   syncNavbarUser();
-  startHeroSlideTimer();
+  renderDynamicHeroSlider();
 
   const user = Storage.getUser();
   if (!user && !sessionStorage.getItem('cos_account_prompted')) {

@@ -188,11 +188,47 @@ def init_database():
     )
     """)
 
+    # 10. Banners Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS banners (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        subtitle TEXT,
+        badge TEXT DEFAULT 'Campus Update',
+        cta_text TEXT DEFAULT 'Explore Now',
+        cta_url TEXT DEFAULT 'dashboard.html',
+        secondary_text TEXT,
+        secondary_url TEXT,
+        image_url TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        active INTEGER DEFAULT 1,
+        created_at INTEGER
+    )
+    """)
+
+    # Seed initial 3 default banners if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM banners")
+    if cursor.fetchone()["cnt"] == 0:
+        default_banners = [
+            ("banner_1", "Commerce, BHS Arts &<br /><span class=\"text-hero-gradient\">TGP Science College</span>", "Stay ahead with academic roadmaps, timetables, and VTU resource hubs.", "✨ BLDE Association's Campus · Jamkhandi", "📊 Open Dashboard →", "dashboard.html", "🚀 Create Account", "javascript:openAccountModal()", "img/banner1.jpg", 1, 1, int(time.time()*1000)),
+            ("banner_2", "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>", "Check live timetable periods, room locations, and lab schedule allocations.", "📅 Class Timetables", "📅 View Timetable →", "timetable.html", None, None, "img/banner2.jpg", 2, 1, int(time.time()*1000)),
+            ("banner_3", "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>", "Calculate safe bunk margins, track minimum 75% thresholds, and access handwritten notes.", "🌟 75% Attendance Radar", "📈 Check Attendance", "attendance.html", "📝 Notes Vault", "notes.html", "img/banner3.jpg", 3, 1, int(time.time()*1000))
+        ]
+        cursor.executemany("INSERT INTO banners VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", default_banners)
+
+    # 11. Admin Logs Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS admin_logs (
+        id TEXT PRIMARY KEY,
+        action TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        details TEXT,
+        target TEXT,
+        created_at INTEGER
+    )
+    """)
+
     conn.commit()
-
-    # No seed data — only real user-registered accounts are stored
-    pass
-
     conn.close()
 
 
@@ -236,6 +272,40 @@ class AccountModel(BaseModel):
 class LoginModel(BaseModel):
     identifier: str
     password: str
+
+
+class BannerModel(BaseModel):
+    id: Optional[str] = None
+    title: str
+    subtitle: Optional[str] = ""
+    badge: Optional[str] = "Campus Update"
+    cta_text: Optional[str] = "Explore Now"
+    cta_url: Optional[str] = "dashboard.html"
+    secondary_text: Optional[str] = None
+    secondary_url: Optional[str] = None
+    image_url: str
+    sort_order: Optional[int] = 0
+    active: Optional[int] = 1
+
+
+class AdminAuthModel(BaseModel):
+    key: str
+    email: Optional[str] = None
+
+
+class AdminRoleUpdateModel(BaseModel):
+    role: str
+
+
+class AdminPasswordResetModel(BaseModel):
+    new_password: str
+
+
+class BroadcastModel(BaseModel):
+    title: str
+    message: str
+    type: Optional[str] = "announcement"
+    author: Optional[str] = "Campus Administration"
 
 
 class PostCreateModel(BaseModel):
@@ -1211,6 +1281,338 @@ def ai_predict_attendance(req: AttendancePredictRequest):
             "required_classes": max(0, required),
             "recommendation": f"Alert! You must attend the next {max(0, required)} class(es) to maintain {target:.0f}% attendance."
         }
+
+
+# ============================================================
+# OWNER & ADMINISTRATOR CONTROL CENTER ENDPOINTS
+# ============================================================
+
+ADMIN_MASTER_KEYS = {"AdminMaster#2026", "blde_admin_2026", "owner_secret_key", "CampusOSAdmin2026!"}
+
+@app.post("/api/admin/auth")
+def admin_auth(data: AdminAuthModel):
+    key = data.key.strip()
+    email = (data.email or "").strip().lower()
+
+    is_valid = False
+    admin_info = {
+        "displayName": "Platform Owner / System Administrator",
+        "email": email or "admin@campusos.edu",
+        "handle": "@admin_root",
+        "role": "OWNER_ADMIN"
+    }
+
+    # Check 1: Master Keys
+    if key in ADMIN_MASTER_KEYS:
+        is_valid = True
+    else:
+        # Check 2: Database accounts with role == 'ADMIN' or 'OWNER_ADMIN'
+        conn = get_db()
+        cursor = conn.cursor()
+        if email:
+            cursor.execute("SELECT * FROM accounts WHERE LOWER(email) = ? AND (role = 'ADMIN' OR role = 'OWNER_ADMIN')", (email,))
+        else:
+            cursor.execute("SELECT * FROM accounts WHERE (role = 'ADMIN' OR role = 'OWNER_ADMIN')")
+        admin_rows = cursor.fetchall()
+        conn.close()
+
+        for row in admin_rows:
+            if row["password_hash"] and verify_password(key, row["password_hash"]):
+                is_valid = True
+                admin_info = {
+                    "displayName": row["display_name"],
+                    "email": row["email"],
+                    "handle": row["handle"],
+                    "role": row["role"]
+                }
+                break
+
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid Master Access Key or Administrator Password.")
+
+    now = int(time.time() * 1000)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "ADMIN_LOGIN",
+        admin_info["handle"],
+        f"Admin logged in successfully ({admin_info['displayName']})",
+        "System",
+        now
+    ))
+    conn.commit()
+    conn.close()
+
+    token = f"admin_token_{hashlib.sha256((key + str(time.time())).encode()).hexdigest()[:24]}"
+    return {
+        "status": "success",
+        "token": token,
+        "admin": admin_info
+    }
+
+
+@app.get("/api/admin/stats")
+def admin_stats():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Total Accounts
+    cursor.execute("SELECT COUNT(*) as cnt FROM accounts")
+    total_students = cursor.fetchone()["cnt"]
+
+    # Role breakdown
+    cursor.execute("SELECT role, COUNT(*) as cnt FROM accounts GROUP BY role")
+    role_breakdown = {r["role"]: r["cnt"] for r in cursor.fetchall()}
+
+    # Department breakdown
+    cursor.execute("SELECT department, COUNT(*) as cnt FROM accounts GROUP BY department")
+    branch_breakdown = {r["department"] or "General": r["cnt"] for r in cursor.fetchall()}
+
+    # Semester breakdown
+    cursor.execute("SELECT semester, COUNT(*) as cnt FROM accounts GROUP BY semester ORDER BY semester")
+    semester_breakdown = {f"Sem {r['semester']}": r["cnt"] for r in cursor.fetchall()}
+
+    # Posts stats
+    cursor.execute("SELECT COUNT(*) as cnt, SUM(likes) as total_likes, SUM(saves) as total_saves FROM posts")
+    posts_stats = cursor.fetchone()
+    total_posts = posts_stats["cnt"] or 0
+    total_likes = posts_stats["total_likes"] or 0
+    total_saves = posts_stats["total_saves"] or 0
+
+    # Total Notes & Tasks
+    cursor.execute("SELECT COUNT(*) as cnt FROM notes")
+    total_notes = cursor.fetchone()["cnt"] or 0
+
+    cursor.execute("SELECT COUNT(*) as cnt FROM tasks")
+    total_tasks = cursor.fetchone()["cnt"] or 0
+
+    # Banners count
+    cursor.execute("SELECT COUNT(*) as cnt FROM banners")
+    total_banners = cursor.fetchone()["cnt"] or 0
+
+    # Recent student registrations
+    cursor.execute("SELECT handle, display_name, email, department, semester, role, created_at, photo, xp FROM accounts ORDER BY created_at DESC LIMIT 10")
+    recent_students = [dict(r) for r in cursor.fetchall()]
+
+    # Recent posts
+    cursor.execute("SELECT id, title, type, author, handle, likes, created_at FROM posts ORDER BY created_at DESC LIMIT 10")
+    recent_posts = [dict(r) for r in cursor.fetchall()]
+
+    conn.close()
+
+    return {
+        "status": "success",
+        "total_students": total_students,
+        "total_posts": total_posts,
+        "total_likes": total_likes,
+        "total_saves": total_saves,
+        "total_notes": total_notes,
+        "total_tasks": total_tasks,
+        "total_banners": total_banners,
+        "uptime_seconds": int(time.time() - START_TIME),
+        "branch_breakdown": branch_breakdown,
+        "semester_breakdown": semester_breakdown,
+        "role_breakdown": role_breakdown,
+        "recent_students": recent_students,
+        "recent_posts": recent_posts
+    }
+
+
+@app.get("/api/banners")
+def get_public_banners():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM banners WHERE active = 1 ORDER BY sort_order ASC, created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/admin/banners")
+def get_all_admin_banners():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM banners ORDER BY sort_order ASC, created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/admin/banners")
+def save_admin_banner(data: BannerModel):
+    conn = get_db()
+    cursor = conn.cursor()
+    b_id = data.id or f"banner_{int(time.time()*1000)}"
+    now = int(time.time() * 1000)
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO banners
+    (id, title, subtitle, badge, cta_text, cta_url, secondary_text, secondary_url, image_url, sort_order, active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        b_id,
+        data.title,
+        data.subtitle or "",
+        data.badge or "Campus Update",
+        data.cta_text or "Explore Now",
+        data.cta_url or "dashboard.html",
+        data.secondary_text,
+        data.secondary_url,
+        data.image_url,
+        data.sort_order or 0,
+        data.active if data.active is not None else 1,
+        now
+    ))
+    conn.commit()
+
+    # Log action
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "SAVE_BANNER",
+        "@admin_root",
+        f"Saved banner slide: {data.title[:30]}",
+        b_id,
+        now
+    ))
+    conn.commit()
+    conn.close()
+
+    return {"status": "success", "message": "Banner saved successfully", "banner_id": b_id}
+
+
+@app.delete("/api/admin/banners/{banner_id}")
+def delete_admin_banner(banner_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM banners WHERE id = ?", (banner_id,))
+    conn.commit()
+
+    now = int(time.time() * 1000)
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "DELETE_BANNER",
+        "@admin_root",
+        f"Deleted banner slide ID {banner_id}",
+        banner_id,
+        now
+    ))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": f"Banner {banner_id} deleted."}
+
+
+@app.put("/api/admin/banners/{banner_id}/toggle")
+def toggle_admin_banner(banner_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT active FROM banners WHERE id = ?", (banner_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Banner not found")
+    new_val = 0 if row["active"] == 1 else 1
+    cursor.execute("UPDATE banners SET active = ? WHERE id = ?", (new_val, banner_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "active": new_val}
+
+
+@app.post("/api/admin/broadcast")
+def admin_broadcast(data: BroadcastModel):
+    conn = get_db()
+    cursor = conn.cursor()
+    b_id = f"post_broadcast_{int(time.time()*1000)}"
+    now = int(time.time() * 1000)
+
+    # Insert as official post
+    cursor.execute("""
+    INSERT INTO posts (id, type, title, subject, department, desc, author, handle, likes, saves, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        b_id,
+        "announcement",
+        data.title,
+        "Official Announcement",
+        "College Administration",
+        data.message,
+        data.author or "Campus Administration",
+        "@admin_root",
+        0, 0, now
+    ))
+
+    # Log action
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "BROADCAST",
+        "@admin_root",
+        f"Broadcast announcement: {data.title}",
+        b_id,
+        now
+    ))
+    conn.commit()
+    conn.close()
+
+    return {"status": "success", "message": "Broadcast sent to all students.", "id": b_id}
+
+
+@app.put("/api/admin/accounts/{handle}/role")
+def update_account_role(handle: str, data: AdminRoleUpdateModel):
+    clean = handle if handle.startswith("@") else "@" + handle
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE accounts SET role = ?, updated_at = ? WHERE LOWER(handle) = ?", (data.role, int(time.time()*1000), clean.lower()))
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    now = int(time.time()*1000)
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "UPDATE_ROLE",
+        "@admin_root",
+        f"Changed role of {clean} to {data.role}",
+        clean,
+        now
+    ))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": f"Role for {clean} updated to {data.role}"}
+
+
+@app.put("/api/admin/accounts/{handle}/password")
+def admin_reset_password(handle: str, data: AdminPasswordResetModel):
+    clean = handle if handle.startswith("@") else "@" + handle
+    pwd_hash = hash_password(data.new_password)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE accounts SET password_hash = ?, updated_at = ? WHERE LOWER(handle) = ?", (pwd_hash, int(time.time()*1000), clean.lower()))
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    now = int(time.time()*1000)
+    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+        f"log_{now}",
+        "RESET_PASSWORD",
+        "@admin_root",
+        f"Admin reset password for {clean}",
+        clean,
+        now
+    ))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": f"Password for {clean} updated."}
+
+
+@app.get("/api/admin/audit-logs")
+def get_admin_audit_logs():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 50")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ============================================================

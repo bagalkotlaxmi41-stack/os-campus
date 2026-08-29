@@ -371,6 +371,126 @@ const PythonAPI = {
           : `Alert! You need to attend next ${required} class(es) to hit ${targetPercentage}%.`
       };
     }
+  },
+
+  // ============================================================
+  // OWNER & ADMINISTRATOR API METHODS
+  // ============================================================
+
+  adminLogin: async function(key, email) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, email })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Authentication failed' }));
+        throw new Error(err.detail || 'Access denied');
+      }
+      return await res.json();
+    } catch (e) {
+      throw e;
+    }
+  },
+
+  getAdminStats: async function() {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/stats`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  getBanners: async function() {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/banners`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  getAdminBanners: async function() {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/banners`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  saveAdminBanner: async function(banner) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/banners`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(banner)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  deleteAdminBanner: async function(id) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/banners/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch (e) { return false; }
+  },
+
+  toggleAdminBanner: async function(id) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/banners/${encodeURIComponent(id)}/toggle`, {
+        method: 'PUT'
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  adminBroadcast: async function(data) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/broadcast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  updateAccountRole: async function(handle, role) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/accounts/${encodeURIComponent(handle)}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  adminResetPassword: async function(handle, newPassword) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/accounts/${encodeURIComponent(handle)}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_password: newPassword })
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  getAdminAuditLogs: async function() {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/audit-logs`);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) { return []; }
   }
 };
 
