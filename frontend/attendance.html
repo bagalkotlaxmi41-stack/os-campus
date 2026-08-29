@@ -407,9 +407,7 @@
           Storage.updateSubject(editingSubjectId, { name, code, color, present, total });
           showToast('Subject updated!', '', 'success');
         } else {
-          const att = Storage.getAttendance();
-          att.push({ id: genId(), name, code, color, present, total });
-          Storage.setAttendance(att);
+          Storage.addSubject({ name, code, color, present, total });
           showToast('Subject added!', '', 'success');
         }
         closeModal('subject-modal');

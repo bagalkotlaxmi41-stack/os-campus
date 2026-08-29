@@ -546,24 +546,28 @@ def create_or_update_account(acc: AccountModel):
     conn.commit()
     conn.close()
 
+    user_dict = {
+        "username": handle,
+        "handle": handle,
+        "displayName": acc.displayName,
+        "name": acc.displayName,
+        "email": acc.email,
+        "department": acc.department,
+        "semester": acc.semester,
+        "usn": acc.usn,
+        "bio": acc.bio,
+        "skills": acc.skills,
+        "photo": acc.photo,
+        "role": acc.role,
+        "xp": acc.xp,
+        "createdAt": now
+    }
+
     return {
         "status": "success",
         "message": "Account registered / updated successfully",
-        "account": {
-            "username": handle,
-            "handle": handle,
-            "displayName": acc.displayName,
-            "name": acc.displayName,
-            "email": acc.email,
-            "department": acc.department,
-            "semester": acc.semester,
-            "usn": acc.usn,
-            "bio": acc.bio,
-            "skills": acc.skills,
-            "photo": acc.photo,
-            "role": acc.role,
-            "xp": acc.xp,
-        }
+        "account": user_dict,
+        "user": user_dict
     }
 
 
