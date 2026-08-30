@@ -145,6 +145,36 @@ const PythonAPI = {
     }
   },
 
+  updateAccountRole: async function(handle, role) {
+    try {
+      const clean = handle.startsWith('@') ? handle : '@' + handle;
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: role })
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('API updateAccountRole fallback:', err);
+      return false;
+    }
+  },
+
+  adminResetPassword: async function(handle, newPassword) {
+    try {
+      const clean = handle.startsWith('@') ? handle : '@' + handle;
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: clean, password: newPassword })
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('API adminResetPassword fallback:', err);
+      return false;
+    }
+  },
+
   // ============================================================
   // POSTS FEED & SOCIAL INTERACTIONS
   // ============================================================

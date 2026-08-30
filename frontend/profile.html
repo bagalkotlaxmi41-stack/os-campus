@@ -1525,6 +1525,8 @@ function renderStudentProfile(profile, isOwn) {
   const handle = profile.username || profile.handle || '@student';
   const initial = name[0].toUpperCase();
   const photo = Storage.getUserPhoto(handle) || profile.photo;
+  const role = (profile.role || 'STUDENT').toUpperCase();
+  const isAdminProfile = role === 'OWNER_ADMIN' || role === 'ADMIN' || (profile.email === 'campus0012@gmail.com') || (handle.toLowerCase() === '@campus_admin');
 
   const avatarEl = document.getElementById('passportAvatar');
   if (photo) {
@@ -1534,16 +1536,22 @@ function renderStudentProfile(profile, isOwn) {
   }
 
   document.getElementById('photoUploadTrigger').style.display = isOwn ? 'flex' : 'none';
-  document.getElementById('passportName').textContent = name;
+  document.getElementById('passportName').innerHTML = `
+    <span>${escapeHtml(name)}</span>
+    ${isAdminProfile ? '<span style="font-size:17px; color:#fbbf24; margin-left:6px;" title="👑 Official Platform Owner & Administrator">👑</span>' : '<span style="font-size:16px; color:#38bdf8; margin-left:6px;" title="Verified Student">✓</span>'}
+  `;
   document.getElementById('passportHandle').textContent = handle;
-  document.title = `${name} — Campus OS`;
+  document.title = `${name} (${isAdminProfile ? 'Admin' : 'Student'}) — Campus OS`;
 
-  document.getElementById('passportBio').textContent = profile.bio || (isOwn ? 'Click Edit Profile to add your study focus.' : 'Student at Campus OS.');
+  document.getElementById('passportBio').textContent = profile.bio || (isAdminProfile ? 'Official Administrator & Platform Owner for BLDE Campus OS.' : (isOwn ? 'Click Settings to add your study focus.' : 'Student at Campus OS.'));
 
   const chips = [];
-  chips.push(`<span class="student-meta-chip">🎓 ${profile.program || 'Degree'}</span>`);
-  chips.push(`<span class="student-meta-chip">🏛️ ${profile.department || 'Branch'}</span>`);
-  chips.push(`<span class="student-meta-chip">📅 Sem ${profile.semester || '?'}</span>`);
+  if (isAdminProfile) {
+    chips.push(`<span class="student-meta-chip" style="background:rgba(245,158,11,0.18); border-color:rgba(245,158,11,0.45); color:#fbbf24; font-weight:800;">👑 Owner & Administrator</span>`);
+  }
+  chips.push(`<span class="student-meta-chip">🎓 ${profile.program || (isAdminProfile ? 'Administration & Governance' : 'Degree')}</span>`);
+  chips.push(`<span class="student-meta-chip">🏛️ ${profile.department || (isAdminProfile ? 'Central Administration' : 'Branch')}</span>`);
+  chips.push(`<span class="student-meta-chip">📅 Sem ${profile.semester || (isAdminProfile ? 8 : '?')}</span>`);
   if (profile.usn) chips.push(`<span class="student-meta-chip">🆔 ${profile.usn}</span>`);
   document.getElementById('passportChips').innerHTML = chips.join('');
 
@@ -1552,31 +1560,68 @@ function renderStudentProfile(profile, isOwn) {
   const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
 
   document.getElementById('statPDFsUploaded').textContent = userPosts.length;
-  document.getElementById('passportXPPoints').textContent = profile.xp || 100;
-  document.getElementById('statSemesterLevel').textContent = `Sem ${profile.semester || '?'}`;
+  document.getElementById('passportXPPoints').textContent = profile.xp || (isAdminProfile ? 9999 : 100);
+  document.getElementById('statSemesterLevel').textContent = isAdminProfile ? 'Owner' : `Sem ${profile.semester || '?'}`;
 
   const actCol = document.getElementById('passportActions');
   const materialsActionBtn = document.getElementById('materialsTabActionBtnWrap');
 
-  if (isOwn) {
+  const loggedUser = Storage.getUser() || currentUser;
+  const isLoggedAdmin = loggedUser && (loggedUser.role === 'OWNER_ADMIN' || loggedUser.role === 'ADMIN' || loggedUser.email === 'campus0012@gmail.com' || (loggedUser.username || loggedUser.handle) === '@campus_admin');
+
+  if (isOwn || (isLoggedAdmin && isAdminProfile)) {
     actCol.innerHTML = `
       <button class="passport-btn primary" onclick="openCreatePostModal()">➕ Share Material / Post</button>
-      <button class="passport-btn" onclick="openSettingsModal()">⚙️ Settings</button>
+      <button class="passport-btn" onclick="openSettingsModal()">⚙️ Settings & Bio</button>
+      ${isAdminProfile || isLoggedAdmin ? '<a href="admin.html" class="passport-btn" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fbbf24; text-decoration:none;">👑 Admin Suite →</a>' : ''}
       <a href="dashboard.html" class="passport-btn">Dashboard →</a>
     `;
     if (materialsActionBtn) {
       materialsActionBtn.innerHTML = '';
     }
   } else {
-    actCol.innerHTML = `<span class="student-meta-chip" style="color:#38bdf8; border-color:rgba(6,182,212,0.4); padding:8px 16px;">✓ Verified Student</span>`;
+    // If Admin is viewing another student profile, show Promote/Demote controls
+    if (isLoggedAdmin) {
+      actCol.innerHTML = `
+        <button class="passport-btn" onclick="toggleStudentRoleFromProfile('${handle}', '${role}')" style="${isAdminProfile ? 'color:#38bdf8; border-color:rgba(56,189,248,0.4);' : 'color:#fbbf24; border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.1);'}">
+          ${isAdminProfile ? '🛡️ Demote to Student' : '👑 Promote to Admin'}
+        </button>
+        <a href="admin.html" class="passport-btn" style="text-decoration:none;">👑 Admin Suite →</a>
+      `;
+    } else {
+      actCol.innerHTML = `<span class="student-meta-chip" style="color:#38bdf8; border-color:rgba(6,182,212,0.4); padding:8px 16px;">✓ Verified Student</span>`;
+    }
     if (materialsActionBtn) {
       materialsActionBtn.innerHTML = '';
     }
   }
 
   renderPostsGrid(userPosts, isOwn);
-  renderSkillsChips(profile.skills || [], isOwn);
+  renderSkillsChips(profile.skills || (isAdminProfile ? ['System Administration', 'Campus OS Governance', 'Academic Operations'] : []), isOwn);
   renderAcademicPassportGrid(profile);
+}
+
+async function toggleStudentRoleFromProfile(handle, currentRole) {
+  const isCurrentlyAdmin = currentRole === 'ADMIN' || currentRole === 'OWNER_ADMIN';
+  const newRole = isCurrentlyAdmin ? 'STUDENT' : 'OWNER_ADMIN';
+  const actionText = isCurrentlyAdmin ? `demote ${handle} to STUDENT` : `promote ${handle} to OWNER & ADMINISTRATOR`;
+
+  if (!confirm(`Are you sure you want to ${actionText}? This will grant them full administrative suite access.`)) return;
+
+  Storage.updateAccountRole(handle, newRole);
+
+  if (window.PythonAPI && PythonAPI.updateAccountRole) {
+    try {
+      await PythonAPI.updateAccountRole(handle, newRole);
+    } catch (e) {
+      console.warn('Backend updateAccountRole error:', e);
+    }
+  }
+
+  showToast(`🎉 Role for ${handle} updated to ${newRole}!`);
+
+  const updatedProfile = Storage.getAccountByHandle(handle) || { handle, role: newRole, displayName: handle };
+  renderStudentProfile(updatedProfile, false);
 }
 
 function renderPostsGrid(posts, isOwn) {

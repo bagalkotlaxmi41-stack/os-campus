@@ -954,6 +954,9 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         <span>Dashboard</span>
       </a>
+      <a href="profile.html?handle=@campus_admin" class="admin-nav-btn" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fbbf24;" title="View & Manage Official Admin Profile">
+        <span>👑 Admin Passport</span>
+      </a>
       <button class="admin-nav-btn" onclick="loadAllAdminData(true)" title="Refresh data now" style="border-color:rgba(139,92,246,0.3); background:rgba(124,58,237,0.15);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         <span>Live Sync 🔄</span>
@@ -974,6 +977,10 @@
       <a class="admin-sidebar-item active" data-tab="overview" onclick="switchAdminTab('overview', this)">
         <span class="admin-sidebar-icon">📊</span>
         <span>Overview & KPIs</span>
+      </a>
+      <a href="profile.html?handle=@campus_admin" class="admin-sidebar-item" style="color:#fbbf24;">
+        <span class="admin-sidebar-icon">👑</span>
+        <span>My Admin Profile</span>
       </a>
 
       <div class="admin-sidebar-heading">User & Security</div>
@@ -1589,10 +1596,13 @@
               <strong style="color:#38bdf8;">${a.xp || 150} XP</strong>
             </td>
             <td>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="admin-action-btn" onclick="toggleAccountRole('${handle}', '${role}')" title="Change Role">
-                  ${role === 'ADMIN' ? 'Demote' : 'Promote'}
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button class="admin-action-btn" onclick="toggleAccountRole('${handle}', '${role}')" title="Promote/Demote role" style="${role === 'OWNER_ADMIN' || role === 'ADMIN' ? 'color:#38bdf8;border-color:rgba(56,189,248,0.3);' : 'color:#fbbf24;border-color:rgba(245,158,11,0.3);'}">
+                  ${role === 'OWNER_ADMIN' || role === 'ADMIN' ? '🛡️ Demote' : '👑 Promote to Admin'}
                 </button>
+                <a href="profile.html?handle=${encodeURIComponent(handle)}" class="admin-action-btn" target="_blank" title="View Student Profile" style="text-decoration:none;color:#cbd5e1;">
+                  👤 Profile
+                </a>
                 <button class="admin-action-btn" onclick="promptResetPassword('${handle}')" title="Reset Password">
                   🔑 Reset
                 </button>
@@ -1619,7 +1629,7 @@
         const role = (a.role || 'STUDENT').toUpperCase();
 
         const matchesQuery = !q || name.includes(q) || handle.includes(q) || email.includes(q) || usn.includes(q) || dept.includes(q);
-        const matchesRole = roleFilter === 'all' || role === roleFilter;
+        const matchesRole = roleFilter === 'all' || role === roleFilter || (roleFilter === 'ADMIN' && (role === 'ADMIN' || role === 'OWNER_ADMIN'));
 
         return matchesQuery && matchesRole;
       });
@@ -1628,19 +1638,27 @@
     }
 
     async function toggleAccountRole(handle, currentRole) {
-      const newRole = currentRole === 'ADMIN' ? 'STUDENT' : 'ADMIN';
-      if (!confirm(`Are you sure you want to change the role of ${handle} from ${currentRole} to ${newRole}?`)) return;
+      const isCurrentlyAdmin = currentRole === 'ADMIN' || currentRole === 'OWNER_ADMIN';
+      const newRole = isCurrentlyAdmin ? 'STUDENT' : 'OWNER_ADMIN';
+      const actionText = isCurrentlyAdmin ? `demote ${handle} to STUDENT` : `promote ${handle} to OWNER & ADMINISTRATOR`;
+      
+      if (!confirm(`Are you sure you want to ${actionText}? This will grant them full administrative suite access.`)) return;
+
+      Storage.updateAccountRole(handle, newRole);
 
       if (window.PythonAPI && PythonAPI.updateAccountRole) {
-        await PythonAPI.updateAccountRole(handle, newRole);
+        try {
+          await PythonAPI.updateAccountRole(handle, newRole);
+        } catch (e) {
+          console.warn('Backend updateAccountRole error:', e);
+        }
       }
 
       // Update in local list
       const acc = allAdminAccounts.find(a => (a.handle || a.username || '').toLowerCase() === handle.toLowerCase());
       if (acc) acc.role = newRole;
-      Storage.setAccounts(allAdminAccounts);
 
-      showAdminToast(`Updated role for ${handle} to ${newRole}`);
+      showAdminToast(`🎉 Successfully updated role for ${handle} to ${newRole}!`);
       loadAllAdminData();
     }
 

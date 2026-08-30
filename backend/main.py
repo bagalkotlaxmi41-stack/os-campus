@@ -367,6 +367,15 @@ class CommentCreateModel(BaseModel):
     text: str
 
 
+class AccountRoleUpdate(BaseModel):
+    role: str
+
+
+class AdminPasswordReset(BaseModel):
+    handle: str
+    password: str
+
+
 class NoteModel(BaseModel):
     id: Optional[str] = None
     handle: Optional[str] = "@student"
@@ -655,6 +664,32 @@ def update_account_photo(handle: str, data: Dict[str, str]):
     conn.commit()
     conn.close()
     return {"status": "success", "handle": clean, "photo": photo}
+
+
+@app.put("/api/accounts/{handle}/role")
+def update_account_role(handle: str, role_data: AccountRoleUpdate):
+    clean = handle.strip()
+    if not clean.startswith("@"): clean = "@" + clean
+    new_role = role_data.role.strip().upper()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE accounts SET role = ?, updated_at = ? WHERE LOWER(handle) = ?", (new_role, int(time.time() * 1000), clean.lower()))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "handle": clean, "role": new_role, "message": f"Role updated to {new_role}"}
+
+
+@app.post("/api/admin/reset-password")
+def admin_reset_password(data: AdminPasswordReset):
+    clean = data.handle.strip()
+    if not clean.startswith("@"): clean = "@" + clean
+    pwd_hash = hash_password(data.password)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE accounts SET password_hash = ?, updated_at = ? WHERE LOWER(handle) = ?", (pwd_hash, int(time.time() * 1000), clean.lower()))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "handle": clean, "message": f"Password reset for {clean}"}
 
 
 @app.post("/api/posts/{id}/view")
