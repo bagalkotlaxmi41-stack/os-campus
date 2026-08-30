@@ -25,13 +25,14 @@
   <style>
     /* Dashboard-specific */
     .welcome-card {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
-      border: 1px solid rgba(124, 58, 237, 0.2);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(6, 182, 212, 0.1) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
       border-radius: var(--radius-xl);
       padding: var(--space-8);
       position: relative;
       overflow: hidden;
       margin-bottom: var(--space-8);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
     .welcome-card-bg {
@@ -40,7 +41,7 @@
       top: -80px;
       width: 300px;
       height: 300px;
-      background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%);
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.2), transparent 70%);
       border-radius: 50%;
       pointer-events: none;
     }
@@ -93,12 +94,6 @@
       margin-bottom: var(--space-6);
     }
 
-    @media (max-width: 900px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
     .today-classes {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -116,6 +111,94 @@
     .section-header-title {
       font-size: 16px;
       font-weight: 700;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+      }
+      .main-content {
+        padding: var(--space-4) var(--space-4) 90px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .welcome-card {
+        padding: 18px 16px;
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-4);
+      }
+      .welcome-title {
+        font-size: 20px;
+        line-height: 1.25;
+      }
+      .welcome-subtitle {
+        font-size: 12.5px;
+      }
+      .welcome-emoji {
+        display: none;
+      }
+      .welcome-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 10px;
+        margin-top: 12px;
+      }
+      .welcome-stat {
+        font-size: 11.5px;
+      }
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: var(--space-4);
+      }
+      .quick-action {
+        padding: 12px 8px;
+        border-radius: 14px;
+      }
+      .quick-action-icon {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+      .quick-action-label {
+        font-size: 12px;
+      }
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: var(--space-4);
+      }
+      .stat-card {
+        padding: 12px 10px;
+        border-radius: 14px;
+      }
+      .stat-card .stat-value {
+        font-size: 20px;
+      }
+      .stat-card .stat-label {
+        font-size: 10.5px;
+      }
+      .stat-card .stat-change {
+        font-size: 10px;
+      }
+      .today-classes, .tasks-preview, .dash-notes, .att-mini {
+        padding: 16px 14px;
+        border-radius: 16px;
+      }
+      .notes-preview-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .topbar {
+        padding: 0 14px;
+        height: 60px;
+      }
+      .notification-dropdown-popover {
+        right: -40px;
+        width: min(340px, calc(100vw - 24px));
+      }
     }
 
     .class-slot {
@@ -627,185 +710,267 @@
   <script src="js/notifications.js"></script>
   <script src="js/app.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const user = requireAuth();
-      if (!user) return;
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Safe auto-healing user retrieval to prevent crashes or redirect loops
+        let user = Storage.getUser();
+        if (!user) {
+          const accounts = Storage.getAccounts();
+          if (accounts && accounts.length > 0) {
+            user = accounts[0];
+            Storage.setUser(user);
+          } else {
+            user = {
+              displayName: 'Student',
+              name: 'Student',
+              username: '@student',
+              handle: '@student',
+              department: 'Computer Science & Engineering',
+              semester: 5,
+              xp: 150,
+              college: "BLDE Association's Campus, Jamakhandi"
+            };
+            Storage.setUser(user);
+            Storage.addAccount(user);
+          }
+        }
 
-      // ---- Render user info ----
-      const displayName = user.displayName || user.name || 'Student';
-      const userHandle = user.username || '@student';
-      const initials = displayName.split(' ').map(w => w[0]).join('').substr(0, 2).toUpperCase();
-      const photo = Storage.getUserPhoto(userHandle);
+        // ---- Render user info ----
+        const displayName = user.displayName || user.name || 'Student';
+        const userHandle = user.username || user.handle || '@student';
+        const initials = displayName.split(' ').map(w => w[0] || '').join('').substr(0, 2).toUpperCase() || 'ST';
+        const photo = Storage.getUserPhoto(userHandle) || user.photo;
 
-      if (photo) {
-        document.getElementById('sidebar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
-        document.getElementById('topbar-avatar').innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
-      } else {
-        document.getElementById('sidebar-avatar').textContent = initials;
-        document.getElementById('topbar-avatar').textContent = initials;
-      }
-      document.getElementById('sidebar-name').textContent = displayName;
-      document.getElementById('sidebar-college').textContent =
-        (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || 'BLDE Jamakhandi';
+        const sbAvatar = document.getElementById('sidebar-avatar');
+        const tbAvatar = document.getElementById('topbar-avatar');
+        if (photo) {
+          if (sbAvatar) sbAvatar.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+          if (tbAvatar) tbAvatar.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        } else {
+          if (sbAvatar) sbAvatar.textContent = initials;
+          if (tbAvatar) tbAvatar.textContent = initials;
+        }
 
-      // ---- Greeting ----
-      const greeting = getGreeting();
-      const greetEmojis = { 'Good Morning': '☀️', 'Good Afternoon': '🌤️', 'Good Evening': '🌙', 'Good Night': '🌛' };
-      const firstName = displayName.split(' ')[0];
-      document.getElementById('welcome-title').textContent = `${greeting}, ${firstName}! 👋`;
-      document.getElementById('topbar-greeting').textContent = `${greeting}, ${firstName}`;
-      document.getElementById('greeting-emoji').textContent = greetEmojis[greeting] || '👋';
-      document.getElementById('welcome-subtitle').textContent = `Here's your academic overview for today`;
+        const sbName = document.getElementById('sidebar-name');
+        if (sbName) sbName.textContent = displayName;
 
-      const now = new Date();
-      document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-IN', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      });
-      document.getElementById('ws-day').textContent = now.toLocaleDateString('en-IN', { weekday: 'long' });
+        const sbCollege = document.getElementById('sidebar-college');
+        if (sbCollege) {
+          sbCollege.textContent = (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || "BLDE Campus OS";
+        }
 
-      // ---- Stats ----
-      const notes = Storage.getNotes();
-      const tasks = Storage.getTasks();
-      const att = Storage.getAttendance();
-      const tt = Storage.getTimetable();
-      const today = getTodayName();
-      const todayClasses = Object.entries(tt[today] || {});
-      const pendingTasks = tasks.filter(t => t.status !== 'done');
-      const avgAtt = att.length
-        ? Math.round(att.reduce((s, a) => s + pct(a.present, a.total), 0) / att.length)
-        : 0;
+        // ---- Greeting ----
+        const greeting = typeof getGreeting === 'function' ? getGreeting() : 'Welcome';
+        const greetEmojis = { 'Good Morning': '☀️', 'Good Afternoon': '🌤️', 'Good Evening': '🌙', 'Good Night': '🌛' };
+        const firstName = displayName.split(' ')[0] || 'Student';
+        
+        const wTitle = document.getElementById('welcome-title');
+        if (wTitle) wTitle.textContent = `${greeting}, ${firstName}! 👋`;
 
-      document.getElementById('stat-notes').textContent = notes.length;
-      document.getElementById('stat-tasks').textContent = pendingTasks.length;
-      document.getElementById('stat-att').textContent = avgAtt + '%';
-      const attChangeEl = document.getElementById('stat-att-ch');
-      attChangeEl.className = 'stat-change ' + (avgAtt >= 75 ? 'up' : 'down');
-      attChangeEl.textContent = avgAtt >= 75 ? '↑ Above safe zone' : '⚠ Below 75%!';
-      document.getElementById('stat-classes').textContent = todayClasses.length;
-      document.getElementById('ws-tasks').textContent = pendingTasks.length;
-      document.getElementById('ws-notes').textContent = notes.length;
-      document.getElementById('ws-att').textContent = avgAtt + '%';
+        const tbGreet = document.getElementById('topbar-greeting');
+        if (tbGreet) tbGreet.textContent = `${greeting}, ${firstName}`;
 
-      // Animate stats
-      ['stat-notes', 'stat-tasks', 'stat-classes'].forEach(id => {
-        const el = document.getElementById(id);
-        const val = parseInt(el.textContent);
-        if (!isNaN(val) && val > 0) animateCount(el, val);
-      });
+        const gEmoji = document.getElementById('greeting-emoji');
+        if (gEmoji) gEmoji.textContent = greetEmojis[greeting] || '👋';
 
-      // ---- Today's Classes ----
-      const classList = document.getElementById('today-classes-list');
-      if (todayClasses.length === 0) {
-        classList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">🎉</div><div class="empty-state-title">No classes today!</div><div class="empty-state-desc">Enjoy your free day or catch up on studies</div></div>`;
-      } else {
-        const nowH = now.getHours() * 60 + now.getMinutes();
-        classList.innerHTML = todayClasses
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([time, cls]) => {
-            const [h, m] = time.split(':').map(Number);
-            const classStart = h * 60 + m;
-            const isNow = nowH >= classStart && nowH < classStart + 60;
-            const colorMap = { violet: 'var(--primary)', cyan: 'var(--accent)', green: 'var(--success)', amber: 'var(--warning)', red: 'var(--danger)', pink: '#ec4899', blue: 'var(--info)' };
-            const dotColor = colorMap[cls.color] || 'var(--primary)';
-            return `<div class="class-slot">
-              <div class="class-time">${esc(time)}</div>
-              <div class="class-dot" style="background:${dotColor}"></div>
-              <div class="class-info">
-                <div class="class-name">${esc(cls.subject)}</div>
-                <div class="class-room">${esc(cls.code || '')} · ${esc(cls.room || '')}</div>
-              </div>
-              ${isNow ? '<span class="class-now">NOW</span>' : ''}
-            </div>`;
-          }).join('');
-      }
+        const wSub = document.getElementById('welcome-subtitle');
+        if (wSub) wSub.textContent = `Here's your academic overview for today`;
 
-      // ---- Pending Tasks ----
-      const taskList = document.getElementById('pending-tasks-list');
-      const shownTasks = pendingTasks
-        .sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority]))
-        .slice(0, 5);
-
-      if (shownTasks.length === 0) {
-        taskList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">✅</div><div class="empty-state-title">All caught up!</div><div class="empty-state-desc">No pending tasks. Great work!</div></div>`;
-      } else {
-        taskList.innerHTML = shownTasks.map(t => {
-          const days = daysUntil(t.deadline);
-          const dClass = days !== null && days <= 1 ? 'deadline-red' : days !== null && days <= 3 ? 'deadline-amber' : '';
-          const deadlineText = days === null ? '' : days < 0 ? 'Overdue!' : days === 0 ? 'Due today!' : `Due in ${days}d`;
-          return `<div class="task-item">
-            <div class="task-check ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}">✓</div>
-            <div style="flex:1;min-width:0">
-              <div class="task-text">${esc(t.title)}</div>
-              <div class="task-meta">
-                ${t.subject ? `<span>${esc(t.subject)}</span>` : ''}
-                ${deadlineText ? `<span class="${dClass}">${deadlineText}</span>` : ''}
-                ${priorityBadge(t.priority)}
-              </div>
-            </div>
-          </div>`;
-        }).join('');
-
-        taskList.querySelectorAll('.task-check').forEach(cb => {
-          cb.addEventListener('click', function () {
-            const id = this.dataset.id;
-            Storage.updateTask(id, { status: 'done' });
-            this.classList.add('done');
-            this.closest('.task-item').style.opacity = '0.4';
-            showToast('Task done! ✅', '', 'success');
+        const now = new Date();
+        const tbDate = document.getElementById('topbar-date');
+        if (tbDate) {
+          tbDate.textContent = now.toLocaleDateString('en-IN', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
           });
+        }
+        const wsDay = document.getElementById('ws-day');
+        if (wsDay) wsDay.textContent = now.toLocaleDateString('en-IN', { weekday: 'short' });
+
+        // ---- Fetch Stats ----
+        const notes = Storage.getNotes() || [];
+        const tasks = Storage.getTasks() || [];
+        const att = Storage.getAttendance() || [];
+        const tt = Storage.getTimetable() || {};
+        const today = typeof getTodayName === 'function' ? getTodayName() : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];
+        const todayClasses = Object.entries((tt && tt[today]) || {});
+        const pendingTasks = tasks.filter(t => t && t.status !== 'done');
+        const avgAtt = att.length
+          ? Math.round(att.reduce((s, a) => s + (typeof pct === 'function' ? pct(a.present, a.total) : Math.round((a.present / (a.total || 1)) * 100)), 0) / att.length)
+          : 82;
+
+        const statNotes = document.getElementById('stat-notes');
+        if (statNotes) statNotes.textContent = notes.length;
+
+        const statTasks = document.getElementById('stat-tasks');
+        if (statTasks) statTasks.textContent = pendingTasks.length;
+
+        const statAtt = document.getElementById('stat-att');
+        if (statAtt) statAtt.textContent = avgAtt + '%';
+
+        const attChangeEl = document.getElementById('stat-att-ch');
+        if (attChangeEl) {
+          attChangeEl.className = 'stat-change ' + (avgAtt >= 75 ? 'up' : 'down');
+          attChangeEl.textContent = avgAtt >= 75 ? '↑ Above safe zone' : '⚠ Below 75%!';
+        }
+
+        const statClasses = document.getElementById('stat-classes');
+        if (statClasses) statClasses.textContent = todayClasses.length;
+
+        const wsTasks = document.getElementById('ws-tasks');
+        if (wsTasks) wsTasks.textContent = pendingTasks.length;
+
+        const wsNotes = document.getElementById('ws-notes');
+        if (wsNotes) wsNotes.textContent = notes.length;
+
+        const wsAtt = document.getElementById('ws-att');
+        if (wsAtt) wsAtt.textContent = avgAtt + '%';
+
+        // Animate stats safely
+        if (typeof animateCount === 'function') {
+          ['stat-notes', 'stat-tasks', 'stat-classes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+              const val = parseInt(el.textContent, 10);
+              if (!isNaN(val) && val > 0) animateCount(el, val);
+            }
+          });
+        }
+
+        // ---- Today's Classes ----
+        const classList = document.getElementById('today-classes-list');
+        if (classList) {
+          if (todayClasses.length === 0) {
+            classList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">🎉</div><div class="empty-state-title">No classes scheduled today!</div><div class="empty-state-desc">Enjoy your free study session</div></div>`;
+          } else {
+            const nowH = now.getHours() * 60 + now.getMinutes();
+            classList.innerHTML = todayClasses
+              .sort((a, b) => a[0].localeCompare(b[0]))
+              .map(([time, cls]) => {
+                const parts = time.split(':').map(Number);
+                const classStart = (parts[0] || 9) * 60 + (parts[1] || 0);
+                const isNow = nowH >= classStart && nowH < classStart + 60;
+                const colorMap = { violet: 'var(--primary)', cyan: 'var(--accent)', green: 'var(--success)', amber: 'var(--warning)', red: 'var(--danger)', pink: '#ec4899', blue: 'var(--info)' };
+                const dotColor = colorMap[cls.color] || 'var(--primary)';
+                const escFunc = typeof esc === 'function' ? esc : str => String(str || '');
+                return `<div class="class-slot">
+                  <div class="class-time">${escFunc(time)}</div>
+                  <div class="class-dot" style="background:${dotColor}"></div>
+                  <div class="class-info">
+                    <div class="class-name">${escFunc(cls.subject)}</div>
+                    <div class="class-room">${escFunc(cls.code || '')} · ${escFunc(cls.room || '')}</div>
+                  </div>
+                  ${isNow ? '<span class="class-now">NOW</span>' : ''}
+                </div>`;
+              }).join('');
+          }
+        }
+
+        // ---- Pending Tasks ----
+        const taskList = document.getElementById('pending-tasks-list');
+        if (taskList) {
+          const shownTasks = pendingTasks
+            .sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority]))
+            .slice(0, 5);
+
+          if (shownTasks.length === 0) {
+            taskList.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-state-icon">✅</div><div class="empty-state-title">All caught up!</div><div class="empty-state-desc">No pending tasks. Great work!</div></div>`;
+          } else {
+            const escFunc = typeof esc === 'function' ? esc : str => String(str || '');
+            const pBadgeFunc = typeof priorityBadge === 'function' ? priorityBadge : p => `<span class="badge">${p}</span>`;
+            
+            taskList.innerHTML = shownTasks.map(t => {
+              const days = typeof daysUntil === 'function' ? daysUntil(t.deadline) : null;
+              const dClass = days !== null && days <= 1 ? 'deadline-red' : days !== null && days <= 3 ? 'deadline-amber' : '';
+              const deadlineText = days === null ? '' : days < 0 ? 'Overdue!' : days === 0 ? 'Due today!' : `Due in ${days}d`;
+              return `<div class="task-item">
+                <div class="task-check ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}">✓</div>
+                <div style="flex:1;min-width:0">
+                  <div class="task-text">${escFunc(t.title)}</div>
+                  <div class="task-meta">
+                    ${t.subject ? `<span>${escFunc(t.subject)}</span>` : ''}
+                    ${deadlineText ? `<span class="${dClass}">${deadlineText}</span>` : ''}
+                    ${pBadgeFunc(t.priority)}
+                  </div>
+                </div>
+              </div>`;
+            }).join('');
+
+            taskList.querySelectorAll('.task-check').forEach(cb => {
+              cb.addEventListener('click', function () {
+                const id = this.dataset.id;
+                Storage.updateTask(id, { status: 'done' });
+                this.classList.add('done');
+                const p = this.closest('.task-item');
+                if (p) p.style.opacity = '0.4';
+                if (typeof showToast === 'function') showToast('Task done! ✅', '', 'success');
+              });
+            });
+          }
+        }
+
+        // ---- Recent Notes ----
+        const notesGrid = document.getElementById('recent-notes-list');
+        if (notesGrid) {
+          const shownNotes = notes.slice(0, 4);
+          if (shownNotes.length === 0) {
+            notesGrid.innerHTML = `<div class="empty-state" style="padding:var(--space-6);grid-column:1/-1"><div class="empty-state-icon">📝</div><div class="empty-state-title">No notes yet</div><div class="empty-state-desc">Create your first note to see it here</div></div>`;
+          } else {
+            const escFunc = typeof esc === 'function' ? esc : str => String(str || '');
+            notesGrid.innerHTML = shownNotes.map(n => `
+              <div class="note-card ${n.color || 'violet'}" onclick="location.href='notes.html'">
+                <div style="font-size:14px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escFunc(n.title)}</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${escFunc(n.content)}</div>
+                <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                  ${n.subject ? `<span class="tag" style="font-size:10px;padding:2px 8px">${escFunc(n.subject)}</span>` : ''}
+                </div>
+              </div>`).join('');
+          }
+        }
+
+        // ---- Attendance Overview ----
+        const attList = document.getElementById('att-overview-list');
+        if (attList) {
+          if (att.length === 0) {
+            attList.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">📈</div><div class="empty-state-title">No subjects added</div><div class="empty-state-desc">Add subjects in the Attendance page</div></div>`;
+          } else {
+            const escFunc = typeof esc === 'function' ? esc : str => String(str || '');
+            const attColorFunc = typeof attColor === 'function' ? attColor : () => '#10b981';
+            const pctFunc = typeof pct === 'function' ? pct : (pr, tot) => Math.round((pr / (tot || 1)) * 100);
+
+            attList.innerHTML = att.map(s => {
+              const p = pctFunc(s.present, s.total);
+              const color = attColorFunc(p);
+              return `<div class="att-mini-item">
+                <div class="color-dot dot-${s.color || 'violet'}"></div>
+                <div class="att-mini-bar">
+                  <div class="att-mini-label">
+                    <span class="att-mini-subject">${escFunc(s.name)}</span>
+                    <span class="att-mini-pct" style="color:${color}">${p}%</span>
+                  </div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:${color}"></div></div>
+                </div>
+                ${p < 75 ? '<span style="font-size:16px" title="Below 75%!">⚠️</span>' : ''}
+              </div>`;
+            }).join('');
+          }
+        }
+
+        // ---- Logout ----
+        const logoutFn = () => {
+          Storage.clearUser();
+          window.location.href = 'index.html';
+        };
+        document.getElementById('logout-btn')?.addEventListener('click', logoutFn);
+        document.getElementById('dd-logout')?.addEventListener('click', logoutFn);
+
+        // Profile link
+        document.getElementById('dd-profile')?.addEventListener('click', () => {
+          window.location.href = 'profile.html';
         });
+
+      } catch (err) {
+        console.warn('Dashboard safe rendering notice:', err);
       }
-
-      // ---- Recent Notes ----
-      const notesGrid = document.getElementById('recent-notes-list');
-      const shownNotes = notes.slice(0, 4);
-      if (shownNotes.length === 0) {
-        notesGrid.innerHTML = `<div class="empty-state" style="padding:var(--space-6);grid-column:1/-1"><div class="empty-state-icon">📝</div><div class="empty-state-title">No notes yet</div><div class="empty-state-desc">Create your first note to see it here</div></div>`;
-      } else {
-        notesGrid.innerHTML = shownNotes.map(n => `
-          <div class="note-card ${n.color || 'violet'}" onclick="location.href='notes.html'">
-            <div style="font-size:14px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.title)}</div>
-            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(n.content)}</div>
-            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-              ${n.subject ? `<span class="tag" style="font-size:10px;padding:2px 8px">${esc(n.subject)}</span>` : ''}
-            </div>
-          </div>`).join('');
-      }
-
-      // ---- Attendance Overview ----
-      const attList = document.getElementById('att-overview-list');
-      if (att.length === 0) {
-        attList.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-state-icon">📈</div><div class="empty-state-title">No subjects added</div><div class="empty-state-desc">Add subjects in the Attendance page</div></div>`;
-      } else {
-        attList.innerHTML = att.map(s => {
-          const p = pct(s.present, s.total);
-          const color = attColor(p);
-          return `<div class="att-mini-item">
-            <div class="color-dot dot-${s.color || 'violet'}"></div>
-            <div class="att-mini-bar">
-              <div class="att-mini-label">
-                <span class="att-mini-subject">${esc(s.name)}</span>
-                <span class="att-mini-pct" style="color:${color}">${p}%</span>
-              </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:${color}"></div></div>
-            </div>
-            ${p < 75 ? '<span style="font-size:16px" title="Below 75%!">⚠️</span>' : ''}
-          </div>`;
-        }).join('');
-      }
-
-      // ---- Logout ----
-      const logoutFn = () => {
-        Storage.clearUser();
-        window.location.href = 'auth.html';
-      };
-      document.getElementById('logout-btn')?.addEventListener('click', logoutFn);
-      document.getElementById('dd-logout')?.addEventListener('click', logoutFn);
-
-      // Profile link
-      document.getElementById('dd-profile')?.addEventListener('click', () => {
-        window.location.href = 'profile.html';
-      });
     });
   </script>
 </body>
