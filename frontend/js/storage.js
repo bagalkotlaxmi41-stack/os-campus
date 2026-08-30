@@ -150,8 +150,8 @@ const Storage = {
     localStorage.setItem('cos_deleted_handles_v2', JSON.stringify(list));
   },
   getAccounts() {
-    const raw = this.getItem(KEYS.ACCOUNTS);
-    let list = Array.isArray(raw) ? raw : [];
+    const raw = this.get(KEYS.ACCOUNTS, null);
+    let list = (raw && Array.isArray(raw) && raw.length > 0) ? raw : [];
     if (list.length === 0) {
       list = [
         {

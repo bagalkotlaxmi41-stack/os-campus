@@ -1845,6 +1845,15 @@
         return !deletedHandles.includes(h);
       });
 
+      // Also ensure current logged in user session is captured if registered
+      const curUser = (typeof Storage !== 'undefined' && Storage.getUser) ? Storage.getUser() : null;
+      if (curUser && (curUser.handle || curUser.username)) {
+        const curH = (curUser.handle || curUser.username).toLowerCase();
+        if (!deletedHandles.includes(curH) && !localAccs.some(a => (a.handle || a.username || '').toLowerCase() === curH)) {
+          localAccs.push(curUser);
+        }
+      }
+
       // Default official admin
       const officialAdmin = {
         username: '@campus_admin',
