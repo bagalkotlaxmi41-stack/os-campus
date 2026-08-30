@@ -55,7 +55,7 @@ const NotificationsManager = {
         id: 'circ_exam_odd_2026',
         type: 'circular',
         title: 'Odd Semester Exam Form Submission',
-        desc: 'RCUB & VTU Regular/Backlog Examination fees submission portal is live.',
+        desc: 'University Regular & Backlog Examination fees submission portal is live.',
         author: 'Exam Cell',
         handle: '@admin_exam',
         time: '2h ago',

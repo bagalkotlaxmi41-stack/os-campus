@@ -1499,7 +1499,7 @@ function saveNewProfile() {
     username,
     handle: username,
     usn: usn || 'USN Verified',
-    college: "BLDE Association's Campus, Jamakhandi",
+    college: "Campus OS Academic Network",
     program: program,
     department: dept,
     semester: sem,
@@ -1548,7 +1548,7 @@ function renderStudentProfile(profile, isOwn) {
   document.getElementById('passportHandle').textContent = handle;
   document.title = `${name} (${isAdminProfile ? 'Admin' : 'Student'}) — Campus OS`;
 
-  document.getElementById('passportBio').textContent = profile.bio || (isAdminProfile ? 'Official Administrator & Platform Owner for BLDE Campus OS.' : (isOwn ? 'Click Settings to add your study focus.' : 'Student at Campus OS.'));
+  document.getElementById('passportBio').textContent = profile.bio || (isAdminProfile ? 'Official Platform Administrator & Owner for Campus OS.' : (isOwn ? 'Click Settings to add your study focus.' : 'Student at Campus OS.'));
 
   const chips = [];
   if (isAdminProfile) {
@@ -1777,7 +1777,7 @@ function renderAcademicPassportGrid(profile) {
     { label: 'Department / Branch', val: profile.department || 'Computer Science & Engineering', icon: '🏛️' },
     { label: 'Current Semester', val: `Semester ${profile.semester || 5} (Regular Batch)`, icon: '📅' },
     { label: 'University Seat Number (USN)', val: profile.usn || '2BL22CS045 (Verified)', icon: '🆔' },
-    { label: 'Institution / Campus', val: profile.college || "BLDE Association's Commerce, BHS Arts & TGP Science College", icon: '📍' },
+    { label: 'Institution / Campus', val: profile.college || "Campus OS Academic Network", icon: '📍' },
     { label: 'Academic Standing', val: `${profile.xp || 150} XP Points · Verified Active Scholar`, icon: '⭐' }
   ];
 

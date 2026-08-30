@@ -301,22 +301,22 @@ window.FirebaseService = {
         const demoStudents = [
           {
             username: "@priya_sharma", handle: "@priya_sharma", displayName: "Priya Sharma", name: "Priya Sharma",
-            email: "priya.sharma@bldea.edu", department: "Computer Science & Engineering", semester: 6,
-            usn: "2BL21CS084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
+            email: "priya.sharma@campus.edu", department: "Computer Science & Engineering", semester: 6,
+            usn: "2CS21084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
             skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT", xp: 620,
             createdAt: Date.now() - 86400000 * 45, updatedAt: Date.now()
           },
           {
             username: "@vikram_patil", handle: "@vikram_patil", displayName: "Vikram Patil", name: "Vikram Patil",
-            email: "vikram.patil@bldea.edu", department: "Electronics & Communication", semester: 4,
-            usn: "2BL22EC042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
+            email: "vikram.patil@campus.edu", department: "Electronics & Communication", semester: 4,
+            usn: "2EC22042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
             skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT", xp: 480,
             createdAt: Date.now() - 86400000 * 30, updatedAt: Date.now()
           },
           {
             username: "@ananya_kulkarni", handle: "@ananya_kulkarni", displayName: "Ananya Kulkarni", name: "Ananya Kulkarni",
-            email: "ananya.k@bldea.edu", department: "Artificial Intelligence & DS", semester: 5,
-            usn: "2BL22AI018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
+            email: "ananya.k@campus.edu", department: "Artificial Intelligence & DS", semester: 5,
+            usn: "2AI22018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
             skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT", xp: 540,
             createdAt: Date.now() - 86400000 * 20, updatedAt: Date.now()
           }
@@ -334,7 +334,7 @@ window.FirebaseService = {
             title: 'Operating Systems Module 3: Virtual Memory & Paging Handwritten Notes',
             subject: 'Operating Systems',
             department: 'Computer Science & Engineering',
-            desc: 'Complete VTU Scheme Unit 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for VTU exams.',
+            desc: 'Complete curriculum Module 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for university exams.',
             author: 'Priya Sharma',
             handle: '@priya_sharma',
             fileName: 'OS_Module3_Virtual_Memory_Notes.pdf',

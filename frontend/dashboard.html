@@ -506,7 +506,7 @@
         <div class="avatar avatar-md" id="sidebar-avatar">?</div>
         <div style="overflow:hidden;flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-name">Loading...</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-college">BLDE Jamakhandi</div>
+          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-college">Campus OS</div>
         </div>
       </a>
       <button class="btn btn-ghost btn-sm w-full" id="logout-btn" style="justify-content:flex-start;gap:8px">
@@ -728,7 +728,7 @@
               department: 'Computer Science & Engineering',
               semester: 5,
               xp: 150,
-              college: "BLDE Association's Campus, Jamakhandi"
+              college: "Campus OS Academic Network"
             };
             Storage.setUser(user);
             Storage.addAccount(user);
@@ -756,7 +756,7 @@
 
         const sbCollege = document.getElementById('sidebar-college');
         if (sbCollege) {
-          sbCollege.textContent = (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || "BLDE Campus OS";
+          sbCollege.textContent = (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || "Campus OS";
         }
 
         // ---- Greeting ----

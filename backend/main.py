@@ -223,9 +223,9 @@ def init_database():
     cursor.execute("SELECT COUNT(*) as cnt FROM banners")
     if cursor.fetchone()["cnt"] == 0:
         default_banners = [
-            ("banner_1", "Commerce, BHS Arts &<br /><span class=\"text-hero-gradient\">TGP Science College</span>", "Stay ahead with academic roadmaps, timetables, and VTU resource hubs.", "✨ BLDE Association's Campus · Jamkhandi", "📊 Open Dashboard →", "dashboard.html", "🚀 Create Account", "javascript:openAccountModal()", "img/banner1.jpg", 1, 1, int(time.time()*1000)),
-            ("banner_2", "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>", "Check live timetable periods, room locations, and lab schedule allocations.", "📅 Class Timetables", "📅 View Timetable →", "timetable.html", None, None, "img/banner2.jpg", 2, 1, int(time.time()*1000)),
-            ("banner_3", "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>", "Calculate safe bunk margins, track minimum 75% thresholds, and access handwritten notes.", "🌟 75% Attendance Radar", "📈 Check Attendance", "attendance.html", "📝 Notes Vault", "notes.html", "img/banner3.jpg", 3, 1, int(time.time()*1000))
+            ("banner_1", "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>", "Stay ahead with academic roadmaps, timetables, and campus resource hubs.", "✨ Universal Student Platform", "📊 Open Dashboard →", "dashboard.html", "🚀 Create Account", "javascript:openAccountModal()", "img/banner1.jpg", 1, 1, int(time.time()*1000)),
+            ("banner_2", "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>", "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.", "📅 Class Timetables", "📅 View Timetable →", "timetable.html", None, None, "img/banner2.jpg", 2, 1, int(time.time()*1000)),
+            ("banner_3", "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>", "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.", "🌟 75% Attendance Radar", "📈 Check Attendance", "attendance.html", "📝 Notes Vault", "notes.html", "img/banner3.jpg", 3, 1, int(time.time()*1000))
         ]
         cursor.executemany("INSERT INTO banners VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", default_banners)
 
@@ -250,13 +250,13 @@ def init_database():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             "@campus_admin",
-            "BLDE Campus Administrator",
+            "Campus Administrator",
             "campus0012@gmail.com",
             admin_pass_hash,
             "Central Administration",
             8,
             "ADMIN-001",
-            "Official Administrator & Platform Owner for BLDE Campus OS.",
+            "Official Platform Administrator & Owner for Campus OS.",
             json.dumps(["System Administration", "Campus OS Governance", "Academic Operations"]),
             None,
             "OWNER_ADMIN",
@@ -265,7 +265,7 @@ def init_database():
             int(time.time() * 1000)
         ))
     else:
-        cursor.execute("UPDATE accounts SET password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
+        cursor.execute("UPDATE accounts SET display_name = 'Campus Administrator', bio = 'Official Platform Administrator & Owner for Campus OS.', password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
     conn.commit()
     conn.close()
@@ -1421,7 +1421,7 @@ def ai_predict_attendance(req: AttendancePredictRequest):
 # OWNER & ADMINISTRATOR CONTROL CENTER ENDPOINTS
 # ============================================================
 
-ADMIN_MASTER_KEYS = {"campus@#1974", "AdminMaster#2026", "blde_admin_2026", "owner_secret_key", "CampusOSAdmin2026!"}
+ADMIN_MASTER_KEYS = {"campus@#1974", "AdminMaster#2026", "campus_admin_2026", "owner_secret_key", "CampusOSAdmin2026!"}
 
 @app.post("/api/admin/auth")
 def admin_auth(data: AdminAuthModel):
@@ -1430,7 +1430,7 @@ def admin_auth(data: AdminAuthModel):
 
     is_valid = False
     admin_info = {
-        "displayName": "BLDE Campus Administrator",
+        "displayName": "Campus Administrator",
         "email": "campus0012@gmail.com",
         "handle": "@campus_admin",
         "role": "OWNER_ADMIN"

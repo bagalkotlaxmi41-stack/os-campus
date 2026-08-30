@@ -620,82 +620,134 @@
       line-height: 1.5;
     }
 
-    /* ---- 1. MILESTONES RADAR GRID ---- */
-    .milestones-radar-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
+    /* ---- 1. ADMIN BROADCAST CARD & QUICK NAV ---- */
+    .admin-broadcast-banner-card {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(6, 182, 212, 0.12) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 20px;
+      padding: 24px 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(124, 58, 237, 0.2);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
     }
 
-    .radar-card {
+    .broadcast-banner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .broadcast-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .broadcast-authority-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .broadcast-timestamp-tag {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #94a3b8;
+    }
+
+    .broadcast-headline {
+      font-size: clamp(17px, 2.2vw, 22px);
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .broadcast-body-text {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      max-width: 900px;
+    }
+
+    .broadcast-footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .broadcast-tags-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .broadcast-tag-pill {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a78bfa;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+
+    .quick-nav-card {
       background: rgba(16, 13, 32, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 18px;
       padding: 20px;
+      text-decoration: none;
       display: flex;
       flex-direction: column;
-      position: relative;
+      gap: 8px;
       transition: all 0.25s ease;
       backdrop-filter: blur(16px);
     }
 
-    .radar-card:hover {
-      border-color: var(--radar-accent, #8b5cf6);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    .quick-nav-card:hover {
+      border-color: rgba(139, 92, 246, 0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 58, 237, 0.2);
     }
 
-    .radar-top {
+    .quick-nav-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 4px;
     }
 
-    .radar-tag {
-      font-size: 11px;
-      font-weight: 800;
-      padding: 3px 10px;
-      border-radius: 20px;
-      letter-spacing: 0.02em;
-    }
-
-    .radar-days-badge {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 800;
-      color: #c4b5fd;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 3px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-
-    .radar-title {
-      font-size: 16px;
+    .quick-nav-title {
+      font-size: 15px;
       font-weight: 800;
       color: #ffffff;
-      margin-bottom: 6px;
-      line-height: 1.25;
     }
 
-    .radar-desc {
+    .quick-nav-sub {
       font-size: 12px;
       color: #94a3b8;
-      line-height: 1.5;
-      margin-bottom: 14px;
-      flex: 1;
-    }
-
-    .radar-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 11px;
-      color: #cbd5e1;
+      line-height: 1.45;
     }
 
     /* ---- 2. CAMPUS NOTICEBOARD ---- */
@@ -1379,181 +1431,171 @@
 <!-- ===================== CAMPUS INTELLIGENCE & STUDENT BULLETIN HUB ===================== -->
 <main class="platform-main-container">
 
-  <!-- 1. ACADEMIC COUNTDOWN & SEMESTER RADAR -->
-  <div class="section-headline-group">
-    <div class="section-pill-tag">⏱️ Semester Milestone Radar</div>
-    <h2 class="section-h2-title">Upcoming Dates & Critical Deadlines</h2>
-    <p class="section-sub-desc">Stay ahead of university final exams, internal test schedules, and scholarship application windows.</p>
-  </div>
-
-  <div class="milestones-radar-grid">
-    <div class="radar-card" style="--radar-accent: #8b5cf6;">
-      <div class="radar-top">
-        <span class="radar-tag" style="background: rgba(139, 92, 246, 0.18); color: #c4b5fd;">University Finals</span>
-        <span class="radar-days-badge" id="examCountdownDays">45 Days</span>
+  <!-- ===================== 1. OFFICIAL ADMIN BROADCAST & LIVE NOTICE STREAM ===================== -->
+  <section class="admin-broadcast-section" id="adminBroadcastSection">
+    <div class="section-headline-group">
+      <div class="section-pill-tag" style="color:#a78bfa; background:rgba(124,58,237,0.16); border-color:rgba(124,58,237,0.35);">
+        <span>👑</span> Official Campus Channel
       </div>
-      <h3 class="radar-title">Odd Semester University Exams</h3>
-      <p class="radar-desc">RCUB & VTU Regular / Backlog Theory Examination Schedule 2026</p>
-      <div class="radar-footer">
-        <span>Target: Nov 15, 2026</span>
-        <span style="color: #a78bfa; font-weight: 700;">Scheme 2022/24</span>
+      <h2 class="section-h2-title">Official Campus Announcements & Admin Broadcasts</h2>
+      <p class="section-sub-desc">Live high-priority directives, exam schedules, and circulars broadcasted directly by Campus Administration.</p>
+    </div>
+
+    <!-- Live Dynamic Admin Broadcast Container -->
+    <div id="liveAdminBroadcastContainer">
+      <!-- Dynamically populated or verified live stream -->
+      <div class="admin-broadcast-banner-card">
+        <div class="broadcast-banner-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="broadcast-live-badge">🔴 LIVE BROADCAST</div>
+            <span class="broadcast-authority-badge">🏛️ Central Campus Administration</span>
+          </div>
+          <span class="broadcast-timestamp-tag" id="broadcastLiveTime">Official Bulletin</span>
+        </div>
+        <h3 class="broadcast-headline" id="mainBroadcastHeadline">Universal Academic Semester Timetable & Continuous Internal Evaluation Schedule</h3>
+        <p class="broadcast-body-text" id="mainBroadcastBody">
+          All students and faculty across undergraduate and postgraduate departments are notified that the official academic calendar, class periods, and continuous evaluation portals are live on Campus OS. Keep your attendance above 75% and review verified notes on the stream.
+        </p>
+        <div class="broadcast-footer-actions">
+          <div class="broadcast-tags-strip">
+            <span class="broadcast-tag-pill">#UniversityAdvisory</span>
+            <span class="broadcast-tag-pill">#AcademicNotice</span>
+            <span class="broadcast-tag-pill">#AllDepartments</span>
+          </div>
+          <a href="dashboard.html" class="hero-btn-primary" style="padding:7px 18px; font-size:12px; text-decoration:none;">
+            <span>Open Dashboard →</span>
+          </a>
+        </div>
       </div>
     </div>
 
-    <div class="radar-card" style="--radar-accent: #06b6d4;">
-      <div class="radar-top">
-        <span class="radar-tag" style="background: rgba(6, 182, 212, 0.18); color: #67e8f9;">Internal Assessment</span>
-        <span class="radar-days-badge" style="color: #38bdf8; border-color: rgba(6, 182, 212, 0.4);">12 Days</span>
-      </div>
-      <h3 class="radar-title">IA-2 Continuous Evaluation</h3>
-      <p class="radar-desc">Internal Assessment Test 2 across BCA, BSc, B.Pharm, and Engineering branches</p>
-      <div class="radar-footer">
-        <span>Starts: Sept 10, 2026</span>
-        <span style="color: #38bdf8; font-weight: 700;">Weightage: 25 Marks</span>
-      </div>
+    <!-- Verified Academic Notices Stream Filter -->
+    <div class="notice-filter-bar" style="margin-top:28px;">
+      <button class="notice-tab-btn active" data-filter="all" onclick="filterNotices('all', this)">All Broadcasts (6)</button>
+      <button class="notice-tab-btn" data-filter="exams" onclick="filterNotices('exams', this)">Exams & Hall Tickets</button>
+      <button class="notice-tab-btn" data-filter="scholarship" onclick="filterNotices('scholarship', this)">Scholarships & Aid</button>
+      <button class="notice-tab-btn" data-filter="placement" onclick="filterNotices('placement', this)">Placements & Drives</button>
+      <button class="notice-tab-btn" data-filter="academic" onclick="filterNotices('academic', this)">Academics & Library</button>
     </div>
 
-    <div class="radar-card" style="--radar-accent: #10b981;">
-      <div class="radar-top">
-        <span class="radar-tag" style="background: rgba(16, 185, 129, 0.18); color: #34d399;">State Scholarship</span>
-        <span class="radar-days-badge" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);">18 Days</span>
+    <!-- Notice Stream Cards -->
+    <div class="notices-display-grid" id="campusNoticesGrid" style="margin-top:18px;">
+      
+      <!-- Notice 1 -->
+      <div class="notice-item-card" data-category="exams">
+        <div class="notice-card-header">
+          <span class="notice-type-badge badge-exam">Exams & Schedule</span>
+          <span class="notice-date-text">Official Bulletin</span>
+        </div>
+        <h3 class="notice-headline">Semester Theory Examination Form Submission & Verification</h3>
+        <p class="notice-summary">Students appearing for upcoming semester examinations must verify their course registration, subject codes, and hall ticket eligibility before the deadline.</p>
+        <div class="notice-card-footer">
+          <span class="notice-authority">🏛️ Examination Cell</span>
+          <span class="notice-action-tag">Read Directive →</span>
+        </div>
       </div>
-      <h3 class="radar-title">SSP Post-Matric Application</h3>
-      <p class="radar-desc">Karnataka State Scholarship Portal e-Attestation & Fee Receipt Upload</p>
-      <div class="radar-footer">
-        <span>Deadline: Sept 15, 2026</span>
-        <span style="color: #34d399; font-weight: 700;">Govt of Karnataka</span>
+
+      <!-- Notice 2 -->
+      <div class="notice-item-card" data-category="scholarship">
+        <div class="notice-card-header">
+          <span class="notice-type-badge badge-scholarship">Scholarships</span>
+          <span class="notice-date-text">Important</span>
+        </div>
+        <h3 class="notice-headline">Post-Matric State Scholarship: Mandatory Aadhaar e-KYC Verification</h3>
+        <p class="notice-summary">All eligible scholarship applicants must complete biometric Aadhaar mapping and upload verified fee clearance receipts to avoid disbursement delays.</p>
+        <div class="notice-card-footer">
+          <span class="notice-authority">💰 Student Welfare Desk</span>
+          <span class="notice-action-tag">View Guidelines →</span>
+        </div>
       </div>
+
+      <!-- Notice 3 -->
+      <div class="notice-item-card" data-category="placement">
+        <div class="notice-card-header">
+          <span class="notice-type-badge badge-placement">Placements</span>
+          <span class="notice-date-text">Campus Drive</span>
+        </div>
+        <h3 class="notice-headline">Campus Recruitment Drive for BCA, BSc, B.Tech & Graduate Students</h3>
+        <p class="notice-summary">Leading technology consulting firms visiting campus for Software Associate & Cloud Support roles. Ensure your Student Passport profile is updated with verified skills.</p>
+        <div class="notice-card-footer">
+          <span class="notice-authority">💼 Career Placement Cell</span>
+          <span class="notice-action-tag">Register Drive →</span>
+        </div>
+      </div>
+
+      <!-- Notice 4 -->
+      <div class="notice-item-card" data-category="academic">
+        <div class="notice-card-header">
+          <span class="notice-type-badge badge-academic">Library & Study</span>
+          <span class="notice-date-text">Knowledge Hub</span>
+        </div>
+        <h3 class="notice-headline">Central Library Book Bank Scheme: Core Textbook & Formula Vault Access</h3>
+        <p class="notice-summary">Standard reference textbooks and semester module notes are available on Campus OS. Access digital PDF study materials anytime from your device.</p>
+        <div class="notice-card-footer">
+          <span class="notice-authority">📚 Central Library Desk</span>
+          <span class="notice-action-tag">Open Vault →</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== 2. STUDENT ACADEMIC WORKSPACE QUICK ACCESS ===================== -->
+  <section style="margin-top:60px;">
+    <div class="section-headline-group">
+      <div class="section-pill-tag" style="color:#38bdf8; background:rgba(6,182,212,0.16); border-color:rgba(6,182,212,0.35);">⚡ Fast Navigation</div>
+      <h2 class="section-h2-title">Core Academic Workspace Tools</h2>
+      <p class="section-sub-desc">Instant access to your daily schedule, attendance radar, study notes, and student passport.</p>
     </div>
 
-    <div class="radar-card" style="--radar-accent: #f59e0b;">
-      <div class="radar-top">
-        <span class="radar-tag" style="background: rgba(245, 158, 11, 0.18); color: #fcd34d;">Lab Practical</span>
-        <span class="radar-days-badge" style="color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">24 Days</span>
-      </div>
-      <h3 class="radar-title">Lab Record & Viva Submission</h3>
-      <p class="radar-desc">Departmental Laboratory Journal Certification & Final External Viva Mock</p>
-      <div class="radar-footer">
-        <span>Due: Sept 22, 2026</span>
-        <span style="color: #fbbf24; font-weight: 700;">All Science & IT Labs</span>
-      </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-top:20px;">
+      <a href="dashboard.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(139,92,246,0.2); color:#c4b5fd;">📊</div>
+        <div class="quick-nav-title">Academic Dashboard</div>
+        <div class="quick-nav-sub">Today's classes, tasks due, and average attendance summary.</div>
+      </a>
+
+      <a href="feed.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(244,63,94,0.2); color:#fca5a5;">🔴</div>
+        <div class="quick-nav-title">Campus Stream (Reels)</div>
+        <div class="quick-nav-sub">Full-screen vertical reels for lecture videos and PDF notes.</div>
+      </a>
+
+      <a href="timetable.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(6,182,212,0.2); color:#67e8f9;">📅</div>
+        <div class="quick-nav-title">Weekly Timetable</div>
+        <div class="quick-nav-sub">Daily periods, room allocations, and faculty course schedules.</div>
+      </a>
+
+      <a href="attendance.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(16,185,129,0.2); color:#34d399;">📈</div>
+        <div class="quick-nav-title">75% Attendance Radar</div>
+        <div class="quick-nav-sub">Safe bunk calculator and official attendance health predictor.</div>
+      </a>
+
+      <a href="notes.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(245,158,11,0.2); color:#fcd34d;">📝</div>
+        <div class="quick-nav-title">Smart Notes Vault</div>
+        <div class="quick-nav-sub">Markdown study notes with instant tags, search, and backup.</div>
+      </a>
+
+      <a href="resources.html" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background:rgba(168,85,247,0.2); color:#e9d5ff;">📚</div>
+        <div class="quick-nav-title">Question Papers Vault</div>
+        <div class="quick-nav-sub">Previous semester question papers and model answer keys.</div>
+      </a>
     </div>
-  </div>
+  </section>
 
-  <!-- 2. OFFICIAL CAMPUS NOTICEBOARD & CIRCULARS -->
-  <div class="section-headline-group" style="margin-top: 48px;">
-    <div class="section-pill-tag" style="color: #38bdf8; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3);">📢 Campus Circulars</div>
-    <h2 class="section-h2-title">Official Student Noticeboard</h2>
-    <p class="section-sub-desc">Verified updates from college administration, examination department, and career placement cell.</p>
-  </div>
-
-  <!-- Filter Category Tabs -->
-  <div class="notice-filter-bar">
-    <button class="notice-tab-btn active" data-filter="all" onclick="filterNotices('all', this)">All Updates (6)</button>
-    <button class="notice-tab-btn" data-filter="exams" onclick="filterNotices('exams', this)">Exams & Hall Tickets</button>
-    <button class="notice-tab-btn" data-filter="scholarship" onclick="filterNotices('scholarship', this)">Scholarships</button>
-    <button class="notice-tab-btn" data-filter="placement" onclick="filterNotices('placement', this)">Campus Placements</button>
-    <button class="notice-tab-btn" data-filter="academic" onclick="filterNotices('academic', this)">Academic & Library</button>
-  </div>
-
-  <!-- Notices Grid -->
-  <div class="notices-display-grid" id="campusNoticesGrid">
-    
-    <!-- Notice 1 -->
-    <div class="notice-item-card" data-category="exams">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-exam">Exams & Results</span>
-        <span class="notice-date-text">27 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">Odd Semester University Examination Form Submission & Fee Notification</h3>
-      <p class="notice-summary">Students appearing for 1st, 3rd, 5th, and 7th semester examinations must verify their course registration and submit university fees before the deadline to avoid late penaltes.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">🏛️ Examination Cell · BLDEA</span>
-        <span class="notice-action-tag">Read Circular →</span>
-      </div>
-    </div>
-
-    <!-- Notice 2 -->
-    <div class="notice-item-card" data-category="scholarship">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-scholarship">Scholarships</span>
-        <span class="notice-date-text">26 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">State Scholarship Portal (SSP) 2026-27: Mandatory Aadhaar e-KYC Verification</h3>
-      <p class="notice-summary">All SC/ST/OBC/Minority scholarship applicants must complete biometric Aadhaar-NPCI mapping at their designated banks. E-attestation desk is open in Room 104 from 10:00 AM to 4:00 PM.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">💰 Student Welfare Desk</span>
-        <span class="notice-action-tag">View Guidelines →</span>
-      </div>
-    </div>
-
-    <!-- Notice 3 -->
-    <div class="notice-item-card" data-category="placement">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-placement">Placements</span>
-        <span class="notice-date-text">25 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">Campus Recruitment Drive for BCA, BSc, B.Tech Final Year Students</h3>
-      <p class="notice-summary">Leading IT consulting firm visiting campus for Software Associate & Cloud Support roles (4.5 – 6.5 LPA). Eligible students must update their resumes in the Training & Placement portal.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">💼 Career Placement Cell</span>
-        <span class="notice-action-tag">Register Drive →</span>
-      </div>
-    </div>
-
-    <!-- Notice 4 -->
-    <div class="notice-item-card" data-category="academic">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-academic">Library & Academics</span>
-        <span class="notice-date-text">24 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">Central Library Book Bank Scheme: Issue of Core Reference Textbooks</h3>
-      <p class="notice-summary">Book Bank books for 3rd and 5th semester degree courses are available for issue from the central library. Bring your valid College ID card and previous semester clearance slip.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">📚 Central Library Desk</span>
-        <span class="notice-action-tag">Check Book List →</span>
-      </div>
-    </div>
-
-    <!-- Notice 5 -->
-    <div class="notice-item-card" data-category="exams">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-exam">Exams & Results</span>
-        <span class="notice-date-text">23 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">Internal Assessment IA-2 Timetable & Syllabus Blueprint Released</h3>
-      <p class="notice-summary">The detailed period-wise schedule for IA-2 has been published on departmental bulletin boards. Maximum marks: 25. Syllabus covers Modules 3 and 4 of respective curriculum.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">📝 Academic Council</span>
-        <span class="notice-action-tag">Download Schedule →</span>
-      </div>
-    </div>
-
-    <!-- Notice 6 -->
-    <div class="notice-item-card" data-category="academic">
-      <div class="notice-card-header">
-        <span class="notice-type-badge badge-academic">Campus Activity</span>
-        <span class="notice-date-text">22 Aug 2026</span>
-      </div>
-      <h3 class="notice-headline">Annual Inter-Collegiate Science & Tech Symposium 'INNOVA 2026'</h3>
-      <p class="notice-summary">Registrations are invited for Technical Paper Presentation, Coding Hackathon, and Robo-Race events. Cash prizes up to ₹50,000. Form teams and register at the Student Council office.</p>
-      <div class="notice-card-footer">
-        <span class="notice-authority">🏆 Student Council · BLDEA</span>
-        <span class="notice-action-tag">Event Details →</span>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- 3. DAILY STUDENT INTELLIGENCE & APTITUDE CHALLENGE -->
-  <div class="daily-intel-section">
+  <!-- ===================== 3. DAILY STUDENT INTELLIGENCE & APTITUDE CHALLENGE ===================== -->
+  <div class="daily-intel-section" style="margin-top:60px;">
     <div class="daily-intel-card">
       <div class="intel-card-badge">💡 Concept of the Day</div>
       <h3 class="intel-headline">Time Complexity & Big-O in Algorithm Optimization</h3>
       <p class="intel-text">
         When choosing search algorithms, <strong>Binary Search</strong> operates in <code style="background: rgba(139,92,246,0.2); padding: 2px 6px; border-radius: 4px; color:#c4b5fd;">O(log n)</code> time by halving the search space in sorted arrays, compared to <strong>Linear Search</strong> in <code style="background: rgba(139,92,246,0.2); padding: 2px 6px; border-radius: 4px; color:#c4b5fd;">O(n)</code> time.
       </p>
-      <div style="font-size: 11px; color: #a78bfa; font-weight: 700;">Subjects: Data Structures & Algorithms · Computer Science & BCA</div>
+      <div style="font-size: 11px; color: #a78bfa; font-weight: 700;">Subjects: Data Structures & Algorithms · Computer Applications</div>
     </div>
 
     <div class="daily-intel-card" style="border-color: rgba(6, 182, 212, 0.35);">
@@ -1567,55 +1609,6 @@
         <div><strong>Step 1:</strong> Speed in m/s = 72 × (5/18) = <strong>20 m/s</strong>.</div>
         <div><strong>Step 2:</strong> Total Distance = Speed × Time = 20 × 22 = <strong>440 meters</strong>.</div>
         <div><strong>Step 3:</strong> Train Length = Total Distance - Platform Length = 440 - 200 = <strong style="color: #34d399;">240 meters</strong>.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. CAMPUS HELPDESK & EMERGENCY SUPPORT DIRECTORY -->
-  <div class="campus-helpdesk-wrap">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-      <div>
-        <h3 style="font-size: 17px; font-weight: 800; color: #fff;">📞 Campus Helpdesk & Student Grievance Contacts</h3>
-        <p style="font-size: 12px; color: #94a3b8;">Direct departmental phone extensions and official administrative support desks</p>
-      </div>
-      <span style="font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.12); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(16,185,129,0.3);">● Support Desks Active</span>
-    </div>
-
-    <div class="helpdesk-grid">
-      <div class="helpdesk-card">
-        <div class="helpdesk-icon">📝</div>
-        <div>
-          <div class="helpdesk-name">Examination & Results Section</div>
-          <div class="helpdesk-sub">Room 102, Admin Block · Ext: 204</div>
-          <div class="helpdesk-contact">📞 +91 (08353) 220186</div>
-        </div>
-      </div>
-
-      <div class="helpdesk-card">
-        <div class="helpdesk-icon">💰</div>
-        <div>
-          <div class="helpdesk-name">Scholarship & Fee Attestation</div>
-          <div class="helpdesk-sub">Room 104, Student Section · Ext: 208</div>
-          <div class="helpdesk-contact">✉️ scholarship@bldeajkd.ac.in</div>
-        </div>
-      </div>
-
-      <div class="helpdesk-card">
-        <div class="helpdesk-icon">🛡️</div>
-        <div>
-          <div class="helpdesk-name">Anti-Ragging & Grievance Cell</div>
-          <div class="helpdesk-sub">24x7 Student Helpline & Redressal</div>
-          <div class="helpdesk-contact" style="color: #f87171;">🚨 Toll Free: 1800-180-5522</div>
-        </div>
-      </div>
-
-      <div class="helpdesk-card">
-        <div class="helpdesk-icon">💻</div>
-        <div>
-          <div class="helpdesk-name">Central Computing & IT Support</div>
-          <div class="helpdesk-sub">Main IT Server Lab · Ext: 215</div>
-          <div class="helpdesk-contact">✉️ itsupport@bldeajkd.ac.in</div>
-        </div>
       </div>
     </div>
   </div>
@@ -1645,7 +1638,7 @@
         </p>
         <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:20px; font-size:11px; font-weight:800; color:#34d399;">
           <span style="width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
-          BLDEA Campus · Verified Platform
+          Campus OS · Verified Platform
         </div>
       </div>
 
@@ -1682,9 +1675,9 @@
         <div style="font-size:13px; font-weight:800; color:#fff; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">Campus Helpdesk</div>
         <div style="display:flex; flex-direction:column; gap:12px; font-size:12.5px; color:#94a3b8;">
           <div>
-            <div style="color:#cbd5e1; font-weight:700; margin-bottom:2px;">🏛️ BLDEA Campus</div>
-            <div>Commerce, BHS Arts & TGP Science College</div>
-            <div>Jamkhandi – 587301, Karnataka</div>
+            <div style="color:#cbd5e1; font-weight:700; margin-bottom:2px;">🏛️ Campus OS Academic Network</div>
+            <div>Central Digital Student Academic System</div>
+            <div>Universal Student Platform</div>
           </div>
           <div>
             <div style="color:#cbd5e1; font-weight:700; margin-bottom:2px;">✉️ Technical Support</div>
@@ -1702,7 +1695,7 @@
     <!-- Bottom Bar Divider -->
     <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; font-size:12px; color:#64748b;">
       <div>
-        © 2026 Campus OS. Engineered for BLDEA Association Students & Faculty. All Rights Reserved.
+        © 2026 Campus OS. Universal Academic Operating Platform for Students & Faculty. All Rights Reserved.
       </div>
       <div style="display:flex; align-items:center; gap:20px;">
         <span style="display:inline-flex; align-items:center; gap:6px; color:#34d399;">
@@ -1774,7 +1767,7 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="display:block; font-size:10.5px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:5px;">Email Address *</label>
-            <input type="email" id="modalEmail" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:9px 12px; color:#fff; font-size:13px; outline:none;" placeholder="student@bldea.edu" required />
+            <input type="email" id="modalEmail" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:9px 12px; color:#fff; font-size:13px; outline:none;" placeholder="student@college.edu" required />
           </div>
           <div>
             <label style="display:block; font-size:10.5px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:5px;">Password (Min 6 Chars) *</label>
@@ -1848,7 +1841,7 @@
       <form onsubmit="executeModalAccountLogin(event)">
         <div style="margin-bottom:14px;">
           <label style="display:block; font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase; margin-bottom:6px;">Email Address or Username *</label>
-          <input type="text" id="modalLoginIdent" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" placeholder="student@bldea.edu or @username" required />
+          <input type="text" id="modalLoginIdent" style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" placeholder="student@college.edu or @username" required />
         </div>
 
         <div style="margin-bottom:20px;">
@@ -2201,7 +2194,7 @@ async function executeModalAccountSave(e) {
     handle: handle,
     email: email,
     password: password,
-    college: "BLDE Association's Campus, Jamakhandi",
+    college: "Campus OS Academic Network",
     usn: usn || null,
     program: program,
     department: dept,

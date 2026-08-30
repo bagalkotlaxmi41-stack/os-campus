@@ -1,6 +1,6 @@
 # 🎓 Campus OS — Smart Academic Operating Platform
 
-> **Modern, real-time academic operating platform tailored for BLDEA's Commerce, BHS Arts & TGP Science College, Jamkhandi.**
+> **Modern, high-performance, real-time academic operating platform engineered for universities and student communities everywhere.**
 
 [![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg)]()
 [![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20HTML5%20%7C%20CSS3%20%7C%20JS-8b5cf6.svg)]()
@@ -19,7 +19,7 @@
 - Period timings, classroom/lab locators, and interactive slot editing.
 
 ### 📈 75% Attendance Radar (`attendance.html`)
-- Automated VTU / University 75% minimum criteria calculator.
+- Automated University 75% minimum criteria calculator.
 - Real-time Safe Bunk Margin indicator and class eligibility predictor.
 
 ### 📝 Smart Notes Vault (`notes.html`)
@@ -28,7 +28,7 @@
 ### ✅ Kanban Task & Assignment Planner (`tasks.html`)
 - Visual Kanban workflow (`To Do` → `In Progress` → `Done`) for assignments, seminars, and internal exams.
 
-### 📚 VTU / University Question Bank (`resources.html`)
+### 📚 University Question Bank (`resources.html`)
 - Previous years' university question papers, lab manuals, and official syllabus schemes.
 
 ### 👤 Student Passport & Real Student Directory (`profile.html`)
@@ -36,10 +36,9 @@
 - Global Search overlay (`Ctrl+K`) for finding real registered classmates across branches.
 
 ### 📢 Campus Intelligence & Noticeboard (`index.html`)
-- Live semester milestone countdown radar (University Finals, IA-2, SSP Scholarship Deadline, Lab Record Submissions).
-- Official categorized noticeboard (Exams, Scholarships, Placements, Library).
+- Live official Administrator broadcast and circulars stream.
+- Dynamic unlimited hero banner carousel managed by campus administrators.
 - Daily Concept & Placement Aptitude Challenge with step-by-step solution reveals.
-- Departmental helpline directory.
 
 ---
 
@@ -107,4 +106,4 @@ os-campus/
 ---
 
 ## 📜 License
-Developed for **BLDE Association's Commerce, BHS Arts & TGP Science College, Jamkhandi**.
+Campus OS — Universal Open Academic Operating Platform.

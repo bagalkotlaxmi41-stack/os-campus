@@ -433,7 +433,7 @@
           <div class="field-row">
             <div class="field">
               <label>College / University</label>
-              <input type="text" id="regCollege" placeholder="e.g. BLDEA Campus Jamkhandi" />
+              <input type="text" id="regCollege" placeholder="e.g. Campus OS Academic Network" />
             </div>
             <div class="field">
               <label>USN / Roll Number</label>
@@ -740,7 +740,7 @@
     var pass  = (document.getElementById('regPass').value  || '');
     var handle = '@' + username.replace(/^@/, '');
     var usn = (document.getElementById('regUSN')?.value || '').trim();
-    var college = (document.getElementById('regCollege')?.value || '').trim() || 'BLDEA Campus Jamkhandi';
+    var college = (document.getElementById('regCollege')?.value || '').trim() || 'Campus OS Academic Network';
     var dept = document.getElementById('regDept').value;
     var program = document.getElementById('regProgram').value;
     var sem = parseInt(document.getElementById('regSem').value, 10) || 5;

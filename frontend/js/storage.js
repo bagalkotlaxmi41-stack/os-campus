@@ -127,13 +127,47 @@ const Storage = {
   },
 
   // ============================================================
-  // REAL STUDENT ACCOUNTS DIRECTORY (Like Instagram / FB)
+  // REAL STUDENT ACCOUNTS DIRECTORY
   // ============================================================
+  getDeletedHandles() {
+    try {
+      return JSON.parse(localStorage.getItem('cos_deleted_handles_v2') || '[]');
+    } catch(e) { return []; }
+  },
+  addDeletedHandle(handle) {
+    if (!handle) return;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const list = this.getDeletedHandles();
+    if (!list.includes(clean)) {
+      list.push(clean);
+      localStorage.setItem('cos_deleted_handles_v2', JSON.stringify(list));
+    }
+  },
+  removeDeletedHandle(handle) {
+    if (!handle) return;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const list = this.getDeletedHandles().filter(h => h !== clean);
+    localStorage.setItem('cos_deleted_handles_v2', JSON.stringify(list));
+  },
   getAccounts() {
-    return this.get(KEYS.ACCOUNTS, []);
+    const raw = this.getItem(KEYS.ACCOUNTS);
+    let list = Array.isArray(raw) ? raw : [];
+    const deleted = this.getDeletedHandles();
+    if (deleted.length > 0) {
+      list = list.filter(a => {
+        const h = (a.username || a.handle || '').toLowerCase();
+        return !deleted.includes(h);
+      });
+    }
+    return list;
   },
   setAccounts(accounts) {
-    return this.set(KEYS.ACCOUNTS, accounts);
+    const deleted = this.getDeletedHandles();
+    const cleanList = (accounts || []).filter(a => {
+      const h = (a.username || a.handle || '').toLowerCase();
+      return !deleted.includes(h);
+    });
+    return this.set(KEYS.ACCOUNTS, cleanList);
   },
   isEmailTaken(email, excludeHandle = null) {
     if (!email || !email.trim()) return false;
@@ -152,6 +186,9 @@ const Storage = {
     const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
     const emailClean = (account.email || '').trim().toLowerCase();
     
+    // Remove from deleted list if re-registered
+    this.removeDeletedHandle(handle);
+
     const accounts = this.getAccounts();
     const updatedAccount = {
       ...account,
@@ -181,7 +218,7 @@ const Storage = {
 
     // Asynchronously sync with Backend API
     if (window.PythonAPI && PythonAPI.saveAccount) {
-      PythonAPI.saveAccount(updatedAccount).catch(err => console.warn('API saveAccount sync error:', err));
+      PythonAPI.saveAccount(updatedAccount).catch(() => {});
     }
 
     return updatedAccount;
@@ -190,28 +227,31 @@ const Storage = {
     if (!handle) return false;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
     
-    // 1. Remove from accounts array
+    // 1. Add to permanent deleted blacklist
+    this.addDeletedHandle(clean);
+
+    // 2. Remove from accounts array
     const accounts = this.getAccounts().filter(a => (a.username || a.handle || '').toLowerCase() !== clean);
     this.setAccounts(accounts);
 
-    // 2. Remove all posts by this account
+    // 3. Remove all posts by this account
     const posts = this.getPosts().filter(p => (p.handle || '').toLowerCase() !== clean);
     this.setPosts(posts);
 
-    // 3. Remove photo
+    // 4. Remove photo
     try {
       localStorage.removeItem('cos_photo_' + clean);
     } catch (e) {}
 
-    // 4. If current user is this account, clear user
+    // 5. If current user is this account, clear user
     const u = this.getUser();
     if (u && (u.username || u.handle || '').toLowerCase() === clean) {
       this.clearUser();
     }
 
-    // 5. Sync deletion with Backend API
+    // 6. Sync deletion with Backend API
     if (window.PythonAPI && PythonAPI.deleteAccount) {
-      PythonAPI.deleteAccount(clean).catch(e => console.warn('Delete account API sync:', e));
+      PythonAPI.deleteAccount(clean).catch(() => {});
     }
 
     return true;
@@ -232,28 +272,72 @@ const Storage = {
       this.setUser(u);
     }
     if (window.PythonAPI && PythonAPI.updateAccountRole) {
-      PythonAPI.updateAccountRole(clean, formattedRole).catch(e => console.warn('Role API sync:', e));
+      PythonAPI.updateAccountRole(clean, formattedRole).catch(() => {});
     }
     return true;
+  },
+  getUserPhoto(handle) {
+    if (!handle) return null;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    try {
+      const local = localStorage.getItem('cos_photo_' + clean);
+      if (local) return local;
+    } catch(e) {}
+    const acc = this.getAccountByHandle(clean);
+    return acc ? (acc.photo || null) : null;
+  },
+  setUserPhoto(handle, photoBase64) {
+    if (!handle) return;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    try {
+      if (photoBase64) {
+        localStorage.setItem('cos_photo_' + clean, photoBase64);
+      } else {
+        localStorage.removeItem('cos_photo_' + clean);
+      }
+    } catch(e) {}
+
+    // Update in current user session if applicable
+    const u = this.getUser();
+    if (u && (u.username || u.handle || '').toLowerCase() === clean) {
+      u.photo = photoBase64;
+      this.setUser(u);
+    }
+
+    // Update in accounts directory
+    const accs = this.getAccounts();
+    const acc = accs.find(a => (a.username || a.handle || '').toLowerCase() === clean);
+    if (acc) {
+      acc.photo = photoBase64;
+      this.setAccounts(accs);
+    }
+
+    // Sync to Python backend API
+    if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
+      PythonAPI.updateAccountPhoto(clean, photoBase64).catch(() => {});
+    }
   },
   getAccountByHandle(handle) {
     if (!handle) return null;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const deleted = this.getDeletedHandles();
+    if (deleted.includes(clean)) return null;
+
     const found = this.getAccounts().find(a => (a.username || a.handle || '').toLowerCase() === clean);
     if (found) return found;
     if (clean === '@campus_admin') {
       return {
         username: '@campus_admin',
         handle: '@campus_admin',
-        displayName: 'BLDE Campus Administrator',
-        name: 'BLDE Campus Administrator',
+        displayName: 'Campus Administrator',
+        name: 'Campus Administrator',
         email: 'campus0012@gmail.com',
         role: 'OWNER_ADMIN',
         department: 'Central Administration',
         program: 'Administration & Governance',
         semester: 8,
         usn: 'ADMIN-001',
-        bio: 'Official Administrator & Platform Owner for BLDE Campus OS.',
+        bio: 'Official Platform Administrator & Owner for Campus OS.',
         skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
         xp: 9999,
         verified: true,
@@ -715,9 +799,9 @@ const Storage = {
     const fallback = [
       {
         id: "banner_1",
-        title: "Commerce, BHS Arts &<br /><span class=\"text-hero-gradient\">TGP Science College</span>",
-        subtitle: "Stay ahead with academic roadmaps, timetables, and VTU resource hubs.",
-        badge: "✨ BLDE Association's Campus · Jamkhandi",
+        title: "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>",
+        subtitle: "Stay ahead with academic roadmaps, lecture timetables, verified study notes, and campus resource hubs.",
+        badge: "✨ Universal Campus Academic Platform",
         cta_text: "📊 Open Dashboard →",
         cta_url: "dashboard.html",
         secondary_text: "🚀 Create Account",
@@ -728,7 +812,7 @@ const Storage = {
       {
         id: "banner_2",
         title: "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>",
-        subtitle: "Check live timetable periods, room locations, and lab schedule allocations.",
+        subtitle: "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.",
         badge: "📅 Class Timetables",
         cta_text: "📅 View Timetable →",
         cta_url: "timetable.html",
@@ -740,7 +824,7 @@ const Storage = {
       {
         id: "banner_3",
         title: "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>",
-        subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access handwritten notes.",
+        subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.",
         badge: "🌟 75% Attendance Radar",
         cta_text: "📈 Check Attendance",
         cta_url: "attendance.html",

@@ -1290,7 +1290,7 @@
         </svg>
       </div>
       <h2 class="gatekeeper-title">Owner & Admin Access</h2>
-      <p class="gatekeeper-subtitle">Restricted authentication portal for BLDE Campus OS administrators. Please sign in with your administrative credentials.</p>
+      <p class="gatekeeper-subtitle">Restricted authentication portal for Campus OS administrators. Please sign in with your administrative credentials.</p>
 
       <form id="gatekeeperForm" onsubmit="handleGatekeeperAuth(event)">
         <div class="gatekeeper-input-group">
@@ -1781,13 +1781,13 @@
         }
 
         // Master key & official admin local verification fallback
-        const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'blde_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
+        const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'campus_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
         const isOwnerCreds = (email === 'campus0012@gmail.com' && key === 'campus@#1974') || validMasterKeys.includes(key);
 
         if (authResult || isOwnerCreds) {
           failedAdminAttempts = 0;
           const adminData = authResult?.admin || {
-            displayName: 'BLDE Campus Administrator',
+            displayName: 'Campus Administrator',
             email: email || 'campus0012@gmail.com',
             role: 'OWNER_ADMIN',
             handle: '@campus_admin'
