@@ -1190,10 +1190,15 @@ function extractYoutubeId(url) {
 }
 
 const urlParams = new URLSearchParams(window.location.search);
-const viewHandle = urlParams.get('handle');
+const rawHandleParam = urlParams.get('handle');
+const viewHandle = rawHandleParam ? (rawHandleParam.startsWith('@') ? rawHandleParam : '@' + rawHandleParam) : null;
 
 let currentUser = Storage.getUser();
-const isOwnProfile = !viewHandle || (currentUser && viewHandle.toLowerCase() === (currentUser.username || '').toLowerCase());
+const isOwnProfile = !viewHandle || (currentUser && (
+  viewHandle.toLowerCase() === (currentUser.username || '').toLowerCase() ||
+  viewHandle.toLowerCase() === (currentUser.handle || '').toLowerCase() ||
+  viewHandle.toLowerCase().replace('@', '') === (currentUser.username || currentUser.handle || '').toLowerCase().replace('@', '')
+));
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (viewHandle) {

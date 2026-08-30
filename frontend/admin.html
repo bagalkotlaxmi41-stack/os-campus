@@ -1837,26 +1837,95 @@
     // ============================================================
     // DATA LOADING & RENDERING
     // ============================================================
-    async function loadAllAdminData() {
-      // 1. Load Stats
-      let stats = null;
-      if (window.PythonAPI && PythonAPI.getAdminStats) {
-        stats = await PythonAPI.getAdminStats();
+    async function loadAllAdminData(isManualRefresh = false) {
+      // 1. Fetch live accounts from Python API
+      let remoteAccs = [];
+      if (window.PythonAPI && PythonAPI.getAccounts) {
+        try {
+          remoteAccs = await PythonAPI.getAccounts() || [];
+        } catch (e) {
+          console.warn('Remote accounts fetch note:', e);
+        }
       }
 
-      // Fallback local stats calculation
-      const localAccs = Storage.getAccounts();
-      const localPosts = Storage.getPosts();
+      // 2. Fetch local storage accounts & current session
+      const localAccs = Storage.getAccounts() || [];
+      const currentActiveUser = Storage.getUser();
+
+      // 3. Merge and deduplicate all accounts by handle
+      const accountMap = new Map();
+
+      // Seed default official admin
+      const officialAdmin = {
+        username: '@campus_admin',
+        handle: '@campus_admin',
+        displayName: 'BLDE Campus Administrator',
+        name: 'BLDE Campus Administrator',
+        email: 'campus0012@gmail.com',
+        role: 'OWNER_ADMIN',
+        department: 'Central Administration',
+        semester: 8,
+        usn: 'ADMIN-001',
+        bio: 'Official Administrator & Platform Owner for BLDE Campus OS.',
+        skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
+        xp: 9999,
+        verified: true,
+        createdAt: Date.now()
+      };
+      accountMap.set('@campus_admin', officialAdmin);
+
+      localAccs.forEach(a => {
+        const rawH = (a.handle || a.username || '').toLowerCase();
+        if (rawH) {
+          const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
+          accountMap.set(formattedH, { ...a, handle: formattedH, username: formattedH });
+        }
+      });
+
+      remoteAccs.forEach(a => {
+        const rawH = (a.handle || a.username || '').toLowerCase();
+        if (rawH) {
+          const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
+          const existing = accountMap.get(formattedH) || {};
+          accountMap.set(formattedH, { ...existing, ...a, handle: formattedH, username: formattedH });
+        }
+      });
+
+      if (currentActiveUser) {
+        const uh = (currentActiveUser.handle || currentActiveUser.username || '').toLowerCase();
+        if (uh) {
+          const formattedH = uh.startsWith('@') ? uh : '@' + uh;
+          const existing = accountMap.get(formattedH) || {};
+          accountMap.set(formattedH, { ...existing, ...currentActiveUser, handle: formattedH, username: formattedH });
+        }
+      }
+
+      allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      Storage.setAccounts(allAdminAccounts);
+
+      // 4. Fetch live banners & posts
+      let remoteBanners = [];
+      if (window.PythonAPI && PythonAPI.getAdminBanners) {
+        try {
+          remoteBanners = await PythonAPI.getAdminBanners() || [];
+        } catch (e) {}
+      }
       const localBanners = Storage.getBanners();
+      allAdminBanners = remoteBanners.length > 0 ? remoteBanners : localBanners;
 
-      allAdminAccounts = (stats && stats.recent_students && stats.recent_students.length) ? (await PythonAPI.getAccounts() || localAccs) : localAccs;
-      allAdminBanners = (stats && stats.total_banners) ? (await PythonAPI.getAdminBanners() || localBanners) : localBanners;
-      allAdminPosts = localPosts;
+      let remotePosts = [];
+      if (window.PythonAPI && PythonAPI.getPosts) {
+        try {
+          remotePosts = await PythonAPI.getPosts() || [];
+        } catch (e) {}
+      }
+      const localPosts = Storage.getPosts();
+      allAdminPosts = remotePosts.length > 0 ? remotePosts : localPosts;
 
-      // Update KPI Numbers
-      const totalStudents = stats?.total_students ?? localAccs.length;
-      const totalPosts = stats?.total_posts ?? localPosts.length;
-      const totalLikes = stats?.total_likes ?? localPosts.reduce((acc, p) => acc + (p.likes || 0), 0);
+      // 5. Update KPI Numbers
+      const totalStudents = allAdminAccounts.length;
+      const totalPosts = allAdminPosts.length;
+      const totalLikes = allAdminPosts.reduce((acc, p) => acc + (p.likes || 0), 0);
       const totalBanners = allAdminBanners.length;
 
       document.getElementById('kpiTotalStudents').textContent = totalStudents;
@@ -1867,8 +1936,13 @@
       document.getElementById('sidebarAccountsCount').textContent = totalStudents;
       document.getElementById('sidebarBannersCount').textContent = totalBanners;
 
-      // Render Department Breakdown
-      renderDepartmentProgress(stats?.branch_breakdown);
+      // Render Department Breakdown dynamically from allAdminAccounts
+      const branchBreakdown = {};
+      allAdminAccounts.forEach(a => {
+        const dept = a.department || 'Computer Science & Engineering';
+        branchBreakdown[dept] = (branchBreakdown[dept] || 0) + 1;
+      });
+      renderDepartmentProgress(branchBreakdown);
 
       // Render Recent Students
       renderRecentStudents(allAdminAccounts.slice(0, 5));
@@ -1884,6 +1958,10 @@
 
       // Render Audit Logs
       loadAuditLogs();
+
+      if (isManualRefresh) {
+        showAdminToast('🔄 All student accounts & system metrics updated!');
+      }
     }
 
     function renderDepartmentProgress(branchMap) {
@@ -2071,18 +2149,29 @@
     }
 
     function filterAccountsTable() {
-      const q = document.getElementById('accountsSearchInput').value.toLowerCase().trim();
+      const rawInput = document.getElementById('accountsSearchInput').value.trim();
+      const q = rawInput.toLowerCase();
+      // Strip leading '@' if typed so searching "student", "@student", "campus", "@campus" works identically
+      const cleanQ = q.startsWith('@') ? q.slice(1).trim() : q;
       const roleFilter = document.getElementById('roleFilterSelect').value;
 
       const filtered = allAdminAccounts.filter(a => {
         const name = (a.displayName || a.name || '').toLowerCase();
-        const handle = (a.handle || a.username || '').toLowerCase();
+        const rawHandle = (a.handle || a.username || '').toLowerCase();
+        const cleanHandle = rawHandle.startsWith('@') ? rawHandle.slice(1) : rawHandle;
         const email = (a.email || '').toLowerCase();
         const usn = (a.usn || '').toLowerCase();
         const dept = (a.department || '').toLowerCase();
         const role = (a.role || 'STUDENT').toUpperCase();
 
-        const matchesQuery = !q || name.includes(q) || handle.includes(q) || email.includes(q) || usn.includes(q) || dept.includes(q);
+        const matchesQuery = !cleanQ || 
+          name.includes(cleanQ) || 
+          cleanHandle.includes(cleanQ) || 
+          rawHandle.includes(q) || 
+          email.includes(cleanQ) || 
+          usn.includes(cleanQ) || 
+          dept.includes(cleanQ);
+
         const matchesRole = roleFilter === 'all' || role === roleFilter || (roleFilter === 'ADMIN' && (role === 'ADMIN' || role === 'OWNER_ADMIN'));
 
         return matchesQuery && matchesRole;
