@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "cleanUrls": true,
-  "trailingSlash": false,
   "builds": [
     {
       "src": "api/index.py",
@@ -23,51 +21,55 @@
     },
     {
       "src": "/admin",
-      "dest": "frontend/admin.html"
+      "dest": "/frontend/admin.html"
     },
     {
       "src": "/admin.html",
-      "dest": "frontend/admin.html"
+      "dest": "/frontend/admin.html"
     },
     {
       "src": "/dashboard",
-      "dest": "frontend/dashboard.html"
+      "dest": "/frontend/dashboard.html"
     },
     {
       "src": "/feed",
-      "dest": "frontend/feed.html"
+      "dest": "/frontend/feed.html"
     },
     {
       "src": "/profile",
-      "dest": "frontend/profile.html"
+      "dest": "/frontend/profile.html"
     },
     {
       "src": "/notes",
-      "dest": "frontend/notes.html"
+      "dest": "/frontend/notes.html"
     },
     {
       "src": "/tasks",
-      "dest": "frontend/tasks.html"
+      "dest": "/frontend/tasks.html"
     },
     {
       "src": "/attendance",
-      "dest": "frontend/attendance.html"
+      "dest": "/frontend/attendance.html"
     },
     {
       "src": "/timetable",
-      "dest": "frontend/timetable.html"
+      "dest": "/frontend/timetable.html"
     },
     {
       "src": "/resources",
-      "dest": "frontend/resources.html"
+      "dest": "/frontend/resources.html"
     },
     {
       "src": "/auth",
-      "dest": "frontend/auth.html"
+      "dest": "/frontend/auth.html"
+    },
+    {
+      "src": "/",
+      "dest": "/frontend/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "/frontend/$1"
     }
   ]
 }
