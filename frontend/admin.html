@@ -1563,7 +1563,7 @@
           <form onsubmit="handleSendBroadcast(event)">
             <div class="admin-form-group">
               <label class="admin-form-label">BROADCAST TITLE</label>
-              <input type="text" class="admin-form-input" id="broadcastTitle" placeholder="e.g. VTU 5th Sem Exam Schedule Announced" required />
+              <input type="text" class="admin-form-input" id="broadcastTitle" placeholder="e.g. University Semester Examination Schedule Released" required />
             </div>
 
             <div class="admin-form-group">
@@ -1574,7 +1574,7 @@
             <div class="admin-form-row">
               <div class="admin-form-group">
                 <label class="admin-form-label">AUTHOR DESIGNATION</label>
-                <input type="text" class="admin-form-input" id="broadcastAuthor" value="BLDE Campus Administration" />
+                <input type="text" class="admin-form-input" id="broadcastAuthor" value="Central Campus Administration" />
               </div>
               <div class="admin-form-group">
                 <label class="admin-form-label">TARGET AUDIENCE</label>
@@ -1599,7 +1599,7 @@
         <div class="admin-section-header">
           <div>
             <h1 class="admin-section-title">Post & Study Material Moderation</h1>
-            <p class="admin-section-desc">Review student uploads, certify verified VTU study notes, and remove spam.</p>
+            <p class="admin-section-desc">Review student uploads, certify verified academic study notes, and remove spam.</p>
           </div>
         </div>
 
@@ -1669,18 +1669,18 @@
 
         <div class="admin-form-group">
           <label class="admin-form-label">BANNER HEADING (HTML / GRADIENT SUPPORTED)</label>
-          <input type="text" class="admin-form-input" id="bannerTitleInput" placeholder="e.g. Commerce, BHS Arts & Science" required />
+          <input type="text" class="admin-form-input" id="bannerTitleInput" placeholder="e.g. Computer Science & Engineering Academic Hub" required />
         </div>
 
         <div class="admin-form-group">
           <label class="admin-form-label">SUBTITLE / TAGLINE</label>
-          <textarea class="admin-form-textarea" id="bannerSubtitleInput" rows="2" placeholder="e.g. Stay ahead with academic roadmaps and study notes."></textarea>
+          <textarea class="admin-form-textarea" id="bannerSubtitleInput" rows="2" placeholder="e.g. Stay ahead with academic roadmaps, timetables, and verified study notes."></textarea>
         </div>
 
         <div class="admin-form-row">
           <div class="admin-form-group">
             <label class="admin-form-label">TOP BADGE TEXT</label>
-            <input type="text" class="admin-form-input" id="bannerBadgeInput" placeholder="✨ BLDE Jamkhandi" />
+            <input type="text" class="admin-form-input" id="bannerBadgeInput" placeholder="✨ Academic Update" />
           </div>
           <div class="admin-form-group">
             <label class="admin-form-label">SORT ORDER</label>
@@ -1838,91 +1838,96 @@
     // DATA LOADING & RENDERING
     // ============================================================
     async function loadAllAdminData(isManualRefresh = false) {
-      // 1. Fetch live accounts from Python API
-      let remoteAccs = [];
-      if (window.PythonAPI && PythonAPI.getAccounts) {
-        try {
-          remoteAccs = await PythonAPI.getAccounts() || [];
-        } catch (e) {
-          console.warn('Remote accounts fetch note:', e);
-        }
-      }
+      // 1. Instant 0ms Local Storage Rendering
+      const deletedHandles = Storage.getDeletedHandles ? Storage.getDeletedHandles() : [];
+      let localAccs = (Storage.getAccounts() || []).filter(a => {
+        const h = (a.handle || a.username || '').toLowerCase();
+        return !deletedHandles.includes(h);
+      });
 
-      // 2. Fetch local storage accounts & current session
-      const localAccs = Storage.getAccounts() || [];
-      const currentActiveUser = Storage.getUser();
-
-      // 3. Merge and deduplicate all accounts by handle
-      const accountMap = new Map();
-
-      // Seed default official admin
+      // Default official admin
       const officialAdmin = {
         username: '@campus_admin',
         handle: '@campus_admin',
-        displayName: 'BLDE Campus Administrator',
-        name: 'BLDE Campus Administrator',
+        displayName: 'Campus Administrator',
+        name: 'Campus Administrator',
         email: 'campus0012@gmail.com',
         role: 'OWNER_ADMIN',
         department: 'Central Administration',
         semester: 8,
         usn: 'ADMIN-001',
-        bio: 'Official Administrator & Platform Owner for BLDE Campus OS.',
+        bio: 'Official Platform Administrator & Owner for Campus OS.',
         skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
         xp: 9999,
         verified: true,
         createdAt: Date.now()
       };
-      accountMap.set('@campus_admin', officialAdmin);
 
-      localAccs.forEach(a => {
-        const rawH = (a.handle || a.username || '').toLowerCase();
-        if (rawH) {
-          const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-          accountMap.set(formattedH, { ...a, handle: formattedH, username: formattedH });
-        }
-      });
-
-      remoteAccs.forEach(a => {
-        const rawH = (a.handle || a.username || '').toLowerCase();
-        if (rawH) {
-          const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-          const existing = accountMap.get(formattedH) || {};
-          accountMap.set(formattedH, { ...existing, ...a, handle: formattedH, username: formattedH });
-        }
-      });
-
-      if (currentActiveUser) {
-        const uh = (currentActiveUser.handle || currentActiveUser.username || '').toLowerCase();
-        if (uh) {
-          const formattedH = uh.startsWith('@') ? uh : '@' + uh;
-          const existing = accountMap.get(formattedH) || {};
-          accountMap.set(formattedH, { ...existing, ...currentActiveUser, handle: formattedH, username: formattedH });
-        }
+      if (!localAccs.some(a => (a.handle || a.username || '').toLowerCase() === '@campus_admin')) {
+        localAccs.unshift(officialAdmin);
       }
 
-      allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      Storage.setAccounts(allAdminAccounts);
+      allAdminAccounts = localAccs;
+      allAdminBanners = Storage.getBanners() || [];
+      allAdminPosts = Storage.getPosts() || [];
 
-      // 4. Fetch live banners & posts
-      let remoteBanners = [];
-      if (window.PythonAPI && PythonAPI.getAdminBanners) {
-        try {
-          remoteBanners = await PythonAPI.getAdminBanners() || [];
-        } catch (e) {}
+      // Render KPIs & Tables instantly
+      updateAdminDashboardUI();
+
+      // 2. Fast Non-blocking Background Sync
+      try {
+        const [remoteAccs, remoteBanners, remotePosts] = await Promise.allSettled([
+          (window.PythonAPI && PythonAPI.getAccounts) ? PythonAPI.getAccounts() : Promise.resolve(null),
+          (window.PythonAPI && PythonAPI.getAdminBanners) ? PythonAPI.getAdminBanners() : Promise.resolve(null),
+          (window.PythonAPI && PythonAPI.getPosts) ? PythonAPI.getPosts() : Promise.resolve(null)
+        ]);
+
+        const accountMap = new Map();
+        accountMap.set('@campus_admin', officialAdmin);
+
+        allAdminAccounts.forEach(a => {
+          const rawH = (a.handle || a.username || '').toLowerCase();
+          if (rawH && !deletedHandles.includes(rawH)) {
+            const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
+            accountMap.set(formattedH, { ...a, handle: formattedH, username: formattedH });
+          }
+        });
+
+        if (remoteAccs.status === 'fulfilled' && Array.isArray(remoteAccs.value)) {
+          remoteAccs.value.forEach(a => {
+            const rawH = (a.handle || a.username || '').toLowerCase();
+            if (rawH && !deletedHandles.includes(rawH)) {
+              const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
+              const existing = accountMap.get(formattedH) || {};
+              accountMap.set(formattedH, { ...existing, ...a, handle: formattedH, username: formattedH });
+            }
+          });
+        }
+
+        allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        Storage.setAccounts(allAdminAccounts);
+
+        if (remoteBanners.status === 'fulfilled' && Array.isArray(remoteBanners.value) && remoteBanners.value.length > 0) {
+          allAdminBanners = remoteBanners.value;
+          Storage.setBanners(allAdminBanners);
+        }
+
+        if (remotePosts.status === 'fulfilled' && Array.isArray(remotePosts.value) && remotePosts.value.length > 0) {
+          allAdminPosts = remotePosts.value;
+        }
+
+        updateAdminDashboardUI();
+
+        if (isManualRefresh) {
+          showAdminToast('🔄 All student accounts & system metrics updated!');
+        }
+      } catch (err) {
+        console.warn('Background admin sync note:', err);
       }
-      const localBanners = Storage.getBanners();
-      allAdminBanners = remoteBanners.length > 0 ? remoteBanners : localBanners;
+    }
 
-      let remotePosts = [];
-      if (window.PythonAPI && PythonAPI.getPosts) {
-        try {
-          remotePosts = await PythonAPI.getPosts() || [];
-        } catch (e) {}
-      }
-      const localPosts = Storage.getPosts();
-      allAdminPosts = remotePosts.length > 0 ? remotePosts : localPosts;
-
-      // 5. Update KPI Numbers
+    function updateAdminDashboardUI() {
+      // Update KPI Numbers
       const totalStudents = allAdminAccounts.length;
       const totalPosts = allAdminPosts.length;
       const totalLikes = allAdminPosts.reduce((acc, p) => acc + (p.likes || 0), 0);
@@ -1936,7 +1941,7 @@
       document.getElementById('sidebarAccountsCount').textContent = totalStudents;
       document.getElementById('sidebarBannersCount').textContent = totalBanners;
 
-      // Render Department Breakdown dynamically from allAdminAccounts
+      // Render Department Breakdown
       const branchBreakdown = {};
       allAdminAccounts.forEach(a => {
         const dept = a.department || 'Computer Science & Engineering';
@@ -1958,10 +1963,6 @@
 
       // Render Audit Logs
       loadAuditLogs();
-
-      if (isManualRefresh) {
-        showAdminToast('🔄 All student accounts & system metrics updated!');
-      }
     }
 
     function renderDepartmentProgress(branchMap) {
