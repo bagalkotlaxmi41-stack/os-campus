@@ -155,7 +155,12 @@ function addRipple(el) {
 
 // ---- Render User Avatar ----
 function renderUserAvatar(user, size = 'md') {
-  const initials = ((user?.name || 'U').split(' ').map(w => w[0]).join('').substr(0, 2)).toUpperCase();
+  if (user?.photo) {
+    const safeName = esc(user.name || user.displayName || 'Avatar');
+    const safeInitials = esc(((user?.name || user?.displayName || 'U').split(' ').map(w => w[0]).join('').substr(0, 2)).toUpperCase());
+    return `<div class="avatar avatar-${size}"><img src="${user.photo}" alt="${safeName}" onerror="this.parentElement.innerHTML='${safeInitials}'" /></div>`;
+  }
+  const initials = ((user?.name || user?.displayName || 'U').split(' ').map(w => w[0]).join('').substr(0, 2)).toUpperCase();
   return `<div class="avatar avatar-${size}">${initials}</div>`;
 }
 
