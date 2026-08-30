@@ -267,6 +267,36 @@ def init_database():
     else:
         cursor.execute("UPDATE accounts SET display_name = 'Campus Administrator', bio = 'Official Platform Administrator & Owner for Campus OS.', password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
+    # Seed fresh real-time student directory if only admin exists
+    cursor.execute("SELECT COUNT(*) as cnt FROM accounts WHERE handle != '@campus_admin'")
+    if cursor.fetchone()["cnt"] == 0:
+        student_pass = hash_password("student123")
+        now_ms = int(time.time() * 1000)
+        fresh_students = [
+            ("@priya_sharma", "Priya Sharma", "priya.sharma@campus.edu", student_pass, "Computer Science & Engineering", 6, "2CS21084", "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.", json.dumps(["Python", "Operating Systems", "React", "DBMS", "Machine Learning"]), None, "STUDENT", 620, now_ms - 86400000 * 20, now_ms),
+            ("@vikram_patil", "Vikram Patil", "vikram.patil@campus.edu", student_pass, "Electronics & Communication", 4, "2EC22042", "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.", json.dumps(["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"]), None, "STUDENT", 480, now_ms - 86400000 * 15, now_ms),
+            ("@ananya_kulkarni", "Ananya Kulkarni", "ananya.k@campus.edu", student_pass, "Artificial Intelligence & DS", 5, "2AI22018", "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.", json.dumps(["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"]), None, "STUDENT", 540, now_ms - 86400000 * 10, now_ms),
+            ("@rahul_verma", "Rahul Verma", "rahul.verma@campus.edu", student_pass, "Computer Science & Engineering", 5, "2CS22035", "Software engineering enthusiast focused on Full-Stack Web Development and Cloud Systems.", json.dumps(["JavaScript", "Node.js", "Docker", "MongoDB", "PostgreSQL"]), None, "STUDENT", 510, now_ms - 86400000 * 5, now_ms)
+        ]
+        cursor.executemany("""
+        INSERT INTO accounts (handle, display_name, email, password_hash, department, semester, usn, bio, skills, photo, role, xp, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, fresh_students)
+
+    # Seed fresh study posts if empty
+    cursor.execute("SELECT COUNT(*) as cnt FROM posts")
+    if cursor.fetchone()["cnt"] == 0:
+        now_ms = int(time.time() * 1000)
+        fresh_posts = [
+            ("post_os_01", "pdf", "Operating Systems Module 3: Virtual Memory & Paging Handwritten Notes", "Operating Systems", "Computer Science & Engineering", "Complete curriculum Module 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for university exams.", "Priya Sharma", "@priya_sharma", "OS_Module3_Virtual_Memory_Notes.pdf", "3.4 MB", None, None, 38, 19, now_ms - 86400000 * 3),
+            ("post_ai_02", "youtube", "Deep Learning & Neural Network Backpropagation Explained", "Artificial Intelligence", "Artificial Intelligence & DS", "Comprehensive breakdown of gradient descent, backpropagation algorithms, and loss functions for AI semester exams.", "Ananya Kulkarni", "@ananya_kulkarni", None, None, None, "https://www.youtube.com/watch?v=aircAruvnKk", 52, 28, now_ms - 86400000 * 2),
+            ("post_code_03", "text", "Top 5 Placement Technical Interview Coding Strategies", "Career & Placement", "Placement Cell", "1. Master Two-Pointer & Sliding Window.\n2. Write clean modular code.\n3. Always state time/space complexity before coding.\n4. Ask clarifying questions on edge cases.\n5. Test with empty and single-element inputs.", "Career & Placement Cell", "@placement_cell", None, None, None, None, 89, 45, now_ms - 86400000 * 1)
+        ]
+        cursor.executemany("""
+        INSERT INTO posts (id, type, title, subject, department, desc, author, handle, file_name, file_size, pdf_data, youtube_url, likes, saves, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, fresh_posts)
+
     conn.commit()
     conn.close()
 

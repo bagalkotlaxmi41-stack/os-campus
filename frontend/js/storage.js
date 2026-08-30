@@ -152,6 +152,38 @@ const Storage = {
   getAccounts() {
     const raw = this.getItem(KEYS.ACCOUNTS);
     let list = Array.isArray(raw) ? raw : [];
+    if (list.length === 0) {
+      list = [
+        {
+          username: "@priya_sharma", handle: "@priya_sharma", displayName: "Priya Sharma", name: "Priya Sharma",
+          email: "priya.sharma@campus.edu", department: "Computer Science & Engineering", semester: 6,
+          usn: "2CS21084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
+          skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT", xp: 620,
+          createdAt: Date.now() - 86400000 * 20
+        },
+        {
+          username: "@vikram_patil", handle: "@vikram_patil", displayName: "Vikram Patil", name: "Vikram Patil",
+          email: "vikram.patil@campus.edu", department: "Electronics & Communication", semester: 4,
+          usn: "2EC22042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
+          skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT", xp: 480,
+          createdAt: Date.now() - 86400000 * 15
+        },
+        {
+          username: "@ananya_kulkarni", handle: "@ananya_kulkarni", displayName: "Ananya Kulkarni", name: "Ananya Kulkarni",
+          email: "ananya.k@campus.edu", department: "Artificial Intelligence & DS", semester: 5,
+          usn: "2AI22018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
+          skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT", xp: 540,
+          createdAt: Date.now() - 86400000 * 10
+        },
+        {
+          username: "@rahul_verma", handle: "@rahul_verma", displayName: "Rahul Verma", name: "Rahul Verma",
+          email: "rahul.verma@campus.edu", department: "Computer Science & Engineering", semester: 5,
+          usn: "2CS22035", bio: "Software engineering enthusiast focused on Full-Stack Web Development and Cloud Systems.",
+          skills: ["JavaScript", "Node.js", "Docker", "MongoDB", "PostgreSQL"], role: "STUDENT", xp: 510,
+          createdAt: Date.now() - 86400000 * 5
+        }
+      ];
+    }
     const deleted = this.getDeletedHandles();
     if (deleted.length > 0) {
       list = list.filter(a => {
@@ -437,7 +469,55 @@ const Storage = {
   // REAL-TIME POSTS FEED (PDFs, YouTube, Announcements)
   // ============================================================
   getPosts() {
-    return this.get(KEYS.POSTS, []);
+    const list = this.get(KEYS.POSTS, []);
+    if (list && list.length > 0) return list;
+    return [
+      {
+        id: 'post_os_01',
+        type: 'pdf',
+        title: 'Operating Systems Module 3: Virtual Memory & Paging Handwritten Notes',
+        subject: 'Operating Systems',
+        department: 'Computer Science & Engineering',
+        desc: 'Complete curriculum Module 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for university exams.',
+        author: 'Priya Sharma',
+        handle: '@priya_sharma',
+        fileName: 'OS_Module3_Virtual_Memory_Notes.pdf',
+        fileSize: '3.4 MB',
+        likes: 38,
+        saves: 19,
+        comments: [],
+        createdAt: Date.now() - 86400000 * 3
+      },
+      {
+        id: 'post_ai_02',
+        type: 'youtube',
+        title: 'Deep Learning & Neural Network Backpropagation Explained',
+        subject: 'Artificial Intelligence',
+        department: 'Artificial Intelligence & DS',
+        desc: 'Comprehensive breakdown of gradient descent, backpropagation algorithms, and loss functions for AI semester exams.',
+        author: 'Ananya Kulkarni',
+        handle: '@ananya_kulkarni',
+        youtubeUrl: 'https://www.youtube.com/watch?v=aircAruvnKk',
+        likes: 52,
+        saves: 28,
+        comments: [],
+        createdAt: Date.now() - 86400000 * 2
+      },
+      {
+        id: 'post_code_03',
+        type: 'text',
+        title: 'Top 5 Placement Technical Interview Coding Strategies',
+        subject: 'Career & Placement',
+        department: 'Placement Cell',
+        desc: '1. Master Two-Pointer & Sliding Window.\n2. Write clean modular code.\n3. Always state time/space complexity before coding.\n4. Ask clarifying questions on edge cases.\n5. Test with empty and single-element inputs.',
+        author: 'Career & Placement Cell',
+        handle: '@placement_cell',
+        likes: 89,
+        saves: 45,
+        comments: [],
+        createdAt: Date.now() - 86400000 * 1
+      }
+    ];
   },
   setPosts(posts) {
     return this.set(KEYS.POSTS, posts);
