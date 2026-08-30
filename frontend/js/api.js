@@ -180,6 +180,20 @@ const PythonAPI = {
     }
   },
 
+  updatePost: async function(postId, updatedFields) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFields)
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('API updatePost fallback:', err);
+      return false;
+    }
+  },
+
   deletePost: async function(postId) {
     try {
       const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}`, {
@@ -188,6 +202,18 @@ const PythonAPI = {
       return res.ok;
     } catch (err) {
       console.warn('API deletePost fallback:', err);
+      return false;
+    }
+  },
+
+  deleteComment: async function(postId, commentId) {
+    try {
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('API deleteComment fallback:', err);
       return false;
     }
   },

@@ -462,6 +462,94 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* ---- COMMENTS DRAWER ---- */
+    .stream-comment-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 3, 10, 0.75);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .stream-comment-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .stream-comment-drawer {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      background: rgba(13, 10, 26, 0.96);
+      backdrop-filter: blur(28px);
+      border-left: 1px solid rgba(139, 92, 246, 0.35);
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stream-comment-overlay.open .stream-comment-drawer {
+      transform: translateX(0);
+    }
+    .comment-drawer-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .comment-list-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .comment-card-item {
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      position: relative;
+    }
+    .comment-input-bar {
+      padding: 14px 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      gap: 10px;
+      background: rgba(8, 6, 18, 0.95);
+    }
+    .comment-input-field {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+    .comment-input-field:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 14px rgba(139, 92, 246, 0.3);
+    }
+    .comment-submit-btn {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 0 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(139, 92, 246, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -546,6 +634,28 @@
       <div class="loading-spinner"></div>
     </div>
   </main>
+
+  <!-- Comments Drawer Overlay -->
+  <div class="stream-comment-overlay" id="commentOverlay" onclick="closeCommentDrawer(event)">
+    <div class="stream-comment-drawer" onclick="event.stopPropagation()">
+      <div class="comment-drawer-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">💬</span>
+          <span style="font-size:15px; font-weight:800; color:#fff;" id="commentDrawerTitle">Study Discussion</span>
+        </div>
+        <button onclick="closeCommentDrawer()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer; line-height:1;">×</button>
+      </div>
+
+      <div class="comment-list-scroll" id="commentListScroll">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <form class="comment-input-bar" onsubmit="submitComment(event)">
+        <input type="text" id="commentTextInput" class="comment-input-field" placeholder="Write an academic comment or question..." required />
+        <button type="submit" class="comment-submit-btn">Send</button>
+      </form>
+    </div>
+  </div>
 
   <!-- Floating Toast -->
   <div class="stream-toast" id="streamToast">Link copied to clipboard!</div>
@@ -671,6 +781,10 @@
         return;
       }
 
+      const currentUser = Storage.getUser();
+      const currentHandle = (currentUser ? currentUser.username || currentUser.handle : '').toLowerCase();
+      const isAdmin = currentUser && (currentUser.role === 'OWNER_ADMIN' || currentUser.email === 'campus0012@gmail.com');
+
       viewport.innerHTML = streamPosts.map((post, idx) => {
         const authorName = post.author || 'Student';
         const rawHandle = post.handle || '@student';
@@ -678,6 +792,10 @@
         const photo = Storage.getUserPhoto(handle) || post.authorPhoto;
         const ytId = extractYoutubeId(post.youtubeUrl);
         const seenCount = (post.saves || 0) + (seenPostIds.has(post.id) ? 1 : 0);
+
+        const likedKey = `cos_liked_${post.id}_${currentHandle || '@student'}`;
+        const isLiked = post.isLiked || localStorage.getItem(likedKey) === 'true';
+        const isAuthor = (currentHandle && handle.toLowerCase() === currentHandle) || isAdmin;
 
         let mediaHtml = '';
 
@@ -731,20 +849,45 @@
 
               <!-- Floating Right Action Rail -->
               <div class="reel-action-rail">
-                <button class="rail-btn" title="Views / Seen count">
-                  <div class="rail-icon-circle" style="color:#38bdf8;">👁️</div>
+                <!-- Like Button -->
+                <button class="rail-btn" onclick="toggleStreamLike('${post.id}')" title="Like / Save Post">
+                  <div class="rail-icon-circle" id="like_icon_${post.id}" style="color:${isLiked ? '#f43f5e' : '#cbd5e1'}; font-size:20px; text-shadow:0 0 12px ${isLiked ? 'rgba(244,63,94,0.6)' : 'transparent'};">
+                    ${isLiked ? '❤️' : '🤍'}
+                  </div>
+                  <span class="rail-btn-label" id="like_count_${post.id}">${post.likes || 0}</span>
+                </button>
+
+                <!-- Comments Button -->
+                <button class="rail-btn" onclick="openCommentDrawer('${post.id}')" title="Discussion & Questions">
+                  <div class="rail-icon-circle" style="color:#38bdf8; font-size:18px;">💬</div>
+                  <span class="rail-btn-label" id="comm_count_${post.id}">${(post.comments || []).length}</span>
+                </button>
+
+                <!-- Views / Seen Button -->
+                <button class="rail-btn" title="Total Views">
+                  <div class="rail-icon-circle" style="color:#f59e0b; font-size:18px;">👁️</div>
                   <span class="rail-btn-label" id="seen_badge_${post.id}">${seenCount}</span>
                 </button>
 
-                <button class="rail-btn" onclick="sharePostLink('${handle}', '${post.id}')" title="Share Post Link">
-                  <div class="rail-icon-circle" style="color:#a78bfa;">🔗</div>
+                <!-- Share Button -->
+                <button class="rail-btn" onclick="sharePostLink('${handle}', '${post.id}')" title="Share Link">
+                  <div class="rail-icon-circle" style="color:#a78bfa; font-size:18px;">🔗</div>
                   <span class="rail-btn-label">Share</span>
                 </button>
 
-                <a href="profile.html?handle=${encodeURIComponent(handle)}" class="rail-btn" title="View Student Profile" style="text-decoration:none;">
-                  <div class="rail-icon-circle" style="color:#10b981;">👤</div>
+                <!-- Author Profile Link -->
+                <a href="profile.html?handle=${encodeURIComponent(handle)}" class="rail-btn" title="View Profile" style="text-decoration:none;">
+                  <div class="rail-icon-circle" style="color:#10b981; font-size:18px;">👤</div>
                   <span class="rail-btn-label">Profile</span>
                 </a>
+
+                <!-- Delete Post (Author/Admin only) -->
+                ${isAuthor ? `
+                  <button class="rail-btn" onclick="deleteStreamPost('${post.id}')" title="Delete Post">
+                    <div class="rail-icon-circle" style="color:#ef4444; border-color:rgba(239,68,68,0.3); font-size:16px;">🗑️</div>
+                    <span class="rail-btn-label" style="color:#fca5a5;">Delete</span>
+                  </button>
+                ` : ''}
               </div>
 
               <!-- Bottom Info Overlay -->
@@ -758,7 +901,7 @@
                       ${escapeHtml(authorName)}
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="#8b5cf6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                     </div>
-                    <div class="reel-author-meta">${escapeHtml(handle)} · ${escapeHtml(post.department || 'BLDEA Campus')}</div>
+                    <div class="reel-author-meta">${escapeHtml(handle)} · ${escapeHtml(post.department || 'Campus OS')}</div>
                   </div>
                 </a>
 
@@ -812,6 +955,170 @@
       if (e.key === 'ArrowDown' || e.key === 'j') { scrollReels(1); }
       if (e.key === 'ArrowUp' || e.key === 'k') { scrollReels(-1); }
     });
+
+    function toggleStreamLike(postId) {
+      const user = Storage.getUser();
+      const handle = user ? user.username || user.handle : '@student';
+      const isNowLiked = Storage.likePost(postId, handle);
+
+      const iconEl = document.getElementById('like_icon_' + postId);
+      const countEl = document.getElementById('like_count_' + postId);
+
+      if (iconEl && countEl) {
+        let currentCount = parseInt(countEl.textContent, 10) || 0;
+        if (isNowLiked) {
+          iconEl.textContent = '❤️';
+          iconEl.style.color = '#f43f5e';
+          iconEl.style.textShadow = '0 0 12px rgba(244,63,94,0.6)';
+          countEl.textContent = currentCount + 1;
+          showToast('❤️ Liked and saved to your passport');
+        } else {
+          iconEl.textContent = '🤍';
+          iconEl.style.color = '#cbd5e1';
+          iconEl.style.textShadow = 'none';
+          countEl.textContent = Math.max(0, currentCount - 1);
+          showToast('🤍 Removed like');
+        }
+      }
+    }
+
+    // ============================================================
+    // COMMENTS DRAWER MANAGEMENT
+    // ============================================================
+    function openCommentDrawer(postId) {
+      activeCommentPostId = postId;
+      const overlay = document.getElementById('commentOverlay');
+      if (overlay) overlay.classList.add('open');
+      renderCommentDrawer(postId);
+      setTimeout(() => {
+        const input = document.getElementById('commentTextInput');
+        if (input) input.focus();
+      }, 200);
+    }
+
+    function closeCommentDrawer(e) {
+      if (e && e.target && e.target.closest('.stream-comment-drawer') && !e.target.matches('button')) {
+        return;
+      }
+      const overlay = document.getElementById('commentOverlay');
+      if (overlay) overlay.classList.remove('open');
+      activeCommentPostId = null;
+    }
+
+    function renderCommentDrawer(postId) {
+      const container = document.getElementById('commentListScroll');
+      if (!container) return;
+
+      const posts = Storage.getPosts();
+      const post = posts.find(p => p.id === postId) || streamPosts.find(p => p.id === postId);
+      const titleEl = document.getElementById('commentDrawerTitle');
+
+      if (!post) {
+        container.innerHTML = '<div style="color:#64748b; text-align:center; padding:30px 0;">Post not found.</div>';
+        return;
+      }
+
+      if (titleEl) {
+        titleEl.textContent = `Discussion: ${post.title.length > 24 ? post.title.substring(0, 24) + '...' : post.title}`;
+      }
+
+      const comments = post.comments || [];
+      const currentUser = Storage.getUser();
+      const currentHandle = (currentUser ? currentUser.username || currentUser.handle : '').toLowerCase();
+      const isAdmin = currentUser && (currentUser.role === 'OWNER_ADMIN' || currentUser.email === 'campus0012@gmail.com');
+
+      if (comments.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px 10px; color:#64748b;">
+            <div style="font-size:36px; margin-bottom:8px;">💡</div>
+            <div style="font-size:14px; font-weight:800; color:#cbd5e1; margin-bottom:4px;">No comments yet</div>
+            <div style="font-size:12px;">Be the first student to ask a question or share feedback!</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = comments.map(c => {
+        const cAuthor = c.author || 'Student';
+        const cHandle = c.handle || '@student';
+        const cTime = c.createdAt ? new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const canDelete = isAdmin || (currentHandle && cHandle.toLowerCase() === currentHandle);
+
+        return `
+          <div class="comment-card-item">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:11px; color:#fff;">
+                  ${cAuthor[0].toUpperCase()}
+                </div>
+                <div>
+                  <span style="font-size:12px; font-weight:800; color:#fff;">${escapeHtml(cAuthor)}</span>
+                  <span style="font-size:10px; color:#a78bfa; margin-left:4px;">${escapeHtml(cHandle)}</span>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:10px; color:#64748b;">${cTime}</span>
+                ${canDelete ? `
+                  <button onclick="deleteStreamComment('${postId}', '${c.id}')" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; padding:2px 4px;" title="Delete comment">
+                    🗑️
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+            <div style="font-size:12.5px; color:#cbd5e1; line-height:1.45; padding-left:34px;">
+              ${escapeHtml(c.text)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function submitComment(event) {
+      event.preventDefault();
+      if (!activeCommentPostId) return;
+
+      const input = document.getElementById('commentTextInput');
+      const text = input ? input.value.trim() : '';
+      if (!text) return;
+
+      const user = Storage.getUser();
+      const authorName = user ? user.displayName || user.name : 'Student';
+      const authorHandle = user ? user.username || user.handle : '@student';
+
+      const newComm = Storage.addComment(activeCommentPostId, authorName, authorHandle, text);
+      if (input) input.value = '';
+
+      renderCommentDrawer(activeCommentPostId);
+
+      // Update comment count badge on slide
+      const badge = document.getElementById('comm_count_' + activeCommentPostId);
+      if (badge) {
+        const curr = parseInt(badge.textContent, 10) || 0;
+        badge.textContent = curr + 1;
+      }
+
+      showToast('💬 Comment posted in real-time');
+    }
+
+    function deleteStreamComment(postId, commentId) {
+      Storage.deleteComment(postId, commentId);
+      renderCommentDrawer(postId);
+
+      const badge = document.getElementById('comm_count_' + postId);
+      if (badge) {
+        const curr = parseInt(badge.textContent, 10) || 1;
+        badge.textContent = Math.max(0, curr - 1);
+      }
+      showToast('🗑️ Comment deleted');
+    }
+
+    function deleteStreamPost(postId) {
+      if (!confirm('Are you sure you want to delete this study post permanently?')) return;
+      Storage.deletePost(postId);
+      streamPosts = streamPosts.filter(p => p.id !== postId);
+      renderStream();
+      showToast('🗑️ Post deleted successfully');
+    }
 
     function sharePostLink(handle, postId) {
       const url = `${window.location.origin}/profile.html?handle=${encodeURIComponent(handle)}`;

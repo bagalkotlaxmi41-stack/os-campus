@@ -349,6 +349,18 @@ class PostCreateModel(BaseModel):
     youtubeUrl: Optional[str] = None
 
 
+class PostUpdateModel(BaseModel):
+    title: Optional[str] = None
+    subject: Optional[str] = None
+    department: Optional[str] = None
+    desc: Optional[str] = None
+    type: Optional[str] = None
+    fileName: Optional[str] = None
+    fileSize: Optional[str] = None
+    pdfData: Optional[str] = None
+    youtubeUrl: Optional[str] = None
+
+
 class CommentCreateModel(BaseModel):
     author: str
     handle: str
@@ -660,7 +672,7 @@ def register_post_view(id: str):
 # ============================================================
 
 @app.get("/api/posts")
-def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optional[str] = None):
+def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optional[str] = None, user_handle: Optional[str] = None):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -686,13 +698,22 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-    # Load comments for each post
+    clean_user = user_handle.strip().lower() if user_handle else None
+    if clean_user and not clean_user.startswith("@"): clean_user = "@" + clean_user
+
+    # Load comments and like status for each post
     result = []
     for r in rows:
         pid = r["id"]
         cursor.execute("SELECT * FROM post_comments WHERE post_id = ? ORDER BY created_at ASC", (pid,))
         crows = cursor.fetchall()
-        comments = [{"id": c["id"], "author": c["author"], "handle": c["handle"], "text": c["text"], "createdAt": c["created_at"]} for c in crows]
+        comments = [{"id": c["id"], "postId": pid, "author": c["author"], "handle": c["handle"], "text": c["text"], "createdAt": c["created_at"]} for c in crows]
+
+        # Check if current user liked this post
+        is_liked = False
+        if clean_user:
+            cursor.execute("SELECT 1 FROM post_likes WHERE post_id = ? AND LOWER(handle) = ?", (pid, clean_user))
+            is_liked = cursor.fetchone() is not None
 
         # Get author's live photo
         cursor.execute("SELECT photo FROM accounts WHERE LOWER(handle) = ?", (r["handle"].lower(),))
@@ -715,6 +736,7 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
             "youtubeUrl": r["youtube_url"],
             "likes": r["likes"],
             "saves": r["saves"],
+            "isLiked": is_liked,
             "comments": comments,
             "createdAt": r["created_at"]
         })
@@ -774,10 +796,41 @@ def create_post(post: PostCreateModel):
             "youtubeUrl": post.youtubeUrl,
             "likes": 0,
             "saves": 0,
+            "isLiked": False,
             "comments": [],
             "createdAt": now
         }
     }
+
+
+@app.put("/api/posts/{post_id}")
+def update_post(post_id: str, post: PostUpdateModel):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM posts WHERE id = ?", (post_id,))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    title = post.title if post.title is not None else existing["title"]
+    subject = post.subject if post.subject is not None else existing["subject"]
+    department = post.department if post.department is not None else existing["department"]
+    desc = post.desc if post.desc is not None else existing["desc"]
+    ptype = post.type if post.type is not None else existing["type"]
+    yt = post.youtubeUrl if post.youtubeUrl is not None else existing["youtube_url"]
+    fn = post.fileName if post.fileName is not None else existing["file_name"]
+    fs = post.fileSize if post.fileSize is not None else existing["file_size"]
+    pdf = post.pdfData if post.pdfData is not None else existing["pdf_data"]
+
+    cursor.execute("""
+    UPDATE posts 
+    SET title = ?, subject = ?, department = ?, desc = ?, type = ?, youtube_url = ?, file_name = ?, file_size = ?, pdf_data = ?
+    WHERE id = ?
+    """, (title, subject, department, desc, ptype, yt, fn, fs, pdf, post_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Post updated successfully"}
 
 
 @app.delete("/api/posts/{post_id}")
@@ -838,6 +891,16 @@ def add_comment(post_id: str, comm: CommentCreateModel):
     conn.close()
 
     return {"status": "success", "comment": {"id": cid, "postId": post_id, "author": comm.author, "handle": handle, "text": comm.text, "createdAt": now}}
+
+
+@app.delete("/api/posts/{post_id}/comments/{comment_id}")
+def delete_comment(post_id: str, comment_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM post_comments WHERE id = ? AND post_id = ?", (comment_id, post_id))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Comment deleted successfully"}
 
 
 # ============================================================

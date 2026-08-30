@@ -1094,6 +1094,67 @@
   </div>
 </div>
 
+<!-- ===================== EDIT POST MODAL ===================== -->
+<div class="edit-modal-backdrop" id="editPostModal">
+  <div class="edit-dialog-card" style="max-width: 560px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px; margin:0;">
+        <span>✏️</span> Edit Academic Material / Post
+      </h3>
+      <button onclick="closeEditPostModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; line-height:1;">×</button>
+    </div>
+
+    <input type="hidden" id="editPostId" />
+
+    <!-- Title -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Post Title *</label>
+      <input type="text" class="form-input" id="editPostTitle" required />
+    </div>
+
+    <!-- Subject & Department -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Subject / Course *</label>
+        <input type="text" class="form-input" id="editPostSubject" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Department</label>
+        <select class="form-select" id="editPostDept">
+          <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+          <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+          <option value="Information Science & Tech">Information Science & Tech</option>
+          <option value="Electronics & Communication">Electronics & Communication</option>
+          <option value="Electrical & Electronics">Electrical & Electronics</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+          <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+          <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+          <option value="Arts & Humanities">Arts & Humanities</option>
+          <option value="General Science">General Science</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Description & Study Summary</label>
+      <textarea class="form-textarea" id="editPostDesc" style="min-height:80px;"></textarea>
+    </div>
+
+    <!-- YouTube Link (if video post) -->
+    <div class="form-group" id="editYoutubeBox" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">YouTube Video Link</label>
+      <input type="url" class="form-input" id="editPostYoutube" placeholder="https://www.youtube.com/watch?v=..." />
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+      <button type="button" class="passport-btn" onclick="closeEditPostModal()">Cancel</button>
+      <button type="button" class="passport-btn primary" onclick="saveEditedPost()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== FIREBASE SDK & CORE LOGIC SCRIPTS ===================== -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -1346,6 +1407,64 @@ function deletePostHandler(postId) {
   const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === targetHandle.toLowerCase());
   const isOwn = !viewHandle || (user && viewHandle.toLowerCase() === (user.username || '').toLowerCase());
   renderPostsGrid(userPosts, isOwn);
+  showToast('🗑️ Post deleted successfully');
+}
+
+function editPostHandler(postId) {
+  const post = Storage.getPost(postId);
+  if (!post) return;
+  document.getElementById('editPostId').value = post.id;
+  document.getElementById('editPostTitle').value = post.title || '';
+  document.getElementById('editPostSubject').value = post.subject || '';
+  document.getElementById('editPostDept').value = post.department || 'Computer Science & Engineering';
+  document.getElementById('editPostDesc').value = post.desc || '';
+  const ytBox = document.getElementById('editYoutubeBox');
+  if (post.type === 'youtube') {
+    ytBox.style.display = 'block';
+    document.getElementById('editPostYoutube').value = post.youtubeUrl || '';
+  } else {
+    ytBox.style.display = 'none';
+  }
+  document.getElementById('editPostModal').classList.add('open');
+}
+
+function closeEditPostModal() {
+  document.getElementById('editPostModal').classList.remove('open');
+}
+
+function saveEditedPost() {
+  const postId = document.getElementById('editPostId').value;
+  const title = document.getElementById('editPostTitle').value.trim();
+  const subject = document.getElementById('editPostSubject').value.trim();
+  const dept = document.getElementById('editPostDept').value;
+  const desc = document.getElementById('editPostDesc').value.trim();
+  const youtubeUrl = document.getElementById('editPostYoutube').value.trim();
+
+  if (!title || !subject) {
+    alert('Title and Subject are required!');
+    return;
+  }
+
+  const updatedFields = {
+    title,
+    subject,
+    department: dept,
+    desc,
+    youtubeUrl: youtubeUrl || null
+  };
+
+  Storage.updatePost(postId, updatedFields);
+  closeEditPostModal();
+  showToast('✅ Post updated successfully!');
+
+  const user = Storage.getUser() || currentUser;
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewHandle = urlParams.get('handle');
+  const targetHandle = viewHandle || (user ? user.username : '@student');
+  const allPosts = Storage.getPosts();
+  const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === targetHandle.toLowerCase());
+  const isOwn = !viewHandle || (user && viewHandle.toLowerCase() === (user.username || '').toLowerCase());
+  renderPostsGrid(userPosts, isOwn);
 }
 
 // =====================================================
@@ -1537,16 +1656,24 @@ function renderPostsGrid(posts, isOwn) {
       <!-- Media Embed (PDF or YouTube) -->
       ${mediaEmbed}
 
-      <!-- Bottom Actions Bar: Likes & Delete -->
+      <!-- Bottom Actions Bar: Likes, Edit & Delete -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
-        <button class="passport-btn" onclick="togglePostLike('${post.id}')" style="padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:6px; color:#f43f5e; border-color:rgba(244,63,94,0.25);">
-          <span>❤️</span> <span>${post.likes || 0}</span>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="passport-btn" onclick="togglePostLike('${post.id}')" style="padding:4px 12px; font-size:12px; display:flex; align-items:center; gap:6px; color:#f43f5e; border-color:rgba(244,63,94,0.25);">
+            <span>❤️</span> <span>${post.likes || 0}</span>
+          </button>
+          <span style="font-size:11px; color:#94a3b8; font-weight:700;">💬 ${(post.comments || []).length}</span>
+        </div>
 
         ${isAuthor ? `
-          <button class="passport-btn" onclick="deletePostHandler('${post.id}')" style="padding:4px 10px; font-size:11px; color:#ef4444; border-color:rgba(239,68,68,0.2);">
-            🗑️ Delete
-          </button>
+          <div style="display:flex; gap:6px;">
+            <button class="passport-btn" onclick="editPostHandler('${post.id}')" style="padding:4px 10px; font-size:11px; color:#38bdf8; border-color:rgba(56,189,248,0.25);">
+              ✏️ Edit
+            </button>
+            <button class="passport-btn" onclick="deletePostHandler('${post.id}')" style="padding:4px 10px; font-size:11px; color:#ef4444; border-color:rgba(239,68,68,0.25);">
+              🗑️ Delete
+            </button>
+          </div>
         ` : ''}
       </div>
     </div>

@@ -371,6 +371,19 @@ const Storage = {
     }
     return true;
   },
+  updatePost(id, updatedFields) {
+    const posts = this.getPosts();
+    const idx = posts.findIndex(p => p.id === id);
+    if (idx >= 0) {
+      posts[idx] = { ...posts[idx], ...updatedFields, updatedAt: Date.now() };
+      this.setPosts(posts);
+      if (window.PythonAPI && PythonAPI.updatePost) {
+        PythonAPI.updatePost(id, updatedFields).catch(e => console.warn('API updatePost sync:', e));
+      }
+      return posts[idx];
+    }
+    return null;
+  },
   getPost(id) {
     return this.getPosts().find(p => p.id === id) || null;
   },
@@ -438,6 +451,17 @@ const Storage = {
     }
 
     return newComment;
+  },
+  deleteComment(postId, commentId) {
+    const posts = this.getPosts();
+    const post = posts.find(p => p.id === postId);
+    if (!post || !post.comments) return false;
+    post.comments = post.comments.filter(c => c.id !== commentId);
+    this.setPosts(posts);
+    if (window.PythonAPI && PythonAPI.deleteComment) {
+      PythonAPI.deleteComment(postId, commentId).catch(e => console.warn('API deleteComment sync:', e));
+    }
+    return true;
   },
 
   // ============================================================
