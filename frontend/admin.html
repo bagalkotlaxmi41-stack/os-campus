@@ -2549,10 +2549,12 @@
     async function confirmDeletePost(id) {
       if (!confirm('Are you sure you want to remove this student post from the campus stream?')) return;
 
-      if (window.PythonAPI) {
+      if (window.PythonAPI && PythonAPI.deletePost) {
         try {
-          await fetch(`http://localhost:8000/api/posts/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        } catch (e) {}
+          await PythonAPI.deletePost(id);
+        } catch (e) {
+          console.warn('API deletePost notice:', e);
+        }
       }
 
       allAdminPosts = allAdminPosts.filter(p => p.id !== id);

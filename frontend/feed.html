@@ -886,8 +886,8 @@
                 badge.textContent = current + 1;
               }
               // Sync seen view count to backend
-              if (window.PythonAPI && PythonAPI.checkHealth) {
-                fetch(`http://localhost:8000/api/posts/${encodeURIComponent(pid)}/view`, { method: 'POST' }).catch(() => {});
+              if (window.PythonAPI && typeof PYTHON_API_BASE_URL !== 'undefined') {
+                fastFetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(pid)}/view`, { method: 'POST' }, 800).catch(() => {});
               }
             }
           }
