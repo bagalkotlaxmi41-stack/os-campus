@@ -1456,7 +1456,9 @@ ADMIN_MASTER_KEYS = {"campus@#1974", "AdminMaster#2026", "campus_admin_2026", "o
 @app.post("/api/admin/auth")
 def admin_auth(data: AdminAuthModel):
     key = data.key.strip()
-    email = (data.email or "").strip().lower()
+    ident = (data.email or "").strip().lower()
+    clean_handle = ident if ident.startswith("@") else "@" + ident
+    raw_handle = ident.lstrip("@")
 
     is_valid = False
     admin_info = {
@@ -1466,35 +1468,39 @@ def admin_auth(data: AdminAuthModel):
         "role": "OWNER_ADMIN"
     }
 
-    # Direct check for official owner credentials
-    if key == "campus@#1974" or (email == "campus0012@gmail.com" and key == "campus@#1974"):
-        is_valid = True
-    elif key in ADMIN_MASTER_KEYS:
+    # 1. Direct check for official owner credentials or master key
+    if key in ADMIN_MASTER_KEYS or (ident in ["campus0012@gmail.com", "@campus_admin", "campus_admin"] and key == "campus@#1974"):
         is_valid = True
     else:
-        # Check 2: Database accounts with role == 'ADMIN' or 'OWNER_ADMIN'
+        # 2. Check Database accounts with role == 'ADMIN' or 'OWNER_ADMIN'
         conn = get_db()
         cursor = conn.cursor()
-        if email:
-            cursor.execute("SELECT * FROM accounts WHERE LOWER(email) = ? AND (role = 'ADMIN' OR role = 'OWNER_ADMIN')", (email,))
+        if ident:
+            cursor.execute("""
+                SELECT * FROM accounts 
+                WHERE (LOWER(email) = ? OR LOWER(handle) = ? OR LOWER(handle) = ?) 
+                AND (role = 'ADMIN' OR role = 'OWNER_ADMIN')
+            """, (ident, clean_handle, "@" + raw_handle))
         else:
             cursor.execute("SELECT * FROM accounts WHERE (role = 'ADMIN' OR role = 'OWNER_ADMIN')")
+        
         admin_rows = cursor.fetchall()
         conn.close()
 
         for row in admin_rows:
-            if row["password_hash"] and verify_password(key, row["password_hash"]):
+            stored_hash = row["password_hash"]
+            if stored_hash and (verify_password(key, stored_hash) or key in ADMIN_MASTER_KEYS):
                 is_valid = True
                 admin_info = {
                     "displayName": row["display_name"],
-                    "email": row["email"],
+                    "email": row["email"] or ident,
                     "handle": row["handle"],
                     "role": row["role"]
                 }
                 break
 
     if not is_valid:
-        raise HTTPException(status_code=401, detail="Invalid Master Access Key or Administrator Password.")
+        raise HTTPException(status_code=401, detail="Invalid Administrator Email/Handle or Password.")
 
     now = int(time.time() * 1000)
     conn = get_db()
@@ -1503,7 +1509,7 @@ def admin_auth(data: AdminAuthModel):
         f"log_{now}",
         "ADMIN_LOGIN",
         admin_info["handle"],
-        f"Admin logged in successfully ({admin_info['displayName']})",
+        f"Admin logged in successfully ({admin_info['displayName']} - {admin_info['role']})",
         "System",
         now
     ))

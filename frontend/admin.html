@@ -1294,8 +1294,8 @@
 
       <form id="gatekeeperForm" onsubmit="handleGatekeeperAuth(event)">
         <div class="gatekeeper-input-group">
-          <label class="gatekeeper-label">ADMINISTRATOR EMAIL</label>
-          <input type="email" class="gatekeeper-input" id="adminEmailInput" placeholder="admin@domain.com" required autocomplete="email" />
+          <label class="gatekeeper-label">ADMINISTRATOR EMAIL OR @USERNAME</label>
+          <input type="text" class="gatekeeper-input" id="adminEmailInput" placeholder="campus0012@gmail.com or @username" required autocomplete="username" />
         </div>
 
         <div class="gatekeeper-input-group">
@@ -1737,7 +1737,13 @@
     // ============================================================
     async function checkAdminAuth() {
       const token = Storage.getAdminToken();
-      if (token) {
+      const currentUser = Storage.getUser ? Storage.getUser() : null;
+      const isAdminUser = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER_ADMIN');
+
+      if (token || isAdminUser) {
+        if (!token && isAdminUser) {
+          Storage.setAdminSession('adm_token_' + Date.now(), currentUser, true);
+        }
         document.getElementById('adminGatekeeper').classList.add('authenticated');
         loadAllAdminData();
       } else {
@@ -1764,7 +1770,10 @@
       }
 
       const key = document.getElementById('adminKeyInput').value.trim();
-      const email = document.getElementById('adminEmailInput').value.trim().toLowerCase();
+      const rawIdent = document.getElementById('adminEmailInput').value.trim();
+      const ident = rawIdent.toLowerCase();
+      const cleanHandle = ident.startsWith('@') ? ident : '@' + ident;
+      const rawHandleNoAt = ident.replace(/^@/, '');
       const submitBtn = document.getElementById('gatekeeperSubmitBtn');
 
       submitBtn.innerHTML = '<span>Verifying credentials...</span>';
@@ -1774,37 +1783,67 @@
         let authResult = null;
         if (window.PythonAPI && PythonAPI.adminLogin) {
           try {
-            authResult = await PythonAPI.adminLogin(key, email);
+            authResult = await PythonAPI.adminLogin(key, rawIdent);
           } catch (err) {
-            console.warn('Backend admin auth fallback:', err);
+            console.warn('Backend admin auth notice:', err);
           }
         }
 
         // Master key & official admin local verification fallback
         const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'campus_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
-        const isOwnerCreds = (email === 'campus0012@gmail.com' && key === 'campus@#1974') || validMasterKeys.includes(key);
+        const isOfficialOwner = (['campus0012@gmail.com', '@campus_admin', 'campus_admin'].includes(ident) && key === 'campus@#1974') || validMasterKeys.includes(key);
 
-        if (authResult || isOwnerCreds) {
+        // Check local storage for promoted admin user
+        let isLocalPromotedAdmin = false;
+        let promotedAdminData = null;
+
+        const allAccs = Storage.getAccounts ? Storage.getAccounts() : [];
+        const curUser = Storage.getUser ? Storage.getUser() : null;
+        if (curUser && !allAccs.some(a => (a.handle || a.username || '').toLowerCase() === (curUser.handle || curUser.username || '').toLowerCase())) {
+          allAccs.unshift(curUser);
+        }
+
+        const candidate = allAccs.find(a => {
+          const aEmail = (a.email || '').toLowerCase().trim();
+          const aHandle = (a.username || a.handle || '').toLowerCase().trim();
+          return aEmail === ident || aHandle === ident || aHandle === cleanHandle || aHandle.replace(/^@/, '') === rawHandleNoAt;
+        });
+
+        if (candidate) {
+          const isRoleAdmin = candidate.role === 'ADMIN' || candidate.role === 'OWNER_ADMIN';
+          const isPassValid = candidate.password === key || validMasterKeys.includes(key);
+          if (isRoleAdmin && isPassValid) {
+            isLocalPromotedAdmin = true;
+            promotedAdminData = {
+              displayName: candidate.displayName || candidate.name || 'Campus Administrator',
+              email: candidate.email || rawIdent,
+              handle: candidate.handle || candidate.username || cleanHandle,
+              role: candidate.role || 'OWNER_ADMIN'
+            };
+          }
+        }
+
+        if (authResult || isOfficialOwner || isLocalPromotedAdmin) {
           failedAdminAttempts = 0;
-          const adminData = authResult?.admin || {
+          const adminData = authResult?.admin || promotedAdminData || {
             displayName: 'Campus Administrator',
-            email: email || 'campus0012@gmail.com',
+            email: rawIdent || 'campus0012@gmail.com',
             role: 'OWNER_ADMIN',
-            handle: '@campus_admin'
+            handle: cleanHandle || '@campus_admin'
           };
           const token = authResult?.token || 'adm_token_' + Date.now();
           Storage.setAdminSession(token, adminData, true);
 
           document.getElementById('adminGatekeeper').classList.add('authenticated');
-          showAdminToast('👑 Welcome, System Administrator!');
+          showAdminToast(`👑 Welcome, ${adminData.displayName || 'Administrator'}!`);
           loadAllAdminData();
         } else {
           failedAdminAttempts++;
-          if (failedAdminAttempts >= 3) {
+          if (failedAdminAttempts >= 5) {
             adminLockoutUntil = Date.now() + 20000;
-            alert('❌ Access Denied: 3 incorrect attempts. Security locked for 20 seconds.');
+            alert('❌ Access Denied: Too many incorrect attempts. Security locked for 20 seconds.');
           } else {
-            alert(`❌ Access Denied: Invalid Administrator Email or Password (${3 - failedAdminAttempts} attempts remaining).`);
+            alert(`❌ Access Denied: Invalid Administrator Email/Username or Password (${5 - failedAdminAttempts} attempts remaining).`);
           }
         }
       } catch (err) {
