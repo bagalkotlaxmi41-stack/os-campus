@@ -521,8 +521,15 @@
         height: 58px;
       }
       .notification-dropdown-popover {
-        right: -20px;
-        width: min(340px, calc(100vw - 20px));
+        position: fixed !important;
+        top: 60px !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        border-radius: 16px !important;
+        max-height: calc(100dvh - 75px) !important;
+        z-index: 10000 !important;
       }
     }
   </style>
