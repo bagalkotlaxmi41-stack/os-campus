@@ -1822,6 +1822,16 @@
           }
         }
 
+        // Also attempt standard login via backend to check role
+        if (!authResult && window.PythonAPI && PythonAPI.login) {
+          try {
+            const userLoginRes = await PythonAPI.login(rawIdent, key);
+            if (userLoginRes && (userLoginRes.role === 'ADMIN' || userLoginRes.role === 'OWNER_ADMIN')) {
+              authResult = { admin: userLoginRes, token: 'adm_token_' + Date.now() };
+            }
+          } catch(e) {}
+        }
+
         // Master key & official admin local verification fallback
         const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'campus_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
         const isOfficialOwner = (['campus0012@gmail.com', '@campus_admin', 'campus_admin'].includes(ident) && key === 'campus@#1974') || validMasterKeys.includes(key);
@@ -1844,7 +1854,7 @@
 
         if (candidate) {
           const isRoleAdmin = candidate.role === 'ADMIN' || candidate.role === 'OWNER_ADMIN';
-          const isPassValid = candidate.password === key || validMasterKeys.includes(key);
+          const isPassValid = candidate.password === key || candidate.pwd === key || validMasterKeys.includes(key);
           if (isRoleAdmin && isPassValid) {
             isLocalPromotedAdmin = true;
             promotedAdminData = {

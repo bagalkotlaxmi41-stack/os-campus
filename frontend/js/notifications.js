@@ -242,6 +242,16 @@ const NotificationsManager = {
     const dropdown = document.getElementById('notificationDropdown');
     if (!dropdown) return;
     dropdown.classList.add('open');
+
+    // Auto-mark all current notifications as read upon seeing them
+    const notifs = this.getAllNotifications();
+    const ids = notifs.map(n => n.id);
+    this.setReadIds(ids);
+    try {
+      localStorage.setItem('cos_last_seen_notif_time', String(Date.now()));
+    } catch(e) {}
+
+    // Re-render so badge immediately drops to 0 and items show normal state
     this.render();
 
     // Attach document listener
@@ -254,6 +264,7 @@ const NotificationsManager = {
     const dropdown = document.getElementById('notificationDropdown');
     if (dropdown) dropdown.classList.remove('open');
     document.removeEventListener('click', this._outsideClickListener);
+    this.render();
   },
 
   _outsideClickListener(e) {

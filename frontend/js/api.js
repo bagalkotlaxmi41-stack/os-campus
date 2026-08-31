@@ -359,7 +359,7 @@ const PythonAPI = {
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, email })
+        body: JSON.stringify({ key, email, identifier: email, password: key, master_key: key })
       }, 1500);
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Authentication failed' }));

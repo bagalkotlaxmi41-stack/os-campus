@@ -574,10 +574,20 @@
 <header class="campus-navbar">
   <a href="index.html" class="brand-logo-wrap" title="Campus OS" style="display:inline-flex; align-items:center; text-decoration:none;">
     <img src="img/logo.png" alt="Campus OS" class="brand-logo-img" style="height:44px; width:44px; object-fit:contain; border-radius:12px; box-shadow:0 0 16px rgba(124,58,237,0.4);" />
+    <div style="display:flex; flex-direction:column; margin-left:10px;">
+      <span style="font-size:16px; font-weight:900; color:#fff; letter-spacing:-0.02em;">Campus<span style="background:linear-gradient(135deg,#a78bfa,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">OS</span></span>
+      <span style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">Student Passport</span>
+    </div>
   </a>
 
   <div class="nav-actions-group">
-    <!-- Notification Button with SVG icon (Not Emoji) & Glassmorphic Drawer -->
+    <!-- Campus Stream (Reels) Link -->
+    <a href="feed.html" class="nav-link-btn" style="background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#fca5a5;" title="Campus Stream — Student Video Reels">
+      <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#ef4444; box-shadow:0 0 8px #ef4444; margin-right:5px;"></span>
+      <span>🔴 Stream</span>
+    </a>
+
+    <!-- Notification Button with SVG icon & Glassmorphic Drawer -->
     <div class="nav-notification-wrapper" id="navNotificationWrapper">
       <button class="nav-notification-btn" id="navNotificationBtn" onclick="toggleNotificationDropdown(event)" aria-label="Notifications" title="Student & Campus Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon-svg">
@@ -601,7 +611,7 @@
             <span class="notif-live-pill">🔴 LIVE</span>
           </div>
           <div class="notif-actions-sub">
-            <span class="notif-unread-count" id="notifUnreadCountText">0 unread alerts</span>
+            <span class="notif-unread-count" id="notifUnreadCountText">All caught up</span>
             <button class="notif-clear-btn" onclick="markAllNotificationsRead(event)">Mark all read</button>
           </div>
         </div>
@@ -622,14 +632,10 @@
       </div>
     </div>
 
-    <a href="feed.html" class="nav-link-btn" style="background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#fca5a5;" title="Campus Stream — Reels">
-      <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#ef4444; margin-right:4px;"></span>
-      Stream
-    </a>
-    <a href="index.html" class="nav-link-btn">← Home</a>
-    <a href="dashboard.html" class="nav-link-btn" style="background:rgba(124,58,237,0.2); border-color:rgba(139,92,246,0.5); color:#c4b5fd;">
-      Dashboard →
-    </a>
+    <!-- Quick Profile Action / Settings Button -->
+    <button onclick="openSettingsModal('profile')" class="nav-link-btn" style="background:rgba(124,58,237,0.18); border-color:rgba(139,92,246,0.4); color:#c4b5fd;" title="Account & Passport Settings">
+      <span>⚙️ Settings</span>
+    </button>
   </div>
 </header>
 
@@ -643,17 +649,28 @@
       <div class="avatar-wrapper">
         <div class="student-avatar-big" id="passportAvatar">S</div>
         <div class="photo-upload-badge" id="photoUploadTrigger" title="Upload Photo From Device">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </div>
       </div>
 
       <div class="passport-meta-col">
-        <h1 class="passport-name-h1">
-          <span id="passportName">Student</span>
-          <span style="font-size:16px; color:#38bdf8;" title="Verified Student">✓</span>
-        </h1>
-        <div class="passport-handle-text" id="passportHandle">@student</div>
-        <p class="passport-bio-p" id="passportBio">Student at Campus OS Academic Platform.</p>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <h1 class="passport-name-h1" style="margin-bottom:0;">
+            <span id="passportName">Student</span>
+          </h1>
+          <span id="passportRoleBadge" style="display:inline-flex;"></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-top:4px; margin-bottom:8px;">
+          <div class="passport-handle-text" id="passportHandle" style="margin-bottom:0;">@student</div>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('passportHandle').textContent); showToast('📋 Handle copied to clipboard!');" style="background:none; border:none; color:#94a3b8; font-size:12px; cursor:pointer; padding:2px 6px; border-radius:6px;" title="Copy Handle">📋</button>
+        </div>
+
+        <!-- Bio Quote Box -->
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:10px 14px; margin-bottom:12px; max-width:680px; position:relative;">
+          <p class="passport-bio-p" id="passportBio" style="margin-bottom:0; font-size:13px; color:#cbd5e1; line-height:1.5;">Student at Campus OS Academic Platform.</p>
+        </div>
+
         <div class="passport-chips-row" id="passportChips">
           <!-- Chips injected by JS -->
         </div>
@@ -684,26 +701,34 @@
       </div>
     </div>
 
-    <!-- Tabs Navigation -->
-    <div class="passport-tabs-header">
-      <button class="passport-tab-btn active" data-tab="materials">
-        <span>📄 Posts & Materials</span>
+    <!-- Compact Navigation Tabs -->
+    <div class="passport-tabs-header" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:20px;">
+      <button class="passport-tab-btn active" data-tab="materials" style="padding:8px 16px; font-size:12.5px; font-weight:800;">
+        <span>📄 Study Posts & PDFs</span>
       </button>
-      <button class="passport-tab-btn" data-tab="academic">
-        <span>🏛️ Academic Passport</span>
+      <button class="passport-tab-btn" data-tab="academic" style="padding:8px 16px; font-size:12.5px; font-weight:800;">
+        <span>🏛️ Academic Details</span>
       </button>
-      <button class="passport-tab-btn" data-tab="skills">
-        <span>⚡ Skills & Tech</span>
+      <button class="passport-tab-btn" data-tab="skills" style="padding:8px 16px; font-size:12.5px; font-weight:800;">
+        <span>⚡ Skills & Badges</span>
+      </button>
+      <button class="passport-tab-btn" data-tab="settings" style="padding:8px 16px; font-size:12.5px; font-weight:800;">
+        <span>⚙️ Account Settings</span>
       </button>
     </div>
 
     <!-- Tab 1: Uploaded Posts & Materials -->
     <div class="tab-content-panel active" id="tab-materials">
-      <div style="margin-bottom:18px;">
-        <h3 style="font-size:16px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
-          <span>📄</span> Shared Materials & Posts
-        </h3>
-        <p style="font-size:12px; color:#94a3b8; margin-top:2px;">Verified notes, PDFs, code repos, and video tutorials</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:15px; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px; margin:0;">
+            <span>📄</span> Shared Materials & Posts
+          </h3>
+          <p style="font-size:11.5px; color:#94a3b8; margin-top:2px; margin-bottom:0;">Verified notes, PDFs, code repos, and video tutorials</p>
+        </div>
+        <button class="passport-btn primary" onclick="openCreatePostModal()" style="padding:6px 14px; font-size:12px;">
+          <span>➕ Upload Note / PDF</span>
+        </button>
       </div>
 
       <div class="materials-grid-layout" id="publishedMaterialsGrid">
@@ -713,15 +738,104 @@
 
     <!-- Tab 2: Academic Info -->
     <div class="tab-content-panel" id="tab-academic">
-      <div class="academic-info-grid" id="academicInfoGrid">
+      <div class="academic-info-grid" id="academicInfoGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
         <!-- Rendered by JS -->
       </div>
     </div>
 
     <!-- Tab 3: Skills -->
     <div class="tab-content-panel" id="tab-skills">
-      <div style="display:flex; flex-wrap:wrap; gap:12px;" id="skillsChipsWrap">
+      <div style="display:flex; flex-wrap:wrap; gap:8px;" id="skillsChipsWrap">
         <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Tab 4: In-page Account Settings -->
+    <div class="tab-content-panel" id="tab-settings">
+      <div style="max-width:720px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
+        <h3 style="font-size:16px; font-weight:900; color:#fff; margin-bottom:6px;">⚙️ Student Passport & Account Customization</h3>
+        <p style="font-size:12px; color:#94a3b8; margin-bottom:20px;">Update your academic credentials, profile bio, and preferences.</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name</label>
+            <input type="text" class="form-input" id="inpageFullName" placeholder="Full Name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
+            <input type="text" class="form-input" id="inpageUSN" placeholder="e.g. 2BL22CS045" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
+            <select class="form-select" id="inpageProgramSelect">
+              <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+              <option value="BSc">BSc (Bachelor of Science)</option>
+              <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+              <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+              <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+              <option value="BBA">BBA (Bachelor of Business Admin)</option>
+              <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+              <option value="BA">BA (Bachelor of Arts)</option>
+              <option value="MCA">MCA (Master of Computer Applications)</option>
+              <option value="M.Tech">M.Tech (Master of Technology)</option>
+              <option value="Other">Other Degree</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
+            <select class="form-select" id="inpageSemSelect">
+              <option value="1">1st Semester</option>
+              <option value="2">2nd Semester</option>
+              <option value="3">3rd Semester</option>
+              <option value="4">4th Semester</option>
+              <option value="5">5th Semester</option>
+              <option value="6">6th Semester</option>
+              <option value="7">7th Semester</option>
+              <option value="8">8th Semester</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Department / Branch</label>
+          <select class="form-select" id="inpageDeptSelect">
+            <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+            <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+            <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+            <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+            <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            <option value="Civil Engineering">Civil Engineering</option>
+            <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+            <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+            <option value="General">General Academic</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
+          <textarea class="form-textarea" id="inpageBioText" style="min-height:70px;" placeholder="Brief summary of your academic interests, focus, and projects..."></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Technical Skills (comma separated)</label>
+          <input type="text" class="form-input" id="inpageSkillsInput" placeholder="Python, DSA, Web Dev, React" />
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="passport-btn primary" onclick="saveInpageProfile()" style="padding:10px 22px;">
+            <span>💾 Save Changes</span>
+          </button>
+          <button class="passport-btn" onclick="document.getElementById('profilePhotoFileInput').click()">
+            <span>📸 Change Photo</span>
+          </button>
+          <button class="passport-btn" onclick="executeSignOut()" style="color:#fca5a5; border-color:rgba(239,68,68,0.3);">
+            <span>🚪 Logout</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1590,6 +1704,16 @@ function renderStudentProfile(profile, isOwn) {
   document.getElementById('statDepartmentPill').textContent = isAdminProfile ? 'ADMIN' : (deptShort.length > 8 ? deptShort.slice(0, 7) + '…' : deptShort);
   document.getElementById('statSemesterLevel').textContent = isAdminProfile ? 'Owner' : `Sem ${profile.semester || '?'}`;
 
+  if (isOwn) {
+    if (document.getElementById('inpageFullName')) document.getElementById('inpageFullName').value = profile.displayName || profile.name || '';
+    if (document.getElementById('inpageUSN')) document.getElementById('inpageUSN').value = profile.usn || '';
+    if (document.getElementById('inpageBioText')) document.getElementById('inpageBioText').value = profile.bio || '';
+    if (document.getElementById('inpageProgramSelect')) document.getElementById('inpageProgramSelect').value = profile.program || 'BCA';
+    if (document.getElementById('inpageDeptSelect')) document.getElementById('inpageDeptSelect').value = profile.department || 'Computer Science & Engineering';
+    if (document.getElementById('inpageSemSelect')) document.getElementById('inpageSemSelect').value = profile.semester || 5;
+    if (document.getElementById('inpageSkillsInput')) document.getElementById('inpageSkillsInput').value = (profile.skills || []).join(', ');
+  }
+
   const actCol = document.getElementById('passportActions');
   const materialsActionBtn = document.getElementById('materialsTabActionBtnWrap');
 
@@ -1599,9 +1723,8 @@ function renderStudentProfile(profile, isOwn) {
   if (isOwn || (isLoggedAdmin && isAdminProfile)) {
     actCol.innerHTML = `
       <button class="passport-btn primary" onclick="openCreatePostModal()">➕ Share Material / Post</button>
-      <button class="passport-btn" onclick="openSettingsModal()">⚙️ Settings & Bio</button>
+      <button class="passport-btn" onclick="document.querySelector('[data-tab=settings]').click()">⚙️ Settings & Bio</button>
       ${isAdminProfile || isLoggedAdmin ? '<a href="admin.html" class="passport-btn" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fbbf24; text-decoration:none;">👑 Admin Suite →</a>' : ''}
-      <a href="dashboard.html" class="passport-btn">Dashboard →</a>
     `;
     if (materialsActionBtn) {
       materialsActionBtn.innerHTML = '';
@@ -1626,6 +1749,35 @@ function renderStudentProfile(profile, isOwn) {
   renderPostsGrid(userPosts, isOwn);
   renderSkillsChips(profile.skills || (isAdminProfile ? ['System Administration', 'Campus OS Governance', 'Academic Operations'] : []), isOwn);
   renderAcademicPassportGrid(profile);
+}
+
+function saveInpageProfile() {
+  const user = Storage.getUser() || currentUser || {};
+  user.displayName = document.getElementById('inpageFullName').value.trim() || user.displayName || 'Student';
+  user.name = user.displayName;
+  user.usn = document.getElementById('inpageUSN').value.trim();
+  user.bio = document.getElementById('inpageBioText').value.trim();
+  if (document.getElementById('inpageProgramSelect')) {
+    user.program = document.getElementById('inpageProgramSelect').value;
+  }
+  if (document.getElementById('inpageDeptSelect')) {
+    user.department = document.getElementById('inpageDeptSelect').value;
+  }
+  if (document.getElementById('inpageSemSelect')) {
+    user.semester = parseInt(document.getElementById('inpageSemSelect').value, 10);
+  }
+  if (document.getElementById('inpageSkillsInput')) {
+    user.skills = document.getElementById('inpageSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  Storage.setUser(user);
+  Storage.addAccount(user);
+  if (window.PythonAPI && PythonAPI.saveAccount) {
+    PythonAPI.saveAccount(user).catch(err => console.warn('Account sync API:', err));
+  }
+  currentUser = user;
+  renderStudentProfile(user, true);
+  showToast('💾 Profile & passport updated successfully!');
 }
 
 async function toggleStudentRoleFromProfile(handle, currentRole) {
