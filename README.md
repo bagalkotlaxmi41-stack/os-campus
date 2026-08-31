@@ -32,7 +32,7 @@
 - Previous years' university question papers, lab manuals, and official syllabus schemes.
 
 ### 👤 Student Passport & Real Student Directory (`profile.html`)
-- Authentic student profiles with degree, branch (BCA, BSc, B.Pharm, B.Tech, BBA, B.Com, etc.), USN, custom profile photo upload, and XP badges.
+- Authentic student profiles with degree, branch (BCA, BSc, B.Pharm, B.Tech, BBA, B.Com, etc.), USN, verified status, and custom profile photo upload.
 - Global Search overlay (`Ctrl+K`) for finding real registered classmates across branches.
 
 ### 📢 Campus Intelligence & Noticeboard (`index.html`)

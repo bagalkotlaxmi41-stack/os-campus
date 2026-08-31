@@ -1518,7 +1518,7 @@
                   <th>Email / USN</th>
                   <th>Branch & Sem</th>
                   <th>Role</th>
-                  <th>Academic XP</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -1906,7 +1906,6 @@
         usn: 'ADMIN-001',
         bio: 'Official Platform Administrator & Owner for Campus OS.',
         skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
-        xp: 9999,
         verified: true,
         createdAt: Date.now()
       };
@@ -2123,7 +2122,7 @@
                 <span class="admin-role-badge ${role.toLowerCase()}">${role}</span>
               </td>
               <td>
-                <strong style="color:#38bdf8;">${a.xp || 150} XP</strong>
+                <span style="color:#34d399;font-weight:700;font-size:12.5px;">✓ Active</span>
               </td>
               <td>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -2175,7 +2174,7 @@
                 <div><strong>Email:</strong> ${a.email || 'None'}</div>
                 <div><strong>USN:</strong> ${a.usn || '—'}</div>
                 <div><strong>Dept:</strong> ${a.department || 'CSE'}</div>
-                <div><strong>Sem:</strong> Sem ${a.semester || 5} · <span style="color:#38bdf8;font-weight:800;">${a.xp || 150} XP</span></div>
+                <div><strong>Sem:</strong> Sem ${a.semester || 5} · <span style="color:#34d399;font-weight:800;">Active</span></div>
               </div>
 
               <div class="card-actions-grid">
@@ -2285,9 +2284,9 @@
     }
 
     function exportAccountsCSV() {
-      let csv = 'Full Name,Handle,Email,USN,Department,Semester,Role,XP\n';
+      let csv = 'Full Name,Handle,Email,USN,Department,Semester,Role\n';
       allAdminAccounts.forEach(a => {
-        csv += `"${a.displayName || a.name || ''}","${a.handle || a.username || ''}","${a.email || ''}","${a.usn || ''}","${a.department || ''}","${a.semester || 5}","${a.role || 'STUDENT'}","${a.xp || 150}"\n`;
+        csv += `"${a.displayName || a.name || ''}","${a.handle || a.username || ''}","${a.email || ''}","${a.usn || ''}","${a.department || ''}","${a.semester || 5}","${a.role || 'STUDENT'}"\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv' });

@@ -26,8 +26,7 @@ def run():
         "usn": "2BL22CS014",
         "bio": "Web Development & AI enthusiast at BLDE Jamakhandi.",
         "skills": ["Python", "FastAPI", "React", "Data Structures"],
-        "role": "STUDENT",
-        "xp": 320
+        "role": "STUDENT"
     }
 
     req = urllib.request.Request(

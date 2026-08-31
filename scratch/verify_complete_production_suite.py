@@ -69,8 +69,7 @@ def test_full_system():
         "bio": "QA Test account for production verification.",
         "skills": ["Python", "FastAPI", "Jest"],
         "photo": None,
-        "role": "STUDENT",
-        "xp": 250
+        "role": "STUDENT"
     }
     try:
         status, data = http_req("POST", "/api/accounts", student_payload)

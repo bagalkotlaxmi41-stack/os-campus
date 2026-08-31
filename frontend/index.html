@@ -2245,7 +2245,6 @@ async function executeModalAccountSave(e) {
     semester: sem,
     bio: `Student at Campus OS studying ${program} · ${dept}.`,
     photo: _modalSelectedPhotoBase64 || null,
-    xp: 150,
     skills: ['Academic Learner'],
     role: 'STUDENT',
     status: 'ACTIVE',
@@ -2423,7 +2422,7 @@ function renderSearchResults(accounts, posts, tools, query) {
                 <span style="font-size:10px; background:rgba(16,185,129,0.18); color:#34d399; padding:1px 6px; border-radius:6px; font-weight:800;">✓ Verified</span>
               </div>
               <div style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">
-                ${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || 5} ${acc.usn ? `· ${escapeHtml(acc.usn)}` : ''} · <span style="color:#38bdf8; font-weight:700;">${acc.xp || 150} XP</span>
+                ${escapeHtml(acc.program || 'Degree')} · ${escapeHtml(acc.department || 'Branch')} · Sem ${acc.semester || 5} ${acc.usn ? `· ${escapeHtml(acc.usn)}` : ''}
               </div>
             </div>
           </div>

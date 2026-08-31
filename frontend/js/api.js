@@ -102,8 +102,7 @@ const PythonAPI = {
           bio: account.bio || '',
           skills: account.skills || [],
           photo: account.photo || null,
-          role: account.role || 'STUDENT',
-          xp: Number(account.xp) || 150
+          role: account.role || 'STUDENT'
         })
       }, 1500);
       if (!res.ok) {

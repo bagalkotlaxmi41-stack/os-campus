@@ -27,7 +27,6 @@ function requireAuth() {
         handle: '@student',
         department: 'Computer Science & Engineering',
         semester: 5,
-        xp: 150,
         college: "Campus OS Academic Network"
       };
       Storage.setUser(user);

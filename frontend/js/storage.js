@@ -167,28 +167,28 @@ const Storage = {
           username: "@priya_sharma", handle: "@priya_sharma", displayName: "Priya Sharma", name: "Priya Sharma",
           email: "priya.sharma@campus.edu", department: "Computer Science & Engineering", semester: 6,
           usn: "2CS21084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
-          skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT", xp: 620,
+          skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT",
           createdAt: Date.now() - 86400000 * 20
         },
         {
           username: "@vikram_patil", handle: "@vikram_patil", displayName: "Vikram Patil", name: "Vikram Patil",
           email: "vikram.patil@campus.edu", department: "Electronics & Communication", semester: 4,
           usn: "2EC22042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
-          skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT", xp: 480,
+          skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT",
           createdAt: Date.now() - 86400000 * 15
         },
         {
           username: "@ananya_kulkarni", handle: "@ananya_kulkarni", displayName: "Ananya Kulkarni", name: "Ananya Kulkarni",
           email: "ananya.k@campus.edu", department: "Artificial Intelligence & DS", semester: 5,
           usn: "2AI22018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
-          skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT", xp: 540,
+          skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT",
           createdAt: Date.now() - 86400000 * 10
         },
         {
           username: "@rahul_verma", handle: "@rahul_verma", displayName: "Rahul Verma", name: "Rahul Verma",
           email: "rahul.verma@campus.edu", department: "Computer Science & Engineering", semester: 5,
           usn: "2CS22035", bio: "Software engineering enthusiast focused on Full-Stack Web Development and Cloud Systems.",
-          skills: ["JavaScript", "Node.js", "Docker", "MongoDB", "PostgreSQL"], role: "STUDENT", xp: 510,
+          skills: ["JavaScript", "Node.js", "Docker", "MongoDB", "PostgreSQL"], role: "STUDENT",
           createdAt: Date.now() - 86400000 * 5
         }
       ];
@@ -380,7 +380,6 @@ const Storage = {
         usn: 'ADMIN-001',
         bio: 'Official Platform Administrator & Owner for Campus OS.',
         skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
-        xp: 9999,
         verified: true,
         createdAt: Date.now()
       };

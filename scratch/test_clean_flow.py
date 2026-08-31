@@ -33,8 +33,7 @@ def run_test():
         "usn": "2BL22CS088",
         "bio": "Passionate full-stack developer and AI researcher at BLDEA.",
         "skills": ["Python", "React", "Cloud Computing", "DSA"],
-        "college": "BLDE Association's Commerce, BHS Arts & TGP Science College",
-        "xp": 220
+        "college": "Campus OS Academic Network"
     }
     req = urllib.request.Request(f"{BASE}/api/accounts", data=json.dumps(student_payload).encode('utf-8'), headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req) as resp:

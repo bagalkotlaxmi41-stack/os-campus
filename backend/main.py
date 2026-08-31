@@ -461,7 +461,7 @@ class AttendanceModel(BaseModel):
 def get_all_accounts():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM accounts ORDER BY xp DESC")
+    cursor.execute("SELECT * FROM accounts ORDER BY created_at DESC")
     rows = cursor.fetchall()
     conn.close()
 
@@ -480,7 +480,6 @@ def get_all_accounts():
             "skills": json.loads(r["skills"] or "[]"),
             "photo": r["photo"],
             "role": r["role"],
-            "xp": r["xp"],
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"],
         })
@@ -496,7 +495,7 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
     cursor.execute("""
     SELECT * FROM accounts
     WHERE LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ? OR LOWER(department) LIKE ? OR LOWER(usn) LIKE ? OR LOWER(skills) LIKE ? OR LOWER(email) LIKE ? OR LOWER(bio) LIKE ?
-    ORDER BY xp DESC, created_at DESC
+    ORDER BY created_at DESC
     LIMIT 50
     """, (term, term, term, term, term, term, term))
     rows = cursor.fetchall()
@@ -517,7 +516,6 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
             "skills": json.loads(r["skills"] or "[]"),
             "photo": r["photo"],
             "role": r["role"],
-            "xp": r["xp"],
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"]
         })
@@ -556,7 +554,6 @@ def get_account_by_handle(handle: str):
         "skills": json.loads(r["skills"] or "[]"),
         "photo": r["photo"],
         "role": r["role"],
-        "xp": r["xp"],
         "postCount": post_count,
         "createdAt": r["created_at"],
         "updatedAt": r["updated_at"],
@@ -626,7 +623,6 @@ def create_or_update_account(acc: AccountModel):
         "skills": acc.skills,
         "photo": acc.photo,
         "role": acc.role,
-        "xp": acc.xp,
         "createdAt": now
     }
 
@@ -667,7 +663,6 @@ def auth_login(data: LoginModel):
         "skills": json.loads(r["skills"] or "[]"),
         "photo": r["photo"],
         "role": r["role"],
-        "xp": r["xp"],
         "createdAt": r["created_at"]
     }
 
@@ -854,9 +849,6 @@ def create_post(post: PostCreateModel):
         post.youtubeUrl,
         now
     ))
-
-    # Reward XP to the creator
-    cursor.execute("UPDATE accounts SET xp = xp + 30, updated_at = ? WHERE LOWER(handle) = ?", (now, handle.lower()))
     conn.commit()
     conn.close()
 
@@ -1580,7 +1572,7 @@ def admin_stats():
     total_banners = cursor.fetchone()["cnt"] or 0
 
     # Recent student registrations
-    cursor.execute("SELECT handle, display_name, email, department, semester, role, created_at, photo, xp FROM accounts ORDER BY created_at DESC LIMIT 10")
+    cursor.execute("SELECT handle, display_name, email, department, semester, role, created_at, photo FROM accounts ORDER BY created_at DESC LIMIT 10")
     recent_students = [dict(r) for r in cursor.fetchall()]
 
     # Recent posts

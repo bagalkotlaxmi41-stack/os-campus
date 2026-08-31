@@ -645,8 +645,8 @@
         <div class="stat-label-text">Shared Posts</div>
       </div>
       <div class="passport-stat-box">
-        <div class="stat-val-num" id="passportXPPoints">100</div>
-        <div class="stat-label-text">Academic XP</div>
+        <div class="stat-val-num" id="statDepartmentPill">CSE</div>
+        <div class="stat-label-text">Department</div>
       </div>
       <div class="passport-stat-box">
         <div class="stat-val-num" id="statSemesterLevel">Sem 5</div>
@@ -779,7 +779,7 @@
 
     <!-- Submit Button -->
     <button class="btn btn-primary btn-lg w-full" id="submitPostBtn" onclick="submitNewPost()" style="display:flex; justify-content:center; align-items:center; gap:8px;">
-      <span>🚀 Publish Material & Earn +30 XP</span>
+      <span>🚀 Publish Study Material</span>
     </button>
   </div>
 </div>
@@ -1017,7 +1017,7 @@
         <div class="settings-row-item">
           <div>
             <div style="font-size:13px; font-weight:800; color:#fff;">Sound Effects & Audio</div>
-            <div style="font-size:11px; color:#94a3b8;">Audio cues on XP gains and note publication</div>
+            <div style="font-size:11px; color:#94a3b8;">Audio cues on interactions and note publication</div>
           </div>
           <input type="checkbox" id="settingsSoundToggle" checked style="accent-color:#8b5cf6; width:18px; height:18px; cursor:pointer;" />
         </div>
@@ -1083,7 +1083,7 @@
       <div class="settings-section-card" style="background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.3);">
         <div style="font-size:14px; font-weight:900; color:#fca5a5; margin-bottom:4px;">⚠️ Danger Zone: Delete Account</div>
         <div style="font-size:11px; color:#fca5a5; opacity:0.85; line-height:1.5; margin-bottom:16px;">
-          Permanently delete your student passport, uploaded study notes, attendance tracking records, and academic XP. This action is irreversible.
+          Permanently delete your student passport, uploaded study notes, and attendance tracking records. This action is irreversible.
         </div>
         <button class="danger-btn" style="width:100%; justify-content:center;" onclick="executeDeleteAccount()">
           <span>🗑️ Delete My Account Permanently</span>
@@ -1373,16 +1373,11 @@ function submitNewPost() {
   // Save to Storage
   Storage.addPost(postPayload);
 
-  // Reward XP points (+30 XP for sharing academic material)
-  user.xp = (user.xp || 100) + 30;
-  Storage.setUser(user);
-  currentUser = user;
-
   // Refresh profile UI
   closeCreatePostModal();
   renderStudentProfile(user, true);
 
-  alert(`🎉 Post published! You earned +30 Academic XP.`);
+  alert('🎉 Academic material published successfully!');
 }
 
 function togglePostLike(postId) {
@@ -1503,7 +1498,6 @@ function saveNewProfile() {
     program: program,
     department: dept,
     semester: sem,
-    xp: 150,
     skills: skills.length ? skills : ['Academic Learner'],
     bio: bio || 'Student at Campus OS.',
     status: 'ACTIVE',
@@ -1565,7 +1559,8 @@ function renderStudentProfile(profile, isOwn) {
   const userPosts = allPosts.filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
 
   document.getElementById('statPDFsUploaded').textContent = userPosts.length;
-  document.getElementById('passportXPPoints').textContent = profile.xp || (isAdminProfile ? 9999 : 100);
+  const deptShort = (profile.department || 'CSE').replace('Computer Science & Engineering', 'CSE').replace('Electronics & Communication', 'ECE').replace('Artificial Intelligence & DS', 'AI/DS');
+  document.getElementById('statDepartmentPill').textContent = isAdminProfile ? 'ADMIN' : (deptShort.length > 8 ? deptShort.slice(0, 7) + '…' : deptShort);
   document.getElementById('statSemesterLevel').textContent = isAdminProfile ? 'Owner' : `Sem ${profile.semester || '?'}`;
 
   const actCol = document.getElementById('passportActions');
@@ -1778,7 +1773,7 @@ function renderAcademicPassportGrid(profile) {
     { label: 'Current Semester', val: `Semester ${profile.semester || 5} (Regular Batch)`, icon: '📅' },
     { label: 'University Seat Number (USN)', val: profile.usn || '2BL22CS045 (Verified)', icon: '🆔' },
     { label: 'Institution / Campus', val: profile.college || "Campus OS Academic Network", icon: '📍' },
-    { label: 'Academic Standing', val: `${profile.xp || 150} XP Points · Verified Active Scholar`, icon: '⭐' }
+    { label: 'Academic Standing', val: 'Verified Active Scholar · Campus OS', icon: '⭐' }
   ];
 
   grid.innerHTML = items.map(item => `
