@@ -17,6 +17,21 @@
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: var(--space-5);
     }
+
+    @media (max-width: 768px) {
+      .res-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-4);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .res-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+      }
+    }
+
     .sidebar-logo {
       display: flex;
       align-items: center;

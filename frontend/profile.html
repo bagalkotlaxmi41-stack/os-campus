@@ -537,6 +537,32 @@
       background: rgba(239, 68, 68, 0.3);
       box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
     }
+
+    @media (max-width: 768px) {
+      .campus-navbar { padding: 0 16px; height: 60px; }
+      .profile-hero-section { margin-top: 60px; }
+      .profile-banner-cover { height: 160px; }
+      .profile-passport-wrap { padding: 0 14px 60px; }
+      .passport-header-card { margin-top: -48px; gap: 16px; }
+      .student-avatar-big { width: 96px; height: 96px; font-size: 36px; border-width: 3px; }
+      .passport-name-h1 { font-size: 20px; }
+      .passport-stats-ribbon { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .passport-stat-box { padding: 12px 14px; }
+      .stat-val-num { font-size: 20px; }
+      .passport-actions-col { width: 100%; justify-content: flex-start; }
+      .edit-dialog-card { padding: 20px 16px; border-radius: 18px; max-height: 90vh; overflow-y: auto; }
+    }
+
+    @media (max-width: 480px) {
+      .campus-navbar { padding: 0 12px; height: 56px; }
+      .profile-hero-section { margin-top: 56px; }
+      .profile-banner-cover { height: 130px; }
+      .student-avatar-big { width: 80px; height: 80px; font-size: 30px; }
+      .passport-header-card { margin-top: -40px; }
+      .passport-name-h1 { font-size: 18px; }
+      .passport-btn { padding: 8px 14px; font-size: 12px; }
+      .passport-stats-ribbon { grid-template-columns: 1fr 1fr; gap: 8px; }
+    }
   </style>
 </head>
 <body>

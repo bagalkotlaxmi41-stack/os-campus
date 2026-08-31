@@ -794,17 +794,49 @@
   cursor: pointer;
 }
 
-@media (max-width: 768px) {
+/* ---- Tablet: Collapse sidebar ---- */
+@media (max-width: 1024px) {
   .sidebar { transform: translateX(-100%); z-index: 50; }
   .sidebar.open { transform: translateX(0); }
   .sidebar-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity var(--transition-base); }
   .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
   .main-layout { margin-left: 0; }
-  .topbar { left: 0; padding: 0 var(--space-4); }
+  .topbar { left: 0; }
   .mobile-menu-btn { display: flex; }
-  .main-content { padding: var(--space-4); }
-  .fab { bottom: 20px; right: 20px; }
-  .page-header { flex-direction: column; }
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 768px) {
+  .topbar { padding: 0 var(--space-4); }
+  .main-content { padding: var(--space-4) var(--space-4) 90px; }
+  .fab { bottom: 20px; right: 20px; width: 50px; height: 50px; font-size: 20px; }
+  .page-header { flex-direction: column; gap: var(--space-3); }
+  .page-title { font-size: 22px; }
+  .page-subtitle { font-size: 13px; }
+  .stat-card { padding: var(--space-4); border-radius: var(--radius-lg); }
+  .stat-value { font-size: 24px; }
+  .stat-label { font-size: 11px; }
+  .note-card { padding: var(--space-4); border-radius: var(--radius-lg); }
+  .media-grid { grid-template-columns: 1fr; }
+  .modal-content { margin: 16px; max-height: calc(100vh - 32px); width: calc(100% - 32px) !important; max-width: 100% !important; border-radius: var(--radius-lg); }
+  .notification-dropdown-popover { width: min(360px, calc(100vw - 20px)); right: -60px; }
+  .campus-live-notif-toast { right: 12px; left: 12px; max-width: none; }
+}
+
+/* ---- Small phones ---- */
+@media (max-width: 480px) {
+  .topbar { height: 56px; padding: 0 12px; gap: var(--space-2); }
+  .main-content { padding: 12px 12px 80px; }
+  .fab { bottom: 16px; right: 16px; width: 46px; height: 46px; font-size: 18px; }
+  .page-title { font-size: 20px; }
+  .stat-card { padding: 12px 10px; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 10px; }
+  .stat-change { font-size: 10px; }
+  .note-card { padding: 14px 12px; }
+  .notification-dropdown-popover { position: fixed; top: 60px; left: 8px; right: 8px; width: auto; max-width: none; border-radius: 16px; max-height: calc(100vh - 80px); }
+  .campus-live-notif-toast { right: 8px; left: 8px; border-radius: 12px; padding: 10px 14px; }
+  .dropdown-menu { min-width: 180px; }
 }
 
 /* ============================================

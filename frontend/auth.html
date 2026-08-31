@@ -287,9 +287,16 @@
     .panel { display: none; }
     .panel.show { display: block; animation: fadeUp .35s ease both; }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @media (max-width: 480px) {
+      .auth-page { padding: 80px 14px 24px; }
+      .auth-card { padding: 24px 18px; border-radius: 16px; }
+      .form-heading { font-size: 18px; }
+      .auth-logo { margin-bottom: 20px; }
+      .auth-logo-icon { width: 48px; height: 48px; font-size: 24px; }
+      .auth-logo-name { font-size: 19px; }
+      .auth-tabs { margin-bottom: 20px; }
+      .auth-tab { padding: 8px; font-size: 13px; }
+      .field input, .field select { padding: 11px 14px; font-size: 13.5px; }
     }
   </style>
 </head>

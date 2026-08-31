@@ -172,7 +172,25 @@
 
     @media (max-width: 600px) {
       .tasks-summary {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+      }
+      .kanban-col {
+        padding: var(--space-4);
+      }
+      .task-card-actions {
+        display: flex;
+        opacity: 0.8;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tasks-summary {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .kanban-col {
+        padding: var(--space-3);
       }
     }
 

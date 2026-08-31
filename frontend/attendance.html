@@ -208,6 +208,50 @@
       text-transform: uppercase;
     }
 
+    @media (max-width: 768px) {
+      .att-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-4);
+      }
+      .overall-banner {
+        padding: var(--space-4);
+        flex-direction: column;
+        text-align: center;
+      }
+      .overall-stats {
+        gap: var(--space-4);
+        justify-content: center;
+      }
+      .overall-stat-val {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .att-grid {
+        grid-template-columns: 1fr;
+      }
+      .att-card {
+        padding: var(--space-4);
+      }
+      .att-subject-name {
+        font-size: 14px;
+      }
+      .att-ring-pct {
+        font-size: 16px;
+      }
+      .att-stat-val {
+        font-size: 16px;
+      }
+      .overall-stats {
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .overall-stat-val {
+        font-size: 22px;
+      }
+    }
+
     .sidebar-logo {
       display: flex;
       align-items: center;

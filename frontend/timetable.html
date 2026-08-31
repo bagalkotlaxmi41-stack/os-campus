@@ -17,12 +17,33 @@
       grid-template-columns: 80px repeat(6, 1fr);
       gap: 8px;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      min-width: 0;
     }
 
     @media (max-width: 900px) {
       .timetable-grid {
-        grid-template-columns: 70px repeat(6, minmax(130px, 1fr));
+        grid-template-columns: 60px repeat(6, minmax(110px, 1fr));
+        gap: 6px;
       }
+      .tt-header { font-size: 11px; padding: var(--space-2); }
+      .tt-time-slot { font-size: 10px; padding: var(--space-2); }
+      .tt-slot { min-height: 65px; padding: var(--space-2); }
+      .tt-subject { font-size: 11px; }
+      .tt-code { font-size: 9.5px; }
+      .tt-room { font-size: 9px; }
+    }
+
+    @media (max-width: 600px) {
+      .timetable-grid {
+        grid-template-columns: 50px repeat(6, minmax(100px, 1fr));
+        gap: 4px;
+        font-size: 10px;
+      }
+      .tt-header { font-size: 10px; padding: 6px 4px; border-radius: var(--radius-sm); }
+      .tt-time-slot { font-size: 9px; padding: 6px 2px; }
+      .tt-slot { min-height: 55px; padding: 6px; border-radius: var(--radius-sm); }
+      .tt-subject { font-size: 10.5px; }
     }
 
     .tt-header {
