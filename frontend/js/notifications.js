@@ -11,8 +11,22 @@ const NotificationsManager = {
 
   getReadIds() {
     try {
-      return JSON.parse(localStorage.getItem('cos_read_notifs') || '[]');
-    } catch {
+      const stored = localStorage.getItem('cos_read_notif_ids');
+      const ids = stored ? JSON.parse(stored) : [];
+      const lastSeen = Number(localStorage.getItem('cos_last_seen_notif_time') || 0);
+      if (lastSeen > 0) {
+        const posts = window.Storage && Storage.getPosts ? Storage.getPosts() : [];
+        posts.forEach(p => {
+          if ((p.createdAt || 0) <= lastSeen && !ids.includes(p.id)) {
+            ids.push(p.id);
+          }
+        });
+        ['circ_exam_odd_2026', 'circ_ssp_kyc_2026', 'circ_placement_tcs_2026'].forEach(cid => {
+          if (!ids.includes(cid)) ids.push(cid);
+        });
+      }
+      return ids;
+    } catch (e) {
       return [];
     }
   },
