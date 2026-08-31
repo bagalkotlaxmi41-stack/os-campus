@@ -877,6 +877,18 @@ Storage.init();
 // Export to window reliably avoiding native non-writable window.Storage collision
 window.CampusStorage = Storage;
 window.COS_Storage = Storage;
+
+// Attach all custom methods directly onto the native window.Storage constructor as static functions
+if (typeof window !== 'undefined' && window.Storage) {
+  for (var k in Storage) {
+    if (Object.prototype.hasOwnProperty.call(Storage, k)) {
+      try {
+        window.Storage[k] = Storage[k];
+      } catch(e) {}
+    }
+  }
+}
+
 try {
   Object.defineProperty(window, 'Storage', {
     value: Storage,

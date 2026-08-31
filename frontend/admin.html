@@ -1734,16 +1734,48 @@
     }
 
     // ============================================================
-    // AUTHENTICATION & GATEKEEPER
+    // AUTHENTICATION & GATEKEEPER (FAIL-SAFE)
     // ============================================================
+    function safeGetAdminToken() {
+      if (Storage && typeof Storage.getAdminToken === 'function') {
+        return Storage.getAdminToken();
+      }
+      return sessionStorage.getItem('cos_admin_token') || localStorage.getItem('cos_admin_token');
+    }
+
+    function safeSetAdminSession(token, adminData, persist = true) {
+      if (Storage && typeof Storage.setAdminSession === 'function') {
+        Storage.setAdminSession(token, adminData, persist);
+        return;
+      }
+      if (persist) {
+        localStorage.setItem('cos_admin_token', token);
+      } else {
+        sessionStorage.setItem('cos_admin_token', token);
+      }
+      try {
+        localStorage.setItem('cos_admin_user', JSON.stringify(adminData));
+      } catch(e) {}
+    }
+
+    function safeClearAdminSession() {
+      if (Storage && typeof Storage.clearAdminSession === 'function') {
+        Storage.clearAdminSession();
+        return;
+      }
+      sessionStorage.removeItem('cos_admin_token');
+      localStorage.removeItem('cos_admin_token');
+      localStorage.removeItem('cos_admin_user');
+    }
+
     async function checkAdminAuth() {
-      const token = Storage.getAdminToken();
+      const token = safeGetAdminToken();
       const currentUser = Storage.getUser ? Storage.getUser() : null;
       const isAdminUser = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER_ADMIN');
 
       if (token || isAdminUser) {
         if (!token && isAdminUser) {
-          Storage.setAdminSession('adm_token_' + Date.now(), currentUser, true);
+          safeSetAdminSession('adm_token_' + Date.now(), currentUser, true);
         }
         document.getElementById('adminGatekeeper').classList.add('authenticated');
         loadAllAdminData();
@@ -1833,7 +1865,7 @@
             handle: cleanHandle || '@campus_admin'
           };
           const token = authResult?.token || 'adm_token_' + Date.now();
-          Storage.setAdminSession(token, adminData, true);
+          safeSetAdminSession(token, adminData, true);
 
           document.getElementById('adminGatekeeper').classList.add('authenticated');
           showAdminToast(`👑 Welcome, ${adminData.displayName || 'Administrator'}!`);
@@ -1857,7 +1889,7 @@
 
     function exitAdminSession() {
       if (confirm('Are you sure you want to exit your Owner / Admin session?')) {
-        Storage.clearAdminSession();
+        safeClearAdminSession();
         window.location.reload();
       }
     }

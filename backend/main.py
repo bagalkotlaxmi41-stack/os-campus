@@ -560,10 +560,11 @@ def create_or_update_account(acc: AccountModel):
                 detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in with your password."
             )
 
-    cursor.execute("SELECT created_at, password_hash FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
+    cursor.execute("SELECT created_at, password_hash, role FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
     existing = cursor.fetchone()
-    created_at = existing[0] if existing else now
-    pwd_hash = hash_password(acc.password) if acc.password else (existing[1] if existing else None)
+    created_at = existing["created_at"] if existing else now
+    role = acc.role if acc.role else (existing["role"] if existing else "STUDENT")
+    pwd_hash = hash_password(acc.password) if (acc.password and acc.password.strip()) else (existing["password_hash"] if existing else None)
 
     cursor.execute("""
     INSERT OR REPLACE INTO accounts
@@ -580,7 +581,7 @@ def create_or_update_account(acc: AccountModel):
         acc.bio,
         json.dumps(acc.skills or []),
         acc.photo,
-        acc.role or "STUDENT",
+        role,
         acc.xp or 150,
         created_at,
         now
