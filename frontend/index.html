@@ -315,7 +315,7 @@
       border: 1.5px solid #a78bfa;
     }
 
-    /* ---- HERO BANNER SLIDER (CLEAN, COOL, AESTHETIC) ---- */
+    /* ---- HERO BANNER SLIDER (CLEAN, COOL, AESTHETIC & ULTRA-RESPONSIVE) ---- */
     .hero-slider-section {
       position: relative;
       width: 100%;
@@ -325,13 +325,30 @@
       background: #020106;
     }
 
+    @media (max-width: 992px) {
+      .hero-slider-section {
+        height: 320px;
+        margin-top: 68px;
+      }
+    }
+
     @media (max-width: 768px) {
       .hero-slider-section {
-        height: 220px;
-        margin: 78px 12px 14px;
-        border-radius: 20px;
+        height: 250px;
+        min-height: 230px;
+        margin: 74px 10px 14px;
+        border-radius: 18px;
         border: 1px solid rgba(139, 92, 246, 0.35);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-slider-section {
+        height: 230px;
+        min-height: 210px;
+        margin: 70px 8px 12px;
+        border-radius: 16px;
       }
     }
 
@@ -379,7 +396,7 @@
     .hero-slide-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, rgba(6, 4, 14, 0.82) 0%, rgba(6, 4, 14, 0.45) 50%, rgba(6, 4, 14, 0.15) 100%),
+      background: linear-gradient(90deg, rgba(6, 4, 14, 0.86) 0%, rgba(6, 4, 14, 0.52) 50%, rgba(6, 4, 14, 0.2) 100%),
                   linear-gradient(180deg, transparent 70%, #06050e 100%);
       display: flex;
       align-items: center;
@@ -389,8 +406,8 @@
 
     @media (max-width: 768px) {
       .hero-slide-overlay {
-        background: linear-gradient(180deg, rgba(6, 5, 14, 0.2) 0%, rgba(6, 4, 16, 0.88) 100%);
-        padding: 16px;
+        background: linear-gradient(180deg, rgba(6, 5, 14, 0.3) 0%, rgba(6, 4, 16, 0.92) 100%);
+        padding: 14px 16px;
         align-items: flex-end;
       }
     }
@@ -1927,20 +1944,46 @@ let heroSlideTimer = null;
 let activeHeroBanners = [];
 
 async function renderDynamicHeroSlider() {
-  let banners = Storage.getBanners();
+  let banners = Storage.getBanners ? Storage.getBanners() : [];
+  const deleted = Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : [];
+
   if (window.PythonAPI && PythonAPI.getBanners) {
     try {
       const remote = await PythonAPI.getBanners();
-      if (remote && remote.length > 0) banners = remote;
+      if (remote && Array.isArray(remote)) {
+        banners = remote.filter(b => !deleted.includes(b.id));
+      }
     } catch (e) {}
   }
 
-  activeHeroBanners = banners.filter(b => b.active !== 0);
-  if (activeHeroBanners.length === 0) activeHeroBanners = banners;
+  activeHeroBanners = (banners || []).filter(b => b.active !== 0 && !deleted.includes(b.id));
 
   const slidesWrapper = document.querySelector('.hero-slides-wrapper');
   const dotsBar = document.getElementById('sliderDotsBar');
   if (!slidesWrapper || !dotsBar) return;
+
+  if (activeHeroBanners.length === 0) {
+    slidesWrapper.innerHTML = `
+      <div class="hero-slide active" data-slide="0">
+        <div class="hero-slide-bg" style="background-image: url('img/banner1.jpg');"></div>
+        <div class="hero-slide-overlay">
+          <div class="hero-slide-content">
+            <div class="hero-glow-badge">✨ Universal Student Platform</div>
+            <h1 class="hero-title-text">Welcome to <span class="text-hero-gradient">Campus OS</span></h1>
+            <p style="font-size:14px;color:#cbd5e1;margin-bottom:18px;max-width:550px;line-height:1.5;">Access verified academic roadmaps, timetables, handwritten notes, and campus hubs.</p>
+            <div class="hero-cta-group">
+              <a href="dashboard.html" class="hero-btn-primary"><span>📊 Open Dashboard →</span></a>
+              <button class="hero-btn-secondary" id="heroAccountBtn" onclick="openAccountModal()"><span>🚀 Create Account</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    dotsBar.innerHTML = `<div class="slider-indicator-dot active" data-idx="0"></div>`;
+    const counter = document.getElementById('sliderCounterText');
+    if (counter) counter.textContent = `01 / 01`;
+    return;
+  }
 
   slidesWrapper.innerHTML = activeHeroBanners.map((b, idx) => {
     const isFirst = idx === 0 ? 'active' : '';
@@ -1977,7 +2020,8 @@ async function renderDynamicHeroSlider() {
 }
 
 function setHeroSlide(idx) {
-  const total = activeHeroBanners.length || 3;
+  const total = activeHeroBanners.length;
+  if (total === 0) return;
   const slides = document.querySelectorAll('.hero-slide');
   const dots = document.querySelectorAll('.slider-indicator-dot');
   currentHeroSlide = (idx + total) % total;
@@ -1985,7 +2029,7 @@ function setHeroSlide(idx) {
   dots.forEach((d, i) => d.classList.toggle('active', i === currentHeroSlide));
   const counter = document.getElementById('sliderCounterText');
   if (counter) {
-    counter.textContent = `0${currentHeroSlide + 1} / 0${total}`;
+    counter.textContent = `${String(currentHeroSlide + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
   }
 }
 

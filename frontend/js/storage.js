@@ -39,18 +39,13 @@ const Storage = {
   // INITIALIZATION & REALTIME BACKGROUND SYNC
   // ============================================================
   async init() {
-    // Fresh clean slate migration: clear old accounts & posts
-    if (!localStorage.getItem('cos_clean_v3')) {
-      this.remove(KEYS.ACCOUNTS);
-      this.remove(KEYS.POSTS);
-      this.remove(KEYS.USER);
-      this.remove(KEYS.NOTES);
-      this.remove(KEYS.TASKS);
-      this.remove(KEYS.ATTENDANCE);
-      this.remove(KEYS.TIMETABLE);
-      this.remove(KEYS.RESOURCES);
-      localStorage.setItem('cos_clean_v3', '1');
-      console.log('[CampusOS] Clean slate active — ready for real student registrations & posts! 🚀');
+    // Ensure initial directory is populated without wiping custom user accounts
+    if (!localStorage.getItem('cos_initialized_v4')) {
+      const existingAccs = this.get(KEYS.ACCOUNTS, []);
+      if (!existingAccs || existingAccs.length === 0) {
+        this.getAccounts(); // Seeds default accounts if none exist
+      }
+      localStorage.setItem('cos_initialized_v4', '1');
     }
 
     if (window.PythonAPI) {
@@ -60,15 +55,17 @@ const Storage = {
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           const localAccs = this.getAccounts();
           const map = new Map();
-          localAccs.forEach(a => {
-            const h = (a.username || a.handle || '').toLowerCase();
-            if (h) map.set(h, a);
-          });
+          // First add remote
           remoteAccounts.forEach(acc => {
             const h = (acc.username || acc.handle || '').toLowerCase();
+            if (h) map.set(h, acc);
+          });
+          // Then merge local on top so recent creations/edits are preserved
+          localAccs.forEach(a => {
+            const h = (a.username || a.handle || '').toLowerCase();
             if (h) {
               const existing = map.get(h) || {};
-              map.set(h, { ...existing, ...acc });
+              map.set(h, { ...existing, ...a });
             }
           });
           this.setAccounts(Array.from(map.values()));
@@ -78,6 +75,18 @@ const Storage = {
         const posts = await PythonAPI.getPosts();
         if (posts && posts.length > 0) {
           this.setPosts(posts);
+        }
+
+        // Sync Banners from Backend
+        if (PythonAPI.getBanners) {
+          const banners = await PythonAPI.getBanners();
+          if (banners && Array.isArray(banners) && banners.length > 0) {
+            const deletedBanners = this.getDeletedBannerIds();
+            const filteredBanners = banners.filter(b => !deletedBanners.includes(b.id));
+            if (filteredBanners.length > 0) {
+              this.setBanners(filteredBanners);
+            }
+          }
         }
       } catch (e) {
         console.warn('Realtime sync background boot note:', e);
@@ -875,49 +884,113 @@ const Storage = {
   },
 
   // ---- Dynamic Hero Banners ----
+  getDeletedBannerIds() {
+    try {
+      return JSON.parse(localStorage.getItem('cos_deleted_banner_ids') || '[]');
+    } catch (e) { return []; }
+  },
+  addDeletedBannerId(id) {
+    if (!id) return;
+    const list = this.getDeletedBannerIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem('cos_deleted_banner_ids', JSON.stringify(list));
+    }
+  },
+  removeDeletedBannerId(id) {
+    if (!id) return;
+    const list = this.getDeletedBannerIds().filter(x => x !== id);
+    localStorage.setItem('cos_deleted_banner_ids', JSON.stringify(list));
+  },
   getBanners() {
-    const fallback = [
-      {
-        id: "banner_1",
-        title: "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>",
-        subtitle: "Stay ahead with academic roadmaps, lecture timetables, verified study notes, and campus resource hubs.",
-        badge: "✨ Universal Campus Academic Platform",
-        cta_text: "📊 Open Dashboard →",
-        cta_url: "dashboard.html",
-        secondary_text: "🚀 Create Account",
-        secondary_url: "javascript:openAccountModal()",
-        image_url: "img/banner1.jpg",
-        active: 1
-      },
-      {
-        id: "banner_2",
-        title: "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>",
-        subtitle: "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.",
-        badge: "📅 Class Timetables",
-        cta_text: "📅 View Timetable →",
-        cta_url: "timetable.html",
-        secondary_text: null,
-        secondary_url: null,
-        image_url: "img/banner2.jpg",
-        active: 1
-      },
-      {
-        id: "banner_3",
-        title: "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>",
-        subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.",
-        badge: "🌟 75% Attendance Radar",
-        cta_text: "📈 Check Attendance",
-        cta_url: "attendance.html",
-        secondary_text: "📝 Notes Vault",
-        secondary_url: "notes.html",
-        image_url: "img/banner3.jpg",
-        active: 1
-      }
-    ];
-    return this.get(KEYS.BANNERS, fallback);
+    const deleted = this.getDeletedBannerIds();
+    const raw = this.get(KEYS.BANNERS, null);
+    let list = [];
+
+    if (raw !== null && Array.isArray(raw)) {
+      list = raw;
+    } else {
+      list = [
+        {
+          id: "banner_1",
+          title: "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>",
+          subtitle: "Stay ahead with academic roadmaps, lecture timetables, verified study notes, and campus resource hubs.",
+          badge: "✨ Universal Campus Academic Platform",
+          cta_text: "📊 Open Dashboard →",
+          cta_url: "dashboard.html",
+          secondary_text: "🚀 Create Account",
+          secondary_url: "javascript:openAccountModal()",
+          image_url: "img/banner1.jpg",
+          sort_order: 1,
+          active: 1
+        },
+        {
+          id: "banner_2",
+          title: "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>",
+          subtitle: "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.",
+          badge: "📅 Class Timetables",
+          cta_text: "📅 View Timetable →",
+          cta_url: "timetable.html",
+          secondary_text: null,
+          secondary_url: null,
+          image_url: "img/banner2.jpg",
+          sort_order: 2,
+          active: 1
+        },
+        {
+          id: "banner_3",
+          title: "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>",
+          subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.",
+          badge: "🌟 75% Attendance Radar",
+          cta_text: "📈 Check Attendance",
+          cta_url: "attendance.html",
+          secondary_text: "📝 Notes Vault",
+          secondary_url: "notes.html",
+          image_url: "img/banner3.jpg",
+          sort_order: 3,
+          active: 1
+        }
+      ];
+      this.set(KEYS.BANNERS, list);
+    }
+
+    if (deleted.length > 0) {
+      list = list.filter(b => !deleted.includes(b.id));
+    }
+    return list.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   },
   setBanners(banners) {
-    return this.set(KEYS.BANNERS, banners);
+    const deleted = this.getDeletedBannerIds();
+    const clean = (banners || []).filter(b => !deleted.includes(b.id));
+    return this.set(KEYS.BANNERS, clean);
+  },
+  saveBanner(banner) {
+    if (!banner) return null;
+    const id = banner.id || ('banner_' + Date.now());
+    this.removeDeletedBannerId(id);
+    const banners = this.getBanners();
+    const idx = banners.findIndex(b => b.id === id);
+    const newB = { ...banner, id, sort_order: Number(banner.sort_order) || (banners.length + 1) };
+    if (idx >= 0) {
+      banners[idx] = newB;
+    } else {
+      banners.push(newB);
+    }
+    this.setBanners(banners);
+    if (window.PythonAPI && PythonAPI.saveAdminBanner) {
+      PythonAPI.saveAdminBanner(newB).catch(() => {});
+    }
+    return newB;
+  },
+  deleteBanner(id) {
+    if (!id) return false;
+    this.addDeletedBannerId(id);
+    const banners = this.getBanners().filter(b => b.id !== id);
+    this.set(KEYS.BANNERS, banners);
+    if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
+      PythonAPI.deleteAdminBanner(id).catch(() => {});
+    }
+    return true;
   },
 
   // ---- Admin Gatekeeper & Session ----

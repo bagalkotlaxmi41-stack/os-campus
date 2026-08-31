@@ -201,7 +201,7 @@ def init_database():
     )
     """)
 
-    # 10. Banners Table
+    # 10. Banners Table & Deleted Banners Tracking
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS banners (
         id TEXT PRIMARY KEY,
@@ -219,15 +219,31 @@ def init_database():
     )
     """)
 
-    # Seed initial 3 default banners if empty
-    cursor.execute("SELECT COUNT(*) as cnt FROM banners")
-    if cursor.fetchone()["cnt"] == 0:
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS deleted_banners (
+        id TEXT PRIMARY KEY,
+        deleted_at INTEGER
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS app_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """)
+
+    # Seed initial 3 default banners only once on fresh setup
+    cursor.execute("SELECT value FROM app_meta WHERE key = 'banners_seeded'")
+    is_seeded = cursor.fetchone()
+    if not is_seeded:
         default_banners = [
             ("banner_1", "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>", "Stay ahead with academic roadmaps, timetables, and campus resource hubs.", "✨ Universal Student Platform", "📊 Open Dashboard →", "dashboard.html", "🚀 Create Account", "javascript:openAccountModal()", "img/banner1.jpg", 1, 1, int(time.time()*1000)),
             ("banner_2", "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>", "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.", "📅 Class Timetables", "📅 View Timetable →", "timetable.html", None, None, "img/banner2.jpg", 2, 1, int(time.time()*1000)),
             ("banner_3", "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>", "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.", "🌟 75% Attendance Radar", "📈 Check Attendance", "attendance.html", "📝 Notes Vault", "notes.html", "img/banner3.jpg", 3, 1, int(time.time()*1000))
         ]
-        cursor.executemany("INSERT INTO banners VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", default_banners)
+        cursor.executemany("INSERT OR IGNORE INTO banners VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", default_banners)
+        cursor.execute("INSERT OR REPLACE INTO app_meta VALUES ('banners_seeded', '1')")
 
     # 11. Admin Logs Table
     cursor.execute("""
@@ -1595,7 +1611,11 @@ def admin_stats():
 def get_public_banners():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM banners WHERE active = 1 ORDER BY sort_order ASC, created_at DESC")
+    cursor.execute("""
+        SELECT * FROM banners 
+        WHERE active = 1 AND id NOT IN (SELECT id FROM deleted_banners)
+        ORDER BY sort_order ASC, created_at DESC
+    """)
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -1605,7 +1625,11 @@ def get_public_banners():
 def get_all_admin_banners():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM banners ORDER BY sort_order ASC, created_at DESC")
+    cursor.execute("""
+        SELECT * FROM banners 
+        WHERE id NOT IN (SELECT id FROM deleted_banners)
+        ORDER BY sort_order ASC, created_at DESC
+    """)
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -1617,6 +1641,9 @@ def save_admin_banner(data: BannerModel):
     cursor = conn.cursor()
     b_id = data.id or f"banner_{int(time.time()*1000)}"
     now = int(time.time() * 1000)
+
+    # Remove from deleted_banners if previously marked deleted
+    cursor.execute("DELETE FROM deleted_banners WHERE id = ?", (b_id,))
 
     cursor.execute("""
     INSERT OR REPLACE INTO banners
@@ -1657,10 +1684,11 @@ def save_admin_banner(data: BannerModel):
 def delete_admin_banner(banner_id: str):
     conn = get_db()
     cursor = conn.cursor()
+    now = int(time.time() * 1000)
     cursor.execute("DELETE FROM banners WHERE id = ?", (banner_id,))
+    cursor.execute("INSERT OR REPLACE INTO deleted_banners VALUES (?, ?)", (banner_id, now))
     conn.commit()
 
-    now = int(time.time() * 1000)
     cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
         f"log_{now}",
         "DELETE_BANNER",
@@ -1671,7 +1699,7 @@ def delete_admin_banner(banner_id: str):
     ))
     conn.commit()
     conn.close()
-    return {"status": "success", "message": f"Banner {banner_id} deleted."}
+    return {"status": "success", "message": f"Banner {banner_id} deleted permanently."}
 
 
 @app.put("/api/admin/banners/{banner_id}/toggle")

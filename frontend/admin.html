@@ -1955,8 +1955,9 @@
         allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         Storage.setAccounts(allAdminAccounts);
 
-        if (remoteBanners.status === 'fulfilled' && Array.isArray(remoteBanners.value) && remoteBanners.value.length > 0) {
-          allAdminBanners = remoteBanners.value;
+        if (remoteBanners.status === 'fulfilled' && Array.isArray(remoteBanners.value)) {
+          const deletedBanners = Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : [];
+          allAdminBanners = remoteBanners.value.filter(b => !deletedBanners.includes(b.id));
           Storage.setBanners(allAdminBanners);
         }
 
@@ -2406,25 +2407,30 @@
         title: document.getElementById('bannerTitleInput').value.trim(),
         subtitle: document.getElementById('bannerSubtitleInput').value.trim(),
         badge: document.getElementById('bannerBadgeInput').value.trim() || 'Campus Update',
-        sort_order: parseInt(document.getElementById('bannerOrderInput').value) || 1,
+        sort_order: parseInt(document.getElementById('bannerOrderInput').value) || (allAdminBanners.length + 1),
         cta_text: document.getElementById('bannerCtaTextInput').value.trim() || 'Explore Now',
         cta_url: document.getElementById('bannerCtaUrlInput').value.trim() || 'dashboard.html',
         image_url: document.getElementById('bannerImageUrlInput').value.trim() || 'img/banner1.jpg',
         active: 1
       };
 
+      Storage.saveBanner(newBanner);
+
       if (window.PythonAPI && PythonAPI.saveAdminBanner) {
-        await PythonAPI.saveAdminBanner(newBanner);
+        try {
+          await PythonAPI.saveAdminBanner(newBanner);
+        } catch (err) {
+          console.warn('API saveAdminBanner:', err);
+        }
       }
 
-      // Update in local Storage
+      // Update in local list
       const existingIdx = allAdminBanners.findIndex(b => b.id === bId);
       if (existingIdx >= 0) {
         allAdminBanners[existingIdx] = newBanner;
       } else {
         allAdminBanners.push(newBanner);
       }
-      Storage.setBanners(allAdminBanners);
 
       closeBannerModal();
       showAdminToast('Hero banner slide saved successfully!');
@@ -2437,7 +2443,11 @@
       banner.active = banner.active === 0 ? 1 : 0;
 
       if (window.PythonAPI && PythonAPI.toggleAdminBanner) {
-        await PythonAPI.toggleAdminBanner(id);
+        try {
+          await PythonAPI.toggleAdminBanner(id);
+        } catch (err) {
+          console.warn('API toggleAdminBanner:', err);
+        }
       }
       Storage.setBanners(allAdminBanners);
       showAdminToast(`Banner rotation ${banner.active ? 'enabled' : 'disabled'}.`);
@@ -2445,15 +2455,20 @@
     }
 
     async function deleteBannerSlide(id) {
-      if (!confirm('Are you sure you want to delete this hero slide?')) return;
+      if (!confirm('Are you sure you want to permanently delete this hero slide?')) return;
+
+      Storage.deleteBanner(id);
 
       if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
-        await PythonAPI.deleteAdminBanner(id);
+        try {
+          await PythonAPI.deleteAdminBanner(id);
+        } catch (err) {
+          console.warn('API deleteAdminBanner:', err);
+        }
       }
 
       allAdminBanners = allAdminBanners.filter(b => b.id !== id);
-      Storage.setBanners(allAdminBanners);
-      showAdminToast('Hero banner slide deleted.');
+      showAdminToast('Hero banner slide deleted permanently.');
       renderBannersGrid(allAdminBanners);
     }
 
@@ -2464,7 +2479,7 @@
       e.preventDefault();
       const title = document.getElementById('broadcastTitle').value.trim();
       const message = document.getElementById('broadcastMessage').value.trim();
-      const author = document.getElementById('broadcastAuthor').value.trim() || 'BLDE Campus Administration';
+      const author = document.getElementById('broadcastAuthor').value.trim() || 'Central Campus Administration';
 
       const payload = { title, message, author, type: 'announcement' };
 
