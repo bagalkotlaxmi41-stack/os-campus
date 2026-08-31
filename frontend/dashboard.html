@@ -710,6 +710,7 @@
   <script src="js/notifications.js"></script>
   <script src="js/app.js"></script>
   <script>
+    var Storage = window.CampusStorage || window.Storage;
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         // Safe auto-healing user retrieval to prevent crashes or redirect loops

@@ -287,95 +287,11 @@ window.FirebaseService = {
   },
 
   // ============================================================
-  // SEED INITIAL DATA TO CLOUD IF EMPTY
+  // INITIAL CLOUD SYNC & FIRESTORE HEALTH CHECK
   // ============================================================
   async seedInitialCloudData() {
     if (!this.db) return;
-
-    try {
-      const snap = await this.db.collection('posts').limit(1).get();
-      if (snap.empty) {
-        console.log("☁️ [Firebase] Seeding initial verified student materials to Cloud Firestore...");
-        
-        const demoStudents = [
-          {
-            username: "@priya_sharma", handle: "@priya_sharma", displayName: "Priya Sharma", name: "Priya Sharma",
-            email: "priya.sharma@campus.edu", department: "Computer Science & Engineering", semester: 6,
-            usn: "2CS21084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
-            skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT",
-            createdAt: Date.now() - 86400000 * 45, updatedAt: Date.now()
-          },
-          {
-            username: "@vikram_patil", handle: "@vikram_patil", displayName: "Vikram Patil", name: "Vikram Patil",
-            email: "vikram.patil@campus.edu", department: "Electronics & Communication", semester: 4,
-            usn: "2EC22042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
-            skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT",
-            createdAt: Date.now() - 86400000 * 30, updatedAt: Date.now()
-          },
-          {
-            username: "@ananya_kulkarni", handle: "@ananya_kulkarni", displayName: "Ananya Kulkarni", name: "Ananya Kulkarni",
-            email: "ananya.k@campus.edu", department: "Artificial Intelligence & DS", semester: 5,
-            usn: "2AI22018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
-            skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT",
-            createdAt: Date.now() - 86400000 * 20, updatedAt: Date.now()
-          }
-        ];
-
-        for (const s of demoStudents) {
-          const docId = s.handle.replace(/[@.]/g, '_').toLowerCase();
-          await this.db.collection('students').doc(docId).set(s);
-        }
-
-        const demoPosts = [
-          {
-            id: 'cloud-post-01',
-            type: 'pdf',
-            title: 'Operating Systems Module 3: Virtual Memory & Paging Handwritten Notes',
-            subject: 'Operating Systems',
-            department: 'Computer Science & Engineering',
-            desc: 'Complete curriculum Module 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for university exams.',
-            author: 'Priya Sharma',
-            handle: '@priya_sharma',
-            fileName: 'OS_Module3_Virtual_Memory_Notes.pdf',
-            fileSize: '3.4 MB',
-            pdfData: null,
-            youtubeUrl: null,
-            likes: 38,
-            saves: 19,
-            comments: [
-              { id: 'c-1', author: 'Vikram Patil', handle: '@vikram_patil', text: 'Super helpful notes for the LRU page replacement numericals! Thanks Priya!', createdAt: Date.now() - 86400000 }
-            ],
-            createdAt: Date.now() - 86400000 * 2
-          },
-          {
-            id: 'cloud-post-02',
-            type: 'youtube',
-            title: 'AVL Trees: Insertion, Deletion & Tree Rotations Complete Walkthrough',
-            subject: 'Data Structures',
-            department: 'Computer Science & Engineering',
-            desc: 'Recorded this detailed breakdown on AVL Tree rotations (LL, RR, LR, RL) with live whiteboard coding before the semester internals.',
-            author: 'Ananya Kulkarni',
-            handle: '@ananya_kulkarni',
-            fileName: null,
-            fileSize: null,
-            pdfData: null,
-            youtubeUrl: 'https://www.youtube.com/watch?v=jDM6_TnYIuE',
-            likes: 52,
-            saves: 24,
-            comments: [],
-            createdAt: Date.now() - 86400000 * 3
-          }
-        ];
-
-        for (const p of demoPosts) {
-          await this.db.collection('posts').doc(p.id).set(p);
-        }
-
-        console.log("✅ [Firebase] Cloud Firestore initialized with initial verified campus data!");
-      }
-    } catch (e) {
-      console.warn("Cloud seed notice (enable Firestore rules in Firebase console):", e);
-    }
+    // Pure real-time architecture: No mock/fake accounts or posts are seeded.
   }
 };
 

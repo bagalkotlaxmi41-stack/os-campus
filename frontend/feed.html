@@ -649,6 +649,7 @@
   <script src="js/notifications.js"></script>
 
   <script>
+    var Storage = window.CampusStorage || window.Storage;
     let streamPosts = [];
     const seenPostIds = new Set();
 
@@ -676,14 +677,14 @@
     }
 
     async function loadStreamPosts() {
-      // 1. Get from Storage
+      // 1. Get real student posts from local storage
       let posts = Storage.getPosts() || [];
 
       // 2. Fetch fresh real-time posts from Python API
-      if (window.PythonAPI) {
+      if (window.PythonAPI && PythonAPI.getPosts) {
         try {
           const remote = await PythonAPI.getPosts();
-          if (remote && remote.length > 0) {
+          if (remote && Array.isArray(remote)) {
             posts = remote;
             Storage.setPosts(remote);
           }
@@ -692,49 +693,7 @@
         }
       }
 
-      // 3. If no posts exist yet, add engaging academic seed items
-      if (!posts || posts.length === 0) {
-        posts = [
-          {
-            id: 'stream_seed_1',
-            type: 'youtube',
-            title: 'Operating System Full Course — Process & Memory Management',
-            subject: 'Operating Systems',
-            department: 'Computer Science & Engineering',
-            desc: 'Complete high-yield walkthrough of CPU Scheduling, Virtual Memory, and Deadlock algorithms.',
-            author: 'Academic Resource Cell',
-            handle: '@academic_cell',
-            youtubeUrl: 'https://www.youtube.com/watch?v=26QPDBe-NB8',
-            saves: 142
-          },
-          {
-            id: 'stream_seed_2',
-            type: 'pdf',
-            title: 'Database Management Systems (DBMS) Verified Handwritten Notes',
-            subject: 'DBMS',
-            department: 'Computer Science & Engineering',
-            desc: 'Full SQL query cheat sheet, Normalization (1NF to BCNF) proofs, and Relational Algebra examples.',
-            author: 'CS Study Hub',
-            handle: '@cs_study_hub',
-            fileName: 'DBMS_Verified_Notes_Module1-5.pdf',
-            fileSize: '4.8 MB',
-            saves: 98
-          },
-          {
-            id: 'stream_seed_3',
-            type: 'text',
-            title: 'Top 5 Placement Coding Tips for Technical Interviews',
-            subject: 'Career & Placement',
-            department: 'Placement Cell',
-            desc: '1. Master Two-Pointer and Sliding Window.\n2. Write clean modular code.\n3. Always state time/space complexity before coding.\n4. Ask clarifying questions on edge cases.\n5. Test with empty/single-element arrays.',
-            author: 'Career & Placement Cell',
-            handle: '@placement_cell',
-            saves: 230
-          }
-        ];
-      }
-
-      // Shuffle posts for fresh infinity experience
+      // Shuffle posts for fresh experience
       streamPosts = [...posts].sort(() => Math.random() - 0.5);
       renderStream();
     }

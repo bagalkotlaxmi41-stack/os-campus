@@ -1,6 +1,7 @@
 // ============================================
 // College OS — Shared App Utilities
 // ============================================
+var Storage = window.CampusStorage || window.Storage;
 
 // ---- ID Generator ----
 function genId() {

@@ -21,7 +21,17 @@ const KEYS = {
   ADMIN_USER: 'cos_admin_user'
 };
 
-const Storage = {
+const FAKE_HANDLES = [
+  '@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma',
+  'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma',
+  'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu'
+];
+
+const FAKE_POST_IDS = [
+  'post_os_01', 'post_ai_02', 'post_code_03', 'cloud-post-01', 'cloud-post-02'
+];
+
+var Storage = {
   // Generic
   get(key, fallback = null) {
     try {
@@ -39,15 +49,35 @@ const Storage = {
   // INITIALIZATION & REALTIME BACKGROUND SYNC
   // ============================================================
   async init() {
-    // Ensure initial directory is populated without wiping custom user accounts
-    if (!localStorage.getItem('cos_initialized_v4')) {
-      const existingAccs = this.get(KEYS.ACCOUNTS, []);
-      if (!existingAccs || existingAccs.length === 0) {
-        this.getAccounts(); // Seeds default accounts if none exist
+    // 1. Clean up legacy fake accounts and mock posts from localStorage
+    try {
+      const localAccs = this.get(KEYS.ACCOUNTS, []);
+      if (Array.isArray(localAccs) && localAccs.length > 0) {
+        const cleanedAccs = localAccs.filter(a => {
+          const h = (a.username || a.handle || '').toLowerCase();
+          const em = (a.email || '').toLowerCase();
+          return !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em);
+        });
+        if (cleanedAccs.length !== localAccs.length) {
+          this.set(KEYS.ACCOUNTS, cleanedAccs);
+        }
       }
-      localStorage.setItem('cos_initialized_v4', '1');
+
+      const localPosts = this.get(KEYS.POSTS, []);
+      if (Array.isArray(localPosts) && localPosts.length > 0) {
+        const cleanedPosts = localPosts.filter(p => {
+          const h = (p.handle || '').toLowerCase();
+          return !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes(h);
+        });
+        if (cleanedPosts.length !== localPosts.length) {
+          this.set(KEYS.POSTS, cleanedPosts);
+        }
+      }
+    } catch (e) {
+      console.warn('Legacy data purge note:', e);
     }
 
+    // 2. Real-time Backend Sync
     if (window.PythonAPI) {
       try {
         // Sync Accounts from Backend and merge with local
@@ -55,15 +85,19 @@ const Storage = {
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           const localAccs = this.getAccounts();
           const map = new Map();
-          // First add remote
+          // First add remote real accounts
           remoteAccounts.forEach(acc => {
             const h = (acc.username || acc.handle || '').toLowerCase();
-            if (h) map.set(h, acc);
+            const em = (acc.email || '').toLowerCase();
+            if (h && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em)) {
+              map.set(h, acc);
+            }
           });
           // Then merge local on top so recent creations/edits are preserved
           localAccs.forEach(a => {
             const h = (a.username || a.handle || '').toLowerCase();
-            if (h) {
+            const em = (a.email || '').toLowerCase();
+            if (h && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em)) {
               const existing = map.get(h) || {};
               map.set(h, { ...existing, ...a });
             }
@@ -73,8 +107,9 @@ const Storage = {
 
         // Sync Posts from Backend
         const posts = await PythonAPI.getPosts();
-        if (posts && posts.length > 0) {
-          this.setPosts(posts);
+        if (posts && Array.isArray(posts)) {
+          const cleanRemotePosts = posts.filter(p => !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase()));
+          this.setPosts(cleanRemotePosts);
         }
 
         // Sync Banners from Backend
@@ -159,54 +194,25 @@ const Storage = {
     localStorage.setItem('cos_deleted_handles_v2', JSON.stringify(list));
   },
   getAccounts() {
-    const raw = this.get(KEYS.ACCOUNTS, null);
-    let list = (raw && Array.isArray(raw) && raw.length > 0) ? raw : [];
-    if (list.length === 0) {
-      list = [
-        {
-          username: "@priya_sharma", handle: "@priya_sharma", displayName: "Priya Sharma", name: "Priya Sharma",
-          email: "priya.sharma@campus.edu", department: "Computer Science & Engineering", semester: 6,
-          usn: "2CS21084", bio: "Final year CSE scholar & open-source contributor. Sharing verified OS, DBMS & AI notes.",
-          skills: ["Python", "Operating Systems", "React", "DBMS", "Machine Learning"], role: "STUDENT",
-          createdAt: Date.now() - 86400000 * 20
-        },
-        {
-          username: "@vikram_patil", handle: "@vikram_patil", displayName: "Vikram Patil", name: "Vikram Patil",
-          email: "vikram.patil@campus.edu", department: "Electronics & Communication", semester: 4,
-          usn: "2EC22042", bio: "ECE student enthusiastic about VLSI, Signal Processing, and IoT hardware projects.",
-          skills: ["C++", "VLSI Design", "Verilog", "Signal Processing", "Arduino"], role: "STUDENT",
-          createdAt: Date.now() - 86400000 * 15
-        },
-        {
-          username: "@ananya_kulkarni", handle: "@ananya_kulkarni", displayName: "Ananya Kulkarni", name: "Ananya Kulkarni",
-          email: "ananya.k@campus.edu", department: "Artificial Intelligence & DS", semester: 5,
-          usn: "2AI22018", bio: "AI/DS student passionate about Deep Learning, PyTorch, and NLP models.",
-          skills: ["Python", "PyTorch", "Data Science", "Computer Vision", "SQL"], role: "STUDENT",
-          createdAt: Date.now() - 86400000 * 10
-        },
-        {
-          username: "@rahul_verma", handle: "@rahul_verma", displayName: "Rahul Verma", name: "Rahul Verma",
-          email: "rahul.verma@campus.edu", department: "Computer Science & Engineering", semester: 5,
-          usn: "2CS22035", bio: "Software engineering enthusiast focused on Full-Stack Web Development and Cloud Systems.",
-          skills: ["JavaScript", "Node.js", "Docker", "MongoDB", "PostgreSQL"], role: "STUDENT",
-          createdAt: Date.now() - 86400000 * 5
-        }
-      ];
-    }
+    const raw = this.get(KEYS.ACCOUNTS, []);
+    let list = (raw && Array.isArray(raw)) ? raw : [];
     const deleted = this.getDeletedHandles();
-    if (deleted.length > 0) {
-      list = list.filter(a => {
-        const h = (a.username || a.handle || '').toLowerCase();
-        return !deleted.includes(h);
-      });
-    }
+    
+    // Filter out deleted and fake legacy demo accounts
+    list = list.filter(a => {
+      const h = (a.username || a.handle || '').toLowerCase();
+      const em = (a.email || '').toLowerCase();
+      return !deleted.includes(h) && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em);
+    });
+
     return list;
   },
   setAccounts(accounts) {
     const deleted = this.getDeletedHandles();
     const cleanList = (accounts || []).filter(a => {
       const h = (a.username || a.handle || '').toLowerCase();
-      return !deleted.includes(h);
+      const em = (a.email || '').toLowerCase();
+      return !deleted.includes(h) && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em);
     });
     return this.set(KEYS.ACCOUNTS, cleanList);
   },
@@ -253,282 +259,160 @@ const Storage = {
     if (index >= 0) {
       accounts[index] = { ...accounts[index], ...updatedAccount };
     } else {
-      accounts.push({ ...updatedAccount, createdAt: account.createdAt || Date.now() });
+      accounts.unshift(updatedAccount);
     }
     this.setAccounts(accounts);
 
-    // Asynchronously sync with Backend API
+    // Save profile photo if provided
+    if (account.photo) {
+      this.setUserPhoto(handle, account.photo);
+    }
+
+    // Sync to SQLite Backend in background
     if (window.PythonAPI && PythonAPI.saveAccount) {
       PythonAPI.saveAccount(updatedAccount).catch(() => {});
     }
 
     return updatedAccount;
   },
+  getAccountByHandle(handle) {
+    if (!handle) return null;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const rawNoAt = handle.replace(/^@/, '').toLowerCase();
+    const accounts = this.getAccounts();
+    
+    const acc = accounts.find(a => {
+      const aHandle = (a.username || a.handle || '').toLowerCase();
+      return aHandle === clean || aHandle === rawNoAt || aHandle.replace(/^@/, '') === rawNoAt;
+    });
+
+    if (acc) return acc;
+
+    // Check if it's currently logged in user
+    const curUser = this.getUser();
+    if (curUser) {
+      const curH = (curUser.username || curUser.handle || '').toLowerCase();
+      if (curH === clean || curH === rawNoAt || curH.replace(/^@/, '') === rawNoAt) {
+        return curUser;
+      }
+    }
+
+    return null;
+  },
+  searchAccounts(query) {
+    if (!query) return [];
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    return this.getAccounts().filter(a => {
+      const name = (a.displayName || a.name || '').toLowerCase();
+      const handle = (a.username || a.handle || '').toLowerCase().replace(/^@/, '');
+      const usn = (a.usn || '').toLowerCase();
+      const dept = (a.department || '').toLowerCase();
+      return name.includes(q) || handle.includes(q) || usn.includes(q) || dept.includes(q);
+    });
+  },
+  updateAccountRole(handle, role) {
+    if (!handle) return;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const accounts = this.getAccounts();
+    const target = accounts.find(a => (a.username || a.handle || '').toLowerCase() === clean);
+    if (target) {
+      target.role = role;
+      this.setAccounts(accounts);
+    }
+    const curUser = this.getUser();
+    if (curUser && (curUser.username || curUser.handle || '').toLowerCase() === clean) {
+      curUser.role = role;
+      this.setUser(curUser);
+    }
+  },
   deleteAccount(handle) {
     if (!handle) return false;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
-    
-    // 1. Add to permanent deleted blacklist
     this.addDeletedHandle(clean);
-
-    // 2. Remove from accounts array
+    
+    // 1. Remove from accounts
     const accounts = this.getAccounts().filter(a => (a.username || a.handle || '').toLowerCase() !== clean);
     this.setAccounts(accounts);
 
-    // 3. Remove all posts by this account
-    const posts = this.getPosts().filter(p => (p.handle || '').toLowerCase() !== clean);
-    this.setPosts(posts);
-
-    // 4. Remove photo
-    try {
-      localStorage.removeItem('cos_photo_' + clean);
-    } catch (e) {}
-
-    // 5. If current user is this account, clear user
-    const u = this.getUser();
-    if (u && (u.username || u.handle || '').toLowerCase() === clean) {
+    // 2. Clear current session if deleting self
+    const curUser = this.getUser();
+    if (curUser && (curUser.username || curUser.handle || '').toLowerCase() === clean) {
       this.clearUser();
     }
 
-    // 6. Sync deletion with Backend API
+    // 3. Remove all posts created by this handle
+    const posts = this.getPosts().filter(p => (p.handle || '').toLowerCase() !== clean);
+    this.setPosts(posts);
+
+    // 4. Remove saved photo
+    try { localStorage.removeItem('cos_photo_' + clean); } catch (e) {}
+
+    // 5. Backend sync deletion
     if (window.PythonAPI && PythonAPI.deleteAccount) {
       PythonAPI.deleteAccount(clean).catch(() => {});
     }
+    return true;
+  },
 
-    return true;
-  },
-  updateAccountRole(handle, role) {
-    if (!handle || !role) return false;
-    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
-    const formattedRole = role.toUpperCase();
-    const accounts = this.getAccounts();
-    const acc = accounts.find(a => (a.username || a.handle || '').toLowerCase() === clean);
-    if (acc) {
-      acc.role = formattedRole;
-      this.setAccounts(accounts);
-    }
-    const u = this.getUser();
-    if (u && (u.username || u.handle || '').toLowerCase() === clean) {
-      u.role = formattedRole;
-      this.setUser(u);
-    }
-    if (window.PythonAPI && PythonAPI.updateAccountRole) {
-      PythonAPI.updateAccountRole(clean, formattedRole).catch(() => {});
-    }
-    return true;
-  },
+  // ============================================================
+  // USER PROFILE PHOTO STORAGE
+  // ============================================================
   getUserPhoto(handle) {
     if (!handle) return null;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
     try {
-      const local = localStorage.getItem('cos_photo_' + clean);
-      if (local) return local;
-    } catch(e) {}
-    const acc = this.getAccountByHandle(clean);
-    return acc ? (acc.photo || null) : null;
-  },
-  setUserPhoto(handle, photoBase64) {
-    if (!handle) return;
-    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
-    try {
-      if (photoBase64) {
-        localStorage.setItem('cos_photo_' + clean, photoBase64);
-      } else {
-        localStorage.removeItem('cos_photo_' + clean);
+      const direct = localStorage.getItem('cos_photo_' + clean);
+      if (direct) return direct;
+      
+      const acc = this.getAccountByHandle(clean);
+      if (acc && acc.photo) return acc.photo;
+
+      const user = this.getUser();
+      if (user && ((user.username || user.handle || '').toLowerCase() === clean) && user.photo) {
+        return user.photo;
       }
     } catch(e) {}
-
-    // Update in current user session if applicable
-    const u = this.getUser();
-    if (u && (u.username || u.handle || '').toLowerCase() === clean) {
-      u.photo = photoBase64;
-      this.setUser(u);
+    return null;
+  },
+  setUserPhoto(handle, photoBase64) {
+    if (!handle || !photoBase64) return;
+    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    try {
+      localStorage.setItem('cos_photo_' + clean, photoBase64);
+    } catch (e) {
+      console.warn('Local storage quota warning for photo:', e);
     }
 
-    // Update in accounts directory
-    const accs = this.getAccounts();
-    const acc = accs.find(a => (a.username || a.handle || '').toLowerCase() === clean);
+    const accounts = this.getAccounts();
+    const acc = accounts.find(a => (a.username || a.handle || '').toLowerCase() === clean);
     if (acc) {
       acc.photo = photoBase64;
-      this.setAccounts(accs);
+      this.setAccounts(accounts);
     }
 
-    // Sync to Python backend API
+    const cur = this.getUser();
+    if (cur && (cur.username || cur.handle || '').toLowerCase() === clean) {
+      cur.photo = photoBase64;
+      this.setUser(cur);
+    }
+
     if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
       PythonAPI.updateAccountPhoto(clean, photoBase64).catch(() => {});
     }
   },
-  getAccountByHandle(handle) {
-    if (!handle) return null;
-    const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
-    const deleted = this.getDeletedHandles();
-    if (deleted.includes(clean)) return null;
-
-    const found = this.getAccounts().find(a => (a.username || a.handle || '').toLowerCase() === clean);
-    if (found) return found;
-    if (clean === '@campus_admin') {
-      return {
-        username: '@campus_admin',
-        handle: '@campus_admin',
-        displayName: 'Campus Administrator',
-        name: 'Campus Administrator',
-        email: 'campus0012@gmail.com',
-        role: 'OWNER_ADMIN',
-        department: 'Central Administration',
-        program: 'Administration & Governance',
-        semester: 8,
-        usn: 'ADMIN-001',
-        bio: 'Official Platform Administrator & Owner for Campus OS.',
-        skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
-        verified: true,
-        createdAt: Date.now()
-      };
-    }
-    return null;
-  },
-  authenticate(identifier, password) {
-    if (!identifier || !password) return null;
-    const cleanIdent = identifier.trim().toLowerCase();
-    const cleanHandle = cleanIdent.startsWith('@') ? cleanIdent : '@' + cleanIdent;
-    const accounts = this.getAccounts();
-    
-    const acc = accounts.find(a => {
-      const aEmail = (a.email || '').trim().toLowerCase();
-      const aHandle = (a.username || a.handle || '').trim().toLowerCase();
-      return aEmail === cleanIdent || aHandle === cleanHandle;
-    });
-
-    if (acc) {
-      if (!acc.password || acc.password === password) {
-        return acc;
-      }
-    }
-    return null;
-  },
-  searchAccounts(query) {
-    const list = [...this.getAccounts()];
-    const currentUser = this.getUser();
-    if (currentUser && (currentUser.username || currentUser.handle)) {
-      const uHandle = (currentUser.username || currentUser.handle).toLowerCase();
-      if (!list.some(a => (a.username || a.handle || '').toLowerCase() === uHandle)) {
-        list.unshift(currentUser);
-      }
-    }
-    if (!query || !query.trim()) return list;
-    const q = query.toLowerCase().trim().replace(/^@/, '');
-    const tokens = q.split(/\s+/).filter(Boolean);
-    return list.filter(a => {
-      const name = (a.displayName || a.name || '').toLowerCase();
-      const handle = (a.username || a.handle || '').toLowerCase().replace(/^@/, '');
-      const email = (a.email || '').toLowerCase();
-      const dept = (a.department || '').toLowerCase();
-      const prog = (a.program || '').toLowerCase();
-      const usn = (a.usn || '').toLowerCase();
-      const bio = (a.bio || '').toLowerCase();
-      const skills = (Array.isArray(a.skills) ? a.skills : []).map(s => String(s).toLowerCase()).join(' ');
-      const text = `${name} ${handle} ${email} ${dept} ${prog} ${usn} ${bio} ${skills}`;
-      return tokens.every(tok => text.includes(tok));
-    });
-  },
 
   // ============================================================
-  // PROFILE PHOTOS
-  // ============================================================
-  getUserPhoto(handle) {
-    if (!handle) return null;
-    const cleanHandle = handle.startsWith('@') ? handle : '@' + handle;
-    const local = localStorage.getItem('cos_photo_' + cleanHandle);
-    if (local) return local;
-    const acc = this.getAccountByHandle(cleanHandle);
-    if (acc && acc.photo) return acc.photo;
-    const u = this.getUser();
-    if (u && ((u.username || u.handle || '').toLowerCase() === cleanHandle.toLowerCase())) {
-      return u.photo || null;
-    }
-    return null;
-  },
-  setUserPhoto(handle, base64) {
-    if (!handle) return;
-    const cleanHandle = handle.startsWith('@') ? handle : '@' + handle;
-    try {
-      localStorage.setItem('cos_photo_' + cleanHandle, base64);
-      const u = this.getUser();
-      if (u && ((u.username || u.handle || '').toLowerCase() === cleanHandle.toLowerCase() || (u.username || u.handle) === handle)) {
-        u.photo = base64;
-        this.set(KEYS.USER, u);
-      }
-      const acc = this.getAccountByHandle(cleanHandle);
-      if (acc) {
-        acc.photo = base64;
-        this.addAccount(acc);
-      }
-      if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
-        PythonAPI.updateAccountPhoto(cleanHandle, base64).catch(e => console.warn('Photo API sync:', e));
-      }
-      if (window.FirebaseService && FirebaseService.updateStudentPhoto) {
-        FirebaseService.updateStudentPhoto(cleanHandle, base64).catch(e => console.warn('Firebase Photo sync:', e));
-      }
-    } catch (e) {
-      console.warn('Photo storage error:', e);
-    }
-  },
-
-  // ============================================================
-  // REAL-TIME POSTS FEED (PDFs, YouTube, Announcements)
+  // POSTS FEED & STUDY MATERIALS
   // ============================================================
   getPosts() {
     const list = this.get(KEYS.POSTS, []);
-    if (list && list.length > 0) return list;
-    return [
-      {
-        id: 'post_os_01',
-        type: 'pdf',
-        title: 'Operating Systems Module 3: Virtual Memory & Paging Handwritten Notes',
-        subject: 'Operating Systems',
-        department: 'Computer Science & Engineering',
-        desc: 'Complete curriculum Module 3 handwritten formulas, Page Replacement Algorithms (FIFO, LRU, Optimal) with step-by-step solved numericals for university exams.',
-        author: 'Priya Sharma',
-        handle: '@priya_sharma',
-        fileName: 'OS_Module3_Virtual_Memory_Notes.pdf',
-        fileSize: '3.4 MB',
-        likes: 38,
-        saves: 19,
-        comments: [],
-        createdAt: Date.now() - 86400000 * 3
-      },
-      {
-        id: 'post_ai_02',
-        type: 'youtube',
-        title: 'Deep Learning & Neural Network Backpropagation Explained',
-        subject: 'Artificial Intelligence',
-        department: 'Artificial Intelligence & DS',
-        desc: 'Comprehensive breakdown of gradient descent, backpropagation algorithms, and loss functions for AI semester exams.',
-        author: 'Ananya Kulkarni',
-        handle: '@ananya_kulkarni',
-        youtubeUrl: 'https://www.youtube.com/watch?v=aircAruvnKk',
-        likes: 52,
-        saves: 28,
-        comments: [],
-        createdAt: Date.now() - 86400000 * 2
-      },
-      {
-        id: 'post_code_03',
-        type: 'text',
-        title: 'Top 5 Placement Technical Interview Coding Strategies',
-        subject: 'Career & Placement',
-        department: 'Placement Cell',
-        desc: '1. Master Two-Pointer & Sliding Window.\n2. Write clean modular code.\n3. Always state time/space complexity before coding.\n4. Ask clarifying questions on edge cases.\n5. Test with empty and single-element inputs.',
-        author: 'Career & Placement Cell',
-        handle: '@placement_cell',
-        likes: 89,
-        saves: 45,
-        comments: [],
-        createdAt: Date.now() - 86400000 * 1
-      }
-    ];
+    if (!list || !Array.isArray(list)) return [];
+    // Filter out any legacy fake posts
+    return list.filter(p => !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase()));
   },
   setPosts(posts) {
-    return this.set(KEYS.POSTS, posts);
+    const clean = (posts || []).filter(p => !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase()));
+    return this.set(KEYS.POSTS, clean);
   },
   addPost(post) {
     const posts = this.getPosts();
@@ -564,246 +448,235 @@ const Storage = {
     }
     this.setPosts(posts);
 
-    // Sync with Python API
     if (window.PythonAPI && PythonAPI.createPost) {
-      PythonAPI.createPost(newPost).catch(e => console.warn('API createPost sync:', e));
+      PythonAPI.createPost(newPost).catch(() => {});
     }
-
-    // Sync with Firebase Firestore
-    if (window.FirebaseService && FirebaseService.createPost) {
-      FirebaseService.createPost(newPost).catch(e => console.warn('Firebase createPost sync:', e));
-    }
-
     return newPost;
   },
-  deletePost(id) {
-    const posts = this.getPosts().filter(p => p.id !== id);
-    this.setPosts(posts);
-    if (window.PythonAPI && PythonAPI.deletePost) {
-      PythonAPI.deletePost(id).catch(e => console.warn('API deletePost sync:', e));
-    }
-    return true;
+  getPost(id) {
+    return this.getPosts().find(p => p.id === id) || null;
   },
   updatePost(id, updatedFields) {
     const posts = this.getPosts();
     const idx = posts.findIndex(p => p.id === id);
     if (idx >= 0) {
-      posts[idx] = { ...posts[idx], ...updatedFields, updatedAt: Date.now() };
+      posts[idx] = { ...posts[idx], ...updatedFields };
       this.setPosts(posts);
       if (window.PythonAPI && PythonAPI.updatePost) {
-        PythonAPI.updatePost(id, updatedFields).catch(e => console.warn('API updatePost sync:', e));
+        PythonAPI.updatePost(id, updatedFields).catch(() => {});
       }
       return posts[idx];
     }
     return null;
   },
-  getPost(id) {
-    return this.getPosts().find(p => p.id === id) || null;
+  deletePost(id) {
+    const posts = this.getPosts().filter(p => p.id !== id);
+    this.setPosts(posts);
+    if (window.PythonAPI && PythonAPI.deletePost) {
+      PythonAPI.deletePost(id).catch(() => {});
+    }
+    return true;
   },
-  likePost(id, handle) {
+  likePost(id, userHandle) {
+    const posts = this.getPosts();
+    const post = posts.find(p => p.id === id);
+    if (!post) return 0;
+    
+    const likedKey = 'cos_liked_by_' + (userHandle || 'guest');
+    const likedSet = new Set(this.get(likedKey, []));
+    let hasLiked = likedSet.has(id);
+
+    if (hasLiked) {
+      post.likes = Math.max(0, (post.likes || 1) - 1);
+      likedSet.delete(id);
+    } else {
+      post.likes = (post.likes || 0) + 1;
+      likedSet.add(id);
+    }
+    this.set(likedKey, Array.from(likedSet));
+    this.setPosts(posts);
+
+    if (window.PythonAPI && PythonAPI.likePost) {
+      PythonAPI.likePost(id, userHandle).catch(() => {});
+    }
+    return post.likes;
+  },
+  hasUserLiked(id, userHandle) {
+    const likedKey = 'cos_liked_by_' + (userHandle || 'guest');
+    const likedSet = new Set(this.get(likedKey, []));
+    return likedSet.has(id);
+  },
+  savePost(id, userHandle) {
     const posts = this.getPosts();
     const post = posts.find(p => p.id === id);
     if (!post) return false;
 
-    const userHandle = handle || (this.getUser() ? this.getUser().username : '@student');
-    const likedKey = `cos_liked_${id}_${userHandle}`;
-    const alreadyLiked = localStorage.getItem(likedKey) === 'true';
+    const savedKey = 'cos_saved_by_' + (userHandle || 'guest');
+    const savedSet = new Set(this.get(savedKey, []));
+    let isSaved = savedSet.has(id);
 
-    if (alreadyLiked) {
-      post.likes = Math.max(0, (post.likes || 1) - 1);
-      localStorage.removeItem(likedKey);
+    if (isSaved) {
+      post.saves = Math.max(0, (post.saves || 1) - 1);
+      savedSet.delete(id);
     } else {
-      post.likes = (post.likes || 0) + 1;
-      localStorage.setItem(likedKey, 'true');
+      post.saves = (post.saves || 0) + 1;
+      savedSet.add(id);
     }
-
+    this.set(savedKey, Array.from(savedSet));
     this.setPosts(posts);
 
-    if (window.PythonAPI && PythonAPI.toggleLike) {
-      PythonAPI.toggleLike(id, userHandle).catch(e => console.warn('Like API sync:', e));
+    if (window.PythonAPI && PythonAPI.savePost) {
+      PythonAPI.savePost(id, userHandle).catch(() => {});
     }
-
-    return !alreadyLiked;
+    return !isSaved;
   },
-  savePost(id) {
-    const saved = this.get(KEYS.SAVED_POSTS, []);
-    const idx = saved.indexOf(id);
-    let isSaved = false;
-    if (idx >= 0) {
-      saved.splice(idx, 1);
-      isSaved = false;
-    } else {
-      saved.push(id);
-      isSaved = true;
-    }
-    this.set(KEYS.SAVED_POSTS, saved);
-    return isSaved;
+  hasUserSaved(id, userHandle) {
+    const savedKey = 'cos_saved_by_' + (userHandle || 'guest');
+    const savedSet = new Set(this.get(savedKey, []));
+    return savedSet.has(id);
   },
-  isPostSaved(id) {
-    const saved = this.get(KEYS.SAVED_POSTS, []);
-    return saved.includes(id);
-  },
-  addComment(postId, author, handle, text) {
+  addComment(postId, comment) {
     const posts = this.getPosts();
     const post = posts.find(p => p.id === postId);
     if (!post) return null;
 
     if (!post.comments) post.comments = [];
     const newComment = {
-      id: 'comm_' + Date.now(),
-      author: author || 'Student',
-      handle: handle || '@student',
-      text: text,
-      createdAt: Date.now()
+      id: comment.id || ('comment_' + Date.now()),
+      author: comment.author || (this.getUser() ? this.getUser().displayName || this.getUser().name : 'Student'),
+      handle: comment.handle || (this.getUser() ? this.getUser().username || this.getUser().handle : '@student'),
+      text: comment.text,
+      createdAt: comment.createdAt || Date.now()
     };
     post.comments.push(newComment);
     this.setPosts(posts);
 
     if (window.PythonAPI && PythonAPI.addComment) {
-      PythonAPI.addComment(postId, newComment.author, newComment.handle, newComment.text).catch(e => console.warn('Comment API sync:', e));
+      PythonAPI.addComment(postId, newComment).catch(() => {});
     }
-
     return newComment;
-  },
-  deleteComment(postId, commentId) {
-    const posts = this.getPosts();
-    const post = posts.find(p => p.id === postId);
-    if (!post || !post.comments) return false;
-    post.comments = post.comments.filter(c => c.id !== commentId);
-    this.setPosts(posts);
-    if (window.PythonAPI && PythonAPI.deleteComment) {
-      PythonAPI.deleteComment(postId, commentId).catch(e => console.warn('API deleteComment sync:', e));
-    }
-    return true;
   },
 
   // ============================================================
-  // PDF STUDY MATERIALS VAULT
+  // PDF DOCUMENTS & VAULT
   // ============================================================
   getPDFMaterials() {
     return this.get(KEYS.PDF_DOCS, []);
   },
-  setPDFMaterials(docs) {
-    return this.set(KEYS.PDF_DOCS, docs);
-  },
   addPDFMaterial(doc) {
     const docs = this.getPDFMaterials();
     const newDoc = {
-      id: doc.id || ('pdf_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4)),
-      uploadedAt: Date.now(),
-      views: 1,
-      downloads: 0,
-      likes: 0,
-      ...doc
+      id: doc.id || ('pdf_' + Date.now()),
+      title: doc.title,
+      subject: doc.subject || 'General',
+      department: doc.department || 'Computer Science & Engineering',
+      uploader: doc.uploader || 'Student',
+      uploaderHandle: doc.uploaderHandle || '@student',
+      fileName: doc.fileName,
+      fileSize: doc.fileSize,
+      fileData: doc.fileData,
+      downloadCount: 0,
+      createdAt: Date.now()
     };
-    const existing = docs.findIndex(d => d.id === newDoc.id);
-    if (existing >= 0) {
-      docs[existing] = { ...docs[existing], ...newDoc };
-    } else {
-      docs.unshift(newDoc);
-    }
-    this.setPDFMaterials(docs);
-  },
-  deletePDFMaterial(id) {
-    const docs = this.getPDFMaterials().filter(d => d.id !== id);
-    this.setPDFMaterials(docs);
-    return true;
+    docs.unshift(newDoc);
+    this.set(KEYS.PDF_DOCS, docs);
+    return newDoc;
   },
 
   // ============================================================
-  // ACADEMIC VAULT (Notes, Tasks, Timetable, Attendance)
+  // NOTES, TASKS, ATTENDANCE, TIMETABLE, RESOURCES
   // ============================================================
-  // ---- Notes ----
   getNotes() { return this.get(KEYS.NOTES, []); },
   setNotes(notes) { return this.set(KEYS.NOTES, notes); },
-  saveNote(note) {
-    const notes = this.getNotes();
-    const id = note.id || ('note_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4));
-    const newNote = { ...note, id, updatedAt: Date.now() };
-    const idx = notes.findIndex(n => n.id === id);
-    if (idx >= 0) notes[idx] = newNote;
-    else notes.unshift(newNote);
-    this.setNotes(notes);
-    if (window.PythonAPI && PythonAPI.saveNote) {
-      PythonAPI.saveNote(newNote).catch(e => console.warn('Note API sync:', e));
-    }
-    return newNote;
-  },
   addNote(note) {
-    return this.saveNote(note);
+    const list = this.getNotes();
+    const n = { id: note.id || ('note_' + Date.now()), ...note, createdAt: Date.now(), updatedAt: Date.now() };
+    list.unshift(n);
+    this.setNotes(list);
+    if (window.PythonAPI && PythonAPI.saveNote) PythonAPI.saveNote(n).catch(() => {});
+    return n;
   },
-  updateNote(id, updates) {
-    const notes = this.getNotes();
-    const idx = notes.findIndex(n => n.id === id);
+  updateNote(id, data) {
+    const list = this.getNotes();
+    const idx = list.findIndex(n => n.id === id);
     if (idx >= 0) {
-      notes[idx] = { ...notes[idx], ...updates, updatedAt: Date.now() };
-      this.setNotes(notes);
-      if (window.PythonAPI && PythonAPI.saveNote) {
-        PythonAPI.saveNote(notes[idx]).catch(e => console.warn('Note API sync:', e));
-      }
-      return notes[idx];
+      list[idx] = { ...list[idx], ...data, updatedAt: Date.now() };
+      this.setNotes(list);
+      if (window.PythonAPI && PythonAPI.saveNote) PythonAPI.saveNote(list[idx]).catch(() => {});
+      return list[idx];
     }
     return null;
   },
   deleteNote(id) {
-    const notes = this.getNotes().filter(n => n.id !== id);
-    this.setNotes(notes);
-    if (window.PythonAPI && PythonAPI.deleteNote) {
-      PythonAPI.deleteNote(id).catch(e => console.warn('Note delete sync:', e));
-    }
+    const list = this.getNotes().filter(n => n.id !== id);
+    this.setNotes(list);
+    if (window.PythonAPI && PythonAPI.deleteNote) PythonAPI.deleteNote(id).catch(() => {});
     return true;
   },
 
-  // ---- Tasks & Kanban ----
   getTasks() { return this.get(KEYS.TASKS, []); },
   setTasks(tasks) { return this.set(KEYS.TASKS, tasks); },
-  saveTask(task) {
-    const tasks = this.getTasks();
-    const id = task.id || ('task_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4));
-    const newTask = { ...task, id, createdAt: task.createdAt || Date.now(), updatedAt: Date.now() };
-    const idx = tasks.findIndex(t => t.id === id);
-    if (idx >= 0) tasks[idx] = newTask;
-    else tasks.unshift(newTask);
-    this.setTasks(tasks);
-    if (window.PythonAPI && PythonAPI.saveTask) {
-      PythonAPI.saveTask(newTask).catch(e => console.warn('Task API sync:', e));
-    }
-    return newTask;
-  },
   addTask(task) {
-    return this.saveTask(task);
+    const list = this.getTasks();
+    const t = { id: task.id || ('task_' + Date.now()), ...task, createdAt: Date.now() };
+    list.unshift(t);
+    this.setTasks(list);
+    if (window.PythonAPI && PythonAPI.saveTask) PythonAPI.saveTask(t).catch(() => {});
+    return t;
   },
-  updateTask(id, updates) {
-    const tasks = this.getTasks();
-    const idx = tasks.findIndex(t => t.id === id);
+  updateTask(id, data) {
+    const list = this.getTasks();
+    const idx = list.findIndex(t => t.id === id);
     if (idx >= 0) {
-      tasks[idx] = { ...tasks[idx], ...updates, updatedAt: Date.now() };
-      this.setTasks(tasks);
-      if (window.PythonAPI && PythonAPI.saveTask) {
-        PythonAPI.saveTask(tasks[idx]).catch(e => console.warn('Task API sync:', e));
-      }
-      return tasks[idx];
+      list[idx] = { ...list[idx], ...data };
+      this.setTasks(list);
+      if (window.PythonAPI && PythonAPI.saveTask) PythonAPI.saveTask(list[idx]).catch(() => {});
+      return list[idx];
     }
     return null;
   },
   deleteTask(id) {
-    const tasks = this.getTasks().filter(t => t.id !== id);
-    this.setTasks(tasks);
-    if (window.PythonAPI && PythonAPI.deleteTask) {
-      PythonAPI.deleteTask(id).catch(e => console.warn('Task delete sync:', e));
-    }
+    const list = this.getTasks().filter(t => t.id !== id);
+    this.setTasks(list);
+    if (window.PythonAPI && PythonAPI.deleteTask) PythonAPI.deleteTask(id).catch(() => {});
     return true;
   },
 
-  // ---- Timetable & Lecture Slots ----
+  getAttendance() { return this.get(KEYS.ATTENDANCE, []); },
+  setAttendance(records) { return this.set(KEYS.ATTENDANCE, records); },
+  addAttendanceSubject(sub) {
+    const list = this.getAttendance();
+    const record = { id: sub.id || ('att_' + Date.now()), ...sub };
+    list.push(record);
+    this.setAttendance(list);
+    if (window.PythonAPI && PythonAPI.saveAttendance) PythonAPI.saveAttendance(record).catch(() => {});
+    return record;
+  },
+  updateAttendanceSubject(id, data) {
+    const list = this.getAttendance();
+    const idx = list.findIndex(a => a.id === id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...data };
+      this.setAttendance(list);
+      if (window.PythonAPI && PythonAPI.saveAttendance) PythonAPI.saveAttendance(list[idx]).catch(() => {});
+      return list[idx];
+    }
+    return null;
+  },
+  deleteAttendanceSubject(id) {
+    const list = this.getAttendance().filter(a => a.id !== id);
+    this.setAttendance(list);
+    return true;
+  },
+
   getTimetable() { return this.get(KEYS.TIMETABLE, {}); },
   setTimetable(tt) { return this.set(KEYS.TIMETABLE, tt); },
-  setClassSlot(day, time, slotData) {
+  setClassSlot(day, time, slot) {
     const tt = this.getTimetable();
     if (!tt[day]) tt[day] = {};
-    tt[day][time] = slotData;
+    tt[day][time] = slot;
     this.setTimetable(tt);
-    return true;
+    return tt;
   },
   clearClassSlot(day, time) {
     const tt = this.getTimetable();
@@ -811,70 +684,17 @@ const Storage = {
       delete tt[day][time];
       this.setTimetable(tt);
     }
-    return true;
+    return tt;
   },
 
-  // ---- Attendance & 75% Radar ----
-  getAttendance() { return this.get(KEYS.ATTENDANCE, []); },
-  setAttendance(att) { return this.set(KEYS.ATTENDANCE, att); },
-  saveAttendance(item) {
-    const list = this.getAttendance();
-    const id = item.id || ('att_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4));
-    const newItem = { ...item, id };
-    const idx = list.findIndex(a => a.id === id);
-    if (idx >= 0) list[idx] = newItem;
-    else list.push(newItem);
-    this.setAttendance(list);
-    if (window.PythonAPI && PythonAPI.saveAttendance) {
-      PythonAPI.saveAttendance(newItem).catch(e => console.warn('Attendance API sync:', e));
-    }
-    return newItem;
-  },
-  addSubject(item) {
-    return this.saveAttendance(item);
-  },
-  updateSubject(id, updates) {
-    const list = this.getAttendance();
-    const idx = list.findIndex(a => a.id === id);
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...updates };
-      this.setAttendance(list);
-      if (window.PythonAPI && PythonAPI.saveAttendance) {
-        PythonAPI.saveAttendance(list[idx]).catch(e => console.warn('Attendance API sync:', e));
-      }
-      return list[idx];
-    }
-    return null;
-  },
-  deleteSubject(id) {
-    const list = this.getAttendance().filter(a => a.id !== id);
-    this.setAttendance(list);
-    return true;
-  },
-  markAttendance(id, isPresent) {
-    const list = this.getAttendance();
-    const subject = list.find(a => a.id === id);
-    if (!subject) return null;
-    subject.total = (subject.total || 0) + 1;
-    if (isPresent) {
-      subject.present = (subject.present || 0) + 1;
-    }
-    this.setAttendance(list);
-    if (window.PythonAPI && PythonAPI.saveAttendance) {
-      PythonAPI.saveAttendance(subject).catch(e => console.warn('Attendance API sync:', e));
-    }
-    return subject;
-  },
-
-  // ---- Resources & Question Papers ----
   getResources() { return this.get(KEYS.RESOURCES, []); },
   setResources(res) { return this.set(KEYS.RESOURCES, res); },
-  addResource(res) {
+  addResource(r) {
     const list = this.getResources();
-    const newRes = { id: 'res_' + Date.now().toString(36), ...res, createdAt: Date.now() };
-    list.unshift(newRes);
+    const newR = { id: r.id || ('res_' + Date.now()), ...r, downloadCount: 0, createdAt: Date.now() };
+    list.unshift(newR);
     this.setResources(list);
-    return newRes;
+    return newR;
   },
   deleteResource(id) {
     const list = this.getResources().filter(r => r.id !== id);
@@ -882,7 +702,9 @@ const Storage = {
     return true;
   },
 
-  // ---- Dynamic Hero Banners ----
+  // ============================================================
+  // DYNAMIC HERO BANNERS
+  // ============================================================
   getDeletedBannerIds() {
     try {
       return JSON.parse(localStorage.getItem('cos_deleted_banner_ids') || '[]');
@@ -985,14 +807,16 @@ const Storage = {
     if (!id) return false;
     this.addDeletedBannerId(id);
     const banners = this.getBanners().filter(b => b.id !== id);
-    this.set(KEYS.BANNERS, banners);
+    this.setBanners(banners);
     if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
       PythonAPI.deleteAdminBanner(id).catch(() => {});
     }
     return true;
   },
 
-  // ---- Admin Gatekeeper & Session ----
+  // ============================================================
+  // ADMIN GATEKEEPER & SESSION
+  // ============================================================
   getAdminToken() {
     return sessionStorage.getItem(KEYS.ADMIN_TOKEN) || localStorage.getItem(KEYS.ADMIN_TOKEN);
   },
@@ -1020,7 +844,7 @@ const Storage = {
   },
 
   // ============================================================
-  // METRICS COMPUTATION
+  // METRICS COMPUTATION (REAL-TIME DATA)
   // ============================================================
   getLiveMetrics() {
     const accounts = this.getAccounts();
@@ -1033,15 +857,13 @@ const Storage = {
     posts.forEach(p => { if (p.department) depts.add(p.department); });
 
     return {
-      totalStudents: Math.max(accounts.length, 2480),
-      totalPDFs: Math.max(pdfs.length + pdfPosts.length, 890),
+      totalStudents: accounts.length,
+      totalPDFs: pdfs.length + pdfPosts.length,
       totalPosts: posts.length,
-      activeDepartments: Math.max(depts.size, 6),
+      activeDepartments: depts.size || 1,
       syncUptime: '99.9%'
     };
-  },
-
-  // ===========================================================
+  }
 };
 
 // Global genId helper
@@ -1051,4 +873,17 @@ window.genId = function() {
 
 // Initialize Storage and kick off real-time backend sync
 Storage.init();
-window.Storage = Storage;
+
+// Export to window reliably avoiding native non-writable window.Storage collision
+window.CampusStorage = Storage;
+window.COS_Storage = Storage;
+try {
+  Object.defineProperty(window, 'Storage', {
+    value: Storage,
+    writable: true,
+    configurable: true,
+    enumerable: true
+  });
+} catch(e) {
+  try { window.Storage = Storage; } catch(err) {}
+}

@@ -1166,6 +1166,7 @@
 <script src="js/notifications.js"></script>
 
 <script>
+var Storage = window.CampusStorage || window.Storage;
 function showToast(msg) {
   let toast = document.getElementById('profileToast');
   if (!toast) {

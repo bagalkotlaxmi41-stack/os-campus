@@ -1361,19 +1361,18 @@
   </div>
 </header>
 
-<!-- ===================== HERO BANNER SLIDER (CLEAN, COOL, AESTHETIC) ===================== -->
+<!-- ===================== HERO BANNER SLIDER (100% DYNAMIC ADMIN-POWERED) ===================== -->
 <section class="hero-slider-section" id="heroBannerSlider">
   <div class="hero-slides-wrapper">
-    
-    <!-- Slide 1: Main Campus -->
+    <!-- Dynamically rendered from Admin Control Suite & Storage -->
     <div class="hero-slide active" data-slide="0">
       <div class="hero-slide-bg" style="background-image: url('img/banner1.jpg');"></div>
       <div class="hero-slide-overlay">
         <div class="hero-slide-content">
-          <div class="hero-glow-badge">✨ BLDE Association's Campus · Jamkhandi</div>
+          <div class="hero-glow-badge">✨ Campus OS Platform</div>
           <h1 class="hero-title-text">
-            Commerce, BHS Arts &<br />
-            <span class="text-hero-gradient">TGP Science College</span>
+            Smart Academic Operating Platform &<br />
+            <span class="text-hero-gradient">Student Network</span>
           </h1>
           <div class="hero-cta-group">
             <a href="dashboard.html" class="hero-btn-primary">
@@ -1386,48 +1385,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Slide 2: Timetable & Schedule -->
-    <div class="hero-slide" data-slide="1">
-      <div class="hero-slide-bg" style="background-image: url('img/banner2.jpg');"></div>
-      <div class="hero-slide-overlay">
-        <div class="hero-slide-content">
-          <div class="hero-glow-badge" style="background:rgba(6,182,212,0.2); border-color:rgba(6,182,212,0.45); color:#67e8f9;">📅 Class Timetables</div>
-          <h1 class="hero-title-text">
-            Weekly Lectures &<br />
-            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Daily Class Periods</span>
-          </h1>
-          <div class="hero-cta-group">
-            <a href="timetable.html" class="hero-btn-primary">
-              <span>📅 View Timetable →</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Slide 3: Attendance Radar & Study Vault -->
-    <div class="hero-slide" data-slide="2">
-      <div class="hero-slide-bg" style="background-image: url('img/banner3.jpg');"></div>
-      <div class="hero-slide-overlay">
-        <div class="hero-slide-content">
-          <div class="hero-glow-badge" style="background:rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.45); color:#34d399;">🌟 75% Attendance Radar</div>
-          <h1 class="hero-title-text">
-            Attendance Health &<br />
-            <span class="text-hero-gradient" style="background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Smart Study Notes Vault</span>
-          </h1>
-          <div class="hero-cta-group">
-            <a href="attendance.html" class="hero-btn-primary">
-              <span>📈 Check Attendance</span>
-            </a>
-            <a href="notes.html" class="hero-btn-secondary">
-              <span>📝 Notes Vault</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <!-- Navigation Arrows -->
@@ -1436,11 +1393,9 @@
 
   <!-- Slide Controller Bar -->
   <div class="slider-controller-bar">
-    <div class="slide-counter-badge" id="sliderCounterText">01 / 03</div>
+    <div class="slide-counter-badge" id="sliderCounterText">01 / 01</div>
     <div class="slider-indicators-bar" id="sliderDotsBar">
       <div class="slider-indicator-dot active" data-idx="0"></div>
-      <div class="slider-indicator-dot" data-idx="1"></div>
-      <div class="slider-indicator-dot" data-idx="2"></div>
     </div>
   </div>
 </section>
@@ -1936,6 +1891,7 @@
 <script src="js/notifications.js"></script>
 
 <script>
+var Storage = window.CampusStorage || window.Storage;
 // =====================================================
 // DYNAMIC HERO BANNER SLIDER ENGINE
 // =====================================================

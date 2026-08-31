@@ -1721,6 +1721,7 @@
   <script src="js/api.js"></script>
 
   <script>
+    var Storage = window.CampusStorage || window.Storage;
     let allAdminAccounts = [];
     let allAdminBanners = [];
     let allAdminPosts = [];
@@ -2017,22 +2018,22 @@
       const container = document.getElementById('departmentProgressContainer');
       if (!container) return;
 
-      const counts = branchMap || {
-        'Computer Science & Eng': 42,
-        'BCA Application': 28,
-        'B.Sc Physics & Chem': 18,
-        'Commerce & BBA': 12
-      };
+      const counts = branchMap || {};
+      const entries = Object.entries(counts);
+      if (entries.length === 0) {
+        container.innerHTML = `<div style="color:var(--admin-text-muted);font-size:13px;padding:12px 0;">No department records yet.</div>`;
+        return;
+      }
 
       const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
 
-      container.innerHTML = Object.entries(counts).map(([name, val]) => {
+      container.innerHTML = entries.map(([name, val]) => {
         const pct = Math.round((val / total) * 100);
         return `
           <div class="admin-progress-row">
             <div class="admin-progress-header">
               <span>${name}</span>
-              <span>${val} students (${pct}%)</span>
+              <span>${val} student(s) (${pct}%)</span>
             </div>
             <div class="admin-progress-bar">
               <div class="admin-progress-fill" style="width: ${pct}%;"></div>

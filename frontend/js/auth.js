@@ -1,6 +1,7 @@
 // ============================================
 // College OS — Auth Logic
 // ============================================
+var Storage = window.CampusStorage || window.Storage;
 
 document.addEventListener('DOMContentLoaded', () => {
   redirectIfAuth();

@@ -138,6 +138,7 @@
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
   <script>
+    var Storage = window.CampusStorage || window.Storage;
     document.addEventListener('DOMContentLoaded', () => {
       const user = requireAuth();
       if (!user) return;
