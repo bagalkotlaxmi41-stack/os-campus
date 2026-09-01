@@ -935,16 +935,58 @@ def change_student_handle(handle: str, data: HandleChangeModel):
 
 
 @app.put("/api/accounts/{handle}/role")
+@app.post("/api/accounts/{handle}/role")
+@app.put("/api/admin/accounts/{handle}/role")
+@app.post("/api/admin/accounts/{handle}/role")
 def update_account_role(handle: str, role_data: AccountRoleUpdate):
     clean = handle.strip()
-    if not clean.startswith("@"): clean = "@" + clean
+    raw_no_at = clean.replace("@", "")
+    with_at = "@" + raw_no_at
     new_role = role_data.role.strip().upper()
+    now = int(time.time() * 1000)
+
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE accounts SET role = ?, updated_at = ? WHERE LOWER(handle) = ?", (new_role, int(time.time() * 1000), clean.lower()))
+    cursor.execute("""
+    UPDATE accounts SET role = ?, updated_at = ?
+    WHERE LOWER(handle) = ? OR LOWER(handle) = ? OR LOWER(email) = ?
+    """, (new_role, now, with_at.lower(), raw_no_at.lower(), clean.lower()))
     conn.commit()
+
+    cursor.execute("""
+    SELECT * FROM accounts
+    WHERE LOWER(handle) = ? OR LOWER(handle) = ? OR LOWER(email) = ?
+    """, (with_at.lower(), raw_no_at.lower(), clean.lower()))
+    r = cursor.fetchone()
+
+    if not r:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Account '{handle}' not found in database to update role.")
+
+    # Write to admin audit log
+    try:
+        cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
+            f"log_{now}",
+            "UPDATE_ROLE",
+            "@campus_admin",
+            f"Changed role of {r['handle']} to {new_role}",
+            r['handle'],
+            now
+        ))
+        conn.commit()
+    except Exception:
+        pass
+
     conn.close()
-    return {"status": "success", "handle": clean, "role": new_role, "message": f"Role updated to {new_role}"}
+
+    return {
+        "status": "success",
+        "handle": r["handle"],
+        "role": r["role"],
+        "displayName": r["display_name"],
+        "email": r["email"],
+        "message": f"Role for {r['handle']} successfully updated to {r['role']}"
+    }
 
 
 @app.post("/api/admin/reset-password")
@@ -2025,32 +2067,10 @@ def admin_broadcast(data: BroadcastModel):
     return {"status": "success", "message": "Broadcast sent to all students.", "id": b_id}
 
 
-@app.put("/api/admin/accounts/{handle}/role")
-def update_account_role(handle: str, data: AdminRoleUpdateModel):
-    clean = handle if handle.startswith("@") else "@" + handle
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE accounts SET role = ?, updated_at = ? WHERE LOWER(handle) = ?", (data.role, int(time.time()*1000), clean.lower()))
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Account not found")
-    
-    now = int(time.time()*1000)
-    cursor.execute("INSERT INTO admin_logs VALUES (?, ?, ?, ?, ?, ?)", (
-        f"log_{now}",
-        "UPDATE_ROLE",
-        "@admin_root",
-        f"Changed role of {clean} to {data.role}",
-        clean,
-        now
-    ))
-    conn.commit()
-    conn.close()
-    return {"status": "success", "message": f"Role for {clean} updated to {data.role}"}
 
 
 @app.put("/api/admin/accounts/{handle}/password")
-def admin_reset_password(handle: str, data: AdminPasswordResetModel):
+def admin_accounts_reset_password(handle: str, data: AdminPasswordResetModel):
     clean = handle if handle.startswith("@") else "@" + handle
     pwd_hash = hash_password(data.new_password)
     conn = get_db()

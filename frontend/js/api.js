@@ -255,10 +255,15 @@ const PythonAPI = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: role })
-      }, 4000);
-      return res.ok;
+      }, 6000);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to update account role on backend');
+      }
+      return await res.json();
     } catch (err) {
-      return false;
+      console.warn('API updateAccountRole error:', err);
+      throw err;
     }
   },
 

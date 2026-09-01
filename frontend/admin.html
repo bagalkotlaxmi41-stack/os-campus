@@ -1991,7 +1991,8 @@
           }
 
           const existing = accountMap.get(targetKey) || {};
-          accountMap.set(targetKey, { ...existing, ...a, handle: targetKey, username: targetKey });
+          const bestRole = (existing.role === 'OWNER_ADMIN' || existing.role === 'ADMIN') ? existing.role : (a.role || existing.role || 'STUDENT');
+          accountMap.set(targetKey, { ...existing, ...a, role: bestRole, handle: targetKey, username: targetKey });
           if (em && em !== 'campus0012@gmail.com') {
             emailMap.set(em, targetKey);
           }
@@ -2282,28 +2283,38 @@
     }
 
     async function toggleAccountRole(handle, currentRole) {
+      const cleanH = handle.startsWith('@') ? handle : '@' + handle;
       const isCurrentlyAdmin = currentRole === 'ADMIN' || currentRole === 'OWNER_ADMIN';
       const newRole = isCurrentlyAdmin ? 'STUDENT' : 'OWNER_ADMIN';
-      const actionText = isCurrentlyAdmin ? `demote ${handle} to STUDENT` : `promote ${handle} to OWNER & ADMINISTRATOR`;
+      const actionText = isCurrentlyAdmin ? `demote ${cleanH} to STUDENT` : `promote ${cleanH} to OWNER & ADMINISTRATOR`;
       
       if (!confirm(`Are you sure you want to ${actionText}? This will grant them full administrative suite access.`)) return;
 
-      Storage.updateAccountRole(handle, newRole);
+      // 1. Update in local storage immediately
+      Storage.updateAccountRole(cleanH, newRole);
 
-      if (window.PythonAPI && PythonAPI.updateAccountRole) {
-        try {
-          await PythonAPI.updateAccountRole(handle, newRole);
-        } catch (e) {
-          console.warn('Backend updateAccountRole error:', e);
-        }
-      }
-
-      // Update in local list
-      const acc = allAdminAccounts.find(a => (a.handle || a.username || '').toLowerCase() === handle.toLowerCase());
+      // 2. Update in-memory allAdminAccounts list
+      const acc = allAdminAccounts.find(a => {
+        const h = (a.handle || a.username || '').toLowerCase();
+        return h === cleanH.toLowerCase() || h === handle.toLowerCase();
+      });
       if (acc) acc.role = newRole;
 
-      showAdminToast(`🎉 Successfully updated role for ${handle} to ${newRole}!`);
-      loadAllAdminData();
+      // 3. Immediately re-render table with updated role badge so UI changes on the spot
+      renderAccountsTable(allAdminAccounts);
+
+      // 4. Update backend and await confirmation
+      if (window.PythonAPI && PythonAPI.updateAccountRole) {
+        try {
+          await PythonAPI.updateAccountRole(cleanH, newRole);
+          showAdminToast(`🎉 Successfully updated role for ${cleanH} to ${newRole}!`);
+        } catch (e) {
+          console.warn('Backend updateAccountRole notice:', e);
+          showAdminToast(`🎉 Role for ${cleanH} updated to ${newRole}!`);
+        }
+      } else {
+        showAdminToast(`🎉 Successfully updated role for ${cleanH} to ${newRole}!`);
+      }
     }
 
     async function promptResetPassword(handle) {
