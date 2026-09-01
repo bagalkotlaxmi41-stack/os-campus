@@ -265,6 +265,16 @@ def init_database():
     )
     """)
 
+    # High-Performance Indexes for Instant Queries
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_posts_handle ON posts(handle)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_accounts_handle ON accounts(handle)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_notes_handle ON notes(handle)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tasks_handle ON tasks(handle)")
+
     # Seed Official Owner Admin Account (campus0012@gmail.com / campus@#1974)
     admin_pass_hash = hash_password("campus@#1974")
     cursor.execute("SELECT COUNT(*) as cnt FROM accounts WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'")
@@ -1138,6 +1148,59 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
 
     conn.close()
     return result
+
+
+@app.get("/api/search")
+def universal_search(q: str = ""):
+    if not q or not q.strip():
+        return {"accounts": [], "posts": [], "notes": [], "total": 0}
+
+    clean_q = q.strip()
+    term = f"%{clean_q.lower()}%"
+    raw_no_at = clean_q.replace("@", "").lower()
+    term_no_at = f"%{raw_no_at}%"
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # 1. Search Accounts / Peers
+    cursor.execute("""
+    SELECT handle, display_name, email, department, semester, usn, photo, role, bio
+    FROM accounts
+    WHERE LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ? OR LOWER(email) LIKE ? OR LOWER(usn) LIKE ? OR LOWER(department) LIKE ?
+    LIMIT 10
+    """, (term_no_at, term, term, term, term))
+    accounts = [dict(r) for r in cursor.fetchall()]
+
+    # 2. Search Posts / Feeds
+    cursor.execute("""
+    SELECT id, type, title, subject, department, desc, author, handle, likes, saves, created_at
+    FROM posts
+    WHERE LOWER(title) LIKE ? OR LOWER(subject) LIKE ? OR LOWER(desc) LIKE ? OR LOWER(author) LIKE ? OR LOWER(handle) LIKE ?
+    ORDER BY created_at DESC
+    LIMIT 15
+    """, (term, term, term, term, term_no_at))
+    posts = [dict(r) for r in cursor.fetchall()]
+
+    # 3. Search Notes
+    cursor.execute("""
+    SELECT id, title, subject, color, handle, created_at
+    FROM notes
+    WHERE LOWER(title) LIKE ? OR LOWER(subject) LIKE ? OR LOWER(content) LIKE ?
+    ORDER BY updated_at DESC
+    LIMIT 10
+    """, (term, term, term))
+    notes = [dict(r) for r in cursor.fetchall()]
+
+    conn.close()
+
+    return {
+        "query": clean_q,
+        "accounts": accounts,
+        "posts": posts,
+        "notes": notes,
+        "total": len(accounts) + len(posts) + len(notes)
+    }
 
 
 @app.post("/api/posts")

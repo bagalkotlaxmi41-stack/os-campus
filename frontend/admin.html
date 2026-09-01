@@ -1599,11 +1599,30 @@
         <div class="admin-section-header">
           <div>
             <h1 class="admin-section-title">Post & Study Material Moderation</h1>
-            <p class="admin-section-desc">Review student uploads, certify verified academic study notes, and remove spam.</p>
+            <p class="admin-section-desc">Search, review student uploads, inspect verified notes, and manage posts across the campus feed.</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <a href="feed.html" target="_blank" class="admin-btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              <span>Open Campus Stream ↗</span>
+            </a>
           </div>
         </div>
 
         <div class="admin-table-container">
+          <div class="admin-table-toolbar">
+            <input type="text" class="admin-search-input" id="moderationSearchInput" placeholder="🔍 Search posts by title, author, handle, subject..." oninput="filterModerationTable()" style="width:360px;" />
+            
+            <div style="display:flex;gap:10px;">
+              <select class="admin-select" id="moderationTypeSelect" onchange="filterModerationTable()">
+                <option value="all">All Content Types</option>
+                <option value="text">Notes & Insights</option>
+                <option value="pdf">PDF Documents</option>
+                <option value="youtube">Lecture Videos</option>
+                <option value="announcement">Circulars & Broadcasts</option>
+              </select>
+            </div>
+          </div>
+
           <div style="overflow-x:auto;">
             <table class="admin-data-table">
               <thead>
@@ -2013,8 +2032,12 @@
           Storage.setBanners(allAdminBanners);
         }
 
-        if (remotePosts.status === 'fulfilled' && Array.isArray(remotePosts.value) && remotePosts.value.length > 0) {
-          allAdminPosts = remotePosts.value;
+        if (remotePosts.status === 'fulfilled' && Array.isArray(remotePosts.value)) {
+          const postMap = new Map();
+          remotePosts.value.forEach(p => { if (p && p.id) postMap.set(p.id, p); });
+          (Storage.getPosts() || []).forEach(p => { if (p && p.id && !postMap.has(p.id)) postMap.set(p.id, p); });
+          allAdminPosts = Array.from(postMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          Storage.setPosts(allAdminPosts);
         }
 
         updateAdminDashboardUI();
@@ -2572,20 +2595,47 @@
     }
 
     // ============================================================
-    // POST MODERATION TABLE
+    // POST MODERATION TABLE & SEARCH
     // ============================================================
+    function filterModerationTable() {
+      const q = (document.getElementById('moderationSearchInput')?.value || '').trim().toLowerCase().replace(/^@/, '');
+      const type = document.getElementById('moderationTypeSelect')?.value || 'all';
+
+      const filtered = allAdminPosts.filter(p => {
+        const matchesType = type === 'all' || 
+          (type === 'pdf' && (p.type === 'pdf' || p.pdfData || p.fileName)) ||
+          (type === 'youtube' && p.type === 'youtube') ||
+          (type === 'announcement' && (p.type === 'announcement' || p.type === 'circular')) ||
+          (type === 'text' && (p.type === 'text' || !p.type));
+
+        if (!matchesType) return false;
+        if (!q) return true;
+
+        const title = (p.title || '').toLowerCase();
+        const desc = (p.desc || '').toLowerCase();
+        const author = (p.author || '').toLowerCase();
+        const handle = (p.handle || '').toLowerCase().replace(/^@/, '');
+        const sub = (p.subject || '').toLowerCase();
+        return title.includes(q) || desc.includes(q) || author.includes(q) || handle.includes(q) || sub.includes(q);
+      });
+
+      renderModerationTable(filtered);
+    }
+
     function renderModerationTable(posts) {
       const tbody = document.getElementById('moderationTableBody');
       if (!tbody) return;
 
       if (!posts || posts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--admin-text-muted);">No student posts yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--admin-text-muted);">No student posts matched.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = posts.map(p => {
         const typeEmoji = p.type === 'pdf' ? '📄' : (p.type === 'youtube' ? '🎥' : '📝');
         const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today';
+        const rawH = p.handle || '@student';
+        const cleanH = rawH.startsWith('@') ? rawH : '@' + rawH;
 
         return `
           <tr>
@@ -2596,11 +2646,14 @@
             </td>
             <td>
               <div>${p.author || 'Student'}</div>
-              <div style="font-size:11px;color:#38bdf8;">${p.handle || '@student'}</div>
+              <div style="font-size:11px;color:#38bdf8;">${cleanH}</div>
             </td>
             <td>❤️ ${p.likes || 0}</td>
             <td>${dateStr}</td>
             <td>
+              <a href="profile.html?handle=${encodeURIComponent(cleanH)}" target="_blank" class="admin-action-btn" style="text-decoration:none;margin-right:6px;" title="View Author Student Passport">
+                Passport 👤
+              </a>
               <button class="admin-action-btn danger" onclick="confirmDeletePost('${p.id}')">Remove 🗑️</button>
             </td>
           </tr>

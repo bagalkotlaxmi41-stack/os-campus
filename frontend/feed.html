@@ -550,6 +550,214 @@
       cursor: pointer;
       box-shadow: 0 0 14px rgba(139, 92, 246, 0.4);
     }
+
+    /* ---- LIVE FEED SEARCH INPUT ---- */
+    .stream-search-input {
+      width: 100%;
+      background: rgba(18, 14, 38, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 20px;
+      padding: 8px 32px 8px 14px;
+      color: #ffffff;
+      font-size: 12.5px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .stream-search-input:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.4);
+      background: rgba(18, 14, 38, 0.98);
+    }
+
+    /* ---- ➕ SHARE POST CTA BUTTON ---- */
+    .stream-post-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .stream-post-cta-btn:hover {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6);
+    }
+
+    /* ---- CATEGORY FILTER BAR ---- */
+    .stream-category-bar {
+      position: fixed;
+      top: 66px;
+      left: 0;
+      right: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: linear-gradient(180deg, rgba(5, 4, 11, 0.85) 0%, transparent 100%);
+      overflow-x: auto;
+      scrollbar-width: none;
+      pointer-events: none;
+    }
+    .stream-category-bar * {
+      pointer-events: auto;
+    }
+    .stream-category-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .stream-filter-chip {
+      background: rgba(18, 14, 38, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      border-radius: 16px;
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .stream-filter-chip:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .stream-filter-chip.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(6, 182, 212, 0.3) 100%);
+      border-color: #8b5cf6;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.35);
+    }
+
+    /* ---- LIKE BUTTON ACTIVE STATE ---- */
+    .rail-btn.liked .rail-icon-circle {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: rgba(239, 68, 68, 0.25);
+      animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .rail-btn.liked .rail-btn-label {
+      color: #f87171;
+      font-weight: 900;
+    }
+    @keyframes heartPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    /* ---- FEED POST CREATOR MODAL ---- */
+    .stream-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 2, 8, 0.88);
+      backdrop-filter: blur(24px);
+      z-index: 2500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .stream-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .stream-modal-dialog {
+      background: #0f0c24;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 540px;
+      padding: 26px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(-16px) scale(0.98);
+      transition: all 0.25s ease;
+    }
+    .stream-modal-backdrop.open .stream-modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+    .stream-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .feed-type-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .feed-type-pill {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .feed-type-pill.active {
+      background: #8b5cf6;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+    .stream-form-input, .stream-form-textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .stream-form-input:focus, .stream-form-textarea:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 14px rgba(139, 92, 246, 0.35);
+    }
+    .stream-btn-primary {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+    }
+    .stream-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -559,6 +767,17 @@
     <a href="index.html" class="stream-brand" title="Back to Home" style="display:flex; align-items:center; text-decoration:none;">
       <img src="img/logo.png" alt="Campus OS" class="stream-logo" style="height:38px; width:38px; object-fit:contain; border-radius:10px; box-shadow:0 0 16px rgba(124,58,237,0.4);" />
     </a>
+
+    <!-- Live Feed Search Input -->
+    <div class="stream-search-wrapper" style="flex:1; max-width:320px; position:relative; margin:0 8px;">
+      <input type="text" id="streamSearchInput" class="stream-search-input" placeholder="🔍 Search posts, peers, subjects..." oninput="handleStreamSearch(this.value)" autocomplete="off" />
+      <button id="streamSearchClearBtn" onclick="clearStreamSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:14px; line-height:1;" title="Clear search">✕</button>
+    </div>
+
+    <!-- ➕ Share Post CTA Button -->
+    <button class="stream-post-cta-btn" onclick="openFeedPostModal()" title="Share Study Notes, PDF or Video">
+      <span>➕ Post</span>
+    </button>
 
     <div class="stream-header-actions">
       <!-- Notification Button with SVG icon & Glassmorphic Drawer -->
@@ -618,6 +837,103 @@
     </div>
   </header>
 
+  <!-- Horizontal Category Filters Bar -->
+  <div class="stream-category-bar">
+    <button class="stream-filter-chip active" data-cat="all" onclick="setCategoryFilter('all', this)">🔥 All Stream</button>
+    <button class="stream-filter-chip" data-cat="pdf" onclick="setCategoryFilter('pdf', this)">📄 Notes & PDFs</button>
+    <button class="stream-filter-chip" data-cat="youtube" onclick="setCategoryFilter('youtube', this)">🎥 Lecture Videos</button>
+    <button class="stream-filter-chip" data-cat="circular" onclick="setCategoryFilter('circular', this)">🏛️ Circulars</button>
+    <button class="stream-filter-chip" data-cat="text" onclick="setCategoryFilter('text', this)">💡 Insights</button>
+  </div>
+
+  <!-- Comments Discussion Drawer -->
+  <div class="stream-comment-overlay" id="commentOverlay" onclick="closeCommentDrawer(event)">
+    <div class="stream-comment-drawer">
+      <div class="comment-drawer-header">
+        <div>
+          <h3 style="font-size:16px; font-weight:800; color:#fff;" id="commentDrawerTitle">Peer Discussion</h3>
+          <div style="font-size:11px; color:#94a3b8;">Academic discussion and study notes queries</div>
+        </div>
+        <button onclick="closeCommentDrawer()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer;">✕</button>
+      </div>
+      <div class="comment-list-scroll" id="commentListScroll">
+        <!-- Comments rendered dynamically -->
+      </div>
+      <form class="comment-input-bar" onsubmit="submitComment(event)">
+        <input type="text" class="comment-input-field" id="commentTextInput" placeholder="Write a comment or question..." required />
+        <button type="submit" class="comment-submit-btn">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- In-Feed Post Creator Modal -->
+  <div class="stream-modal-backdrop" id="feedPostModal">
+    <div class="stream-modal-dialog">
+      <div class="stream-modal-header">
+        <div>
+          <h3 style="font-size:18px; font-weight:900; color:#fff;">Share Academic Material</h3>
+          <div style="font-size:12px; color:#a78bfa;">Publish notes, lecture links, or study guides to Campus Stream</div>
+        </div>
+        <button onclick="closeFeedPostModal()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer;">✕</button>
+      </div>
+
+      <!-- Type Selector -->
+      <div class="feed-type-selector">
+        <button type="button" class="feed-type-pill active" onclick="selectFeedPostType('text', this)">💡 Note / Insight</button>
+        <button type="button" class="feed-type-pill" onclick="selectFeedPostType('pdf', this)">📄 PDF Document</button>
+        <button type="button" class="feed-type-pill" onclick="selectFeedPostType('youtube', this)">🎥 Lecture Video</button>
+      </div>
+
+      <form id="feedPostForm" onsubmit="submitFeedPost(event)">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">Post Title *</label>
+          <input type="text" class="stream-form-input" id="feedPostTitle" placeholder="e.g. Operating Systems Chapter 3 Virtual Memory Summary" required />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">Subject / Course *</label>
+            <input type="text" class="stream-form-input" id="feedPostSubject" placeholder="e.g. Operating Systems" required />
+          </div>
+          <div>
+            <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">Department</label>
+            <select class="stream-form-input" id="feedPostDept">
+              <option value="Computer Science & Engineering">CSE</option>
+              <option value="BCA Department">BCA</option>
+              <option value="Information Science & Eng">ISE</option>
+              <option value="Artificial Intelligence & DS">AI/DS</option>
+              <option value="Electronics & Communication">ECE</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="feedTextGroup" style="margin-bottom:14px;">
+          <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">Description & Study Points</label>
+          <textarea class="stream-form-textarea" id="feedPostDesc" rows="3" placeholder="Key exam points, definitions, or study insights..."></textarea>
+        </div>
+
+        <div id="feedPdfGroup" style="display:none; margin-bottom:14px;">
+          <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">Upload PDF Document (up to 12MB)</label>
+          <input type="file" id="feedPdfFile" accept="application/pdf" onchange="handleFeedPDFUpload(this)" style="display:none;" />
+          <div onclick="document.getElementById('feedPdfFile').click()" style="padding:16px; border:1.5px dashed rgba(139,92,246,0.4); border-radius:12px; text-align:center; cursor:pointer; background:rgba(124,58,237,0.06);">
+            <div style="font-size:24px; margin-bottom:4px;">📄</div>
+            <div style="font-size:12.5px; color:#cbd5e1;" id="feedPdfStatus">Click to select PDF from device</div>
+          </div>
+        </div>
+
+        <div id="feedYoutubeGroup" style="display:none; margin-bottom:14px;">
+          <label style="display:block; font-size:11.5px; font-weight:800; color:#c4b5fd; margin-bottom:6px; text-transform:uppercase;">YouTube / Reel Video URL</label>
+          <input type="url" class="stream-form-input" id="feedPostYoutube" placeholder="https://www.youtube.com/watch?v=... or shorts URL" />
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="stream-btn-secondary" onclick="closeFeedPostModal()">Cancel</button>
+          <button type="submit" class="stream-btn-primary">🚀 Publish to Stream</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Desktop Arrow Controls -->
   <div class="stream-nav-controls">
     <button class="nav-arrow-btn" onclick="scrollReels(-1)" title="Previous Reel (Up Arrow)">
@@ -676,25 +992,80 @@
         .replace(/'/g, '&#039;');
     }
 
+    let allLoadedPosts = [];
+    let currentCategoryFilter = 'all';
+
     async function loadStreamPosts() {
       // 1. Get real student posts from local storage
       let posts = Storage.getPosts() || [];
 
-      // 2. Fetch fresh real-time posts from Python API
+      // 2. Fetch fresh real-time posts from Python API and merge
       if (window.PythonAPI && PythonAPI.getPosts) {
         try {
           const remote = await PythonAPI.getPosts();
           if (remote && Array.isArray(remote)) {
-            posts = remote;
-            Storage.setPosts(remote);
+            const map = new Map();
+            remote.forEach(p => { if (p && p.id) map.set(p.id, p); });
+            posts.forEach(p => { if (p && p.id && !map.has(p.id)) map.set(p.id, p); });
+            posts = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            Storage.setPosts(posts);
           }
         } catch (e) {
           console.warn('Remote stream fetch note:', e);
         }
       }
 
-      // Shuffle posts for fresh experience
-      streamPosts = [...posts].sort(() => Math.random() - 0.5);
+      allLoadedPosts = [...posts];
+      const searchVal = document.getElementById('streamSearchInput')?.value || '';
+      filterAndRenderStream(searchVal, currentCategoryFilter);
+    }
+
+    function handleStreamSearch(query) {
+      const q = (query || '').trim();
+      const clearBtn = document.getElementById('streamSearchClearBtn');
+      if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+      filterAndRenderStream(q, currentCategoryFilter);
+    }
+
+    function clearStreamSearch() {
+      const input = document.getElementById('streamSearchInput');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('streamSearchClearBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      filterAndRenderStream('', currentCategoryFilter);
+    }
+
+    function setCategoryFilter(category, btn) {
+      currentCategoryFilter = category;
+      document.querySelectorAll('.stream-filter-chip').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const input = document.getElementById('streamSearchInput');
+      filterAndRenderStream(input ? input.value : '', category);
+    }
+
+    function filterAndRenderStream(searchQuery, category) {
+      const q = (searchQuery || '').trim().toLowerCase().replace(/^@/, '');
+      let filtered = allLoadedPosts.filter(p => {
+        const matchesCategory = category === 'all' || 
+          (category === 'pdf' && (p.type === 'pdf' || p.pdfData || p.fileName)) ||
+          (category === 'youtube' && p.type === 'youtube') ||
+          (category === 'circular' && (p.type === 'circular' || p.type === 'announcement')) ||
+          (category === 'text' && (p.type === 'text' || !p.type));
+
+        if (!matchesCategory) return false;
+        if (!q) return true;
+
+        const title = (p.title || '').toLowerCase();
+        const desc = (p.desc || '').toLowerCase();
+        const author = (p.author || '').toLowerCase();
+        const handle = (p.handle || '').toLowerCase().replace(/^@/, '');
+        const sub = (p.subject || '').toLowerCase();
+        const dept = (p.department || '').toLowerCase();
+
+        return title.includes(q) || desc.includes(q) || author.includes(q) || handle.includes(q) || sub.includes(q) || dept.includes(q);
+      });
+
+      streamPosts = filtered;
       renderStream();
     }
 
@@ -705,13 +1076,18 @@
       if (streamPosts.length === 0) {
         viewport.innerHTML = `
           <div class="reel-slide">
-            <div class="reel-content-container" style="display:flex; align-items:center; justify-content:center; text-align:center; padding:40px;">
+            <div class="reel-content-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px;">
               <div style="font-size:48px; margin-bottom:16px;">📚</div>
-              <h2 style="font-size:20px; font-weight:900; margin-bottom:8px;">No Posts Yet!</h2>
-              <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Be the first student to share lecture notes, PDFs, or videos.</p>
-              <a href="profile.html" class="hero-btn-primary" style="padding:10px 20px; font-size:13px; text-decoration:none;">
-                <span>➕ Share First Note</span>
-              </a>
+              <h2 style="font-size:20px; font-weight:900; margin-bottom:8px;">No Materials Found</h2>
+              <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">No study materials matched your search or category filter.</p>
+              <div style="display:flex; gap:10px;">
+                <button class="hero-btn-secondary" style="padding:10px 18px; font-size:12.5px;" onclick="clearStreamSearch()">
+                  <span>Clear Filter</span>
+                </button>
+                <button class="hero-btn-primary" style="padding:10px 20px; font-size:12.5px;" onclick="openFeedPostModal()">
+                  <span>➕ Share Study Note</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -766,7 +1142,7 @@
                 <span style="font-size:18px;">💡</span>
                 <span style="font-size:11px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em;">Verified Student Note</span>
               </div>
-              <div style="white-space:pre-line; color:#cbd5e1; font-size:13.5px;">${escapeHtml(post.desc || post.title)}</div>
+              <div style="white-space:pre-line; color:#cbd5e1; font-size:13.5px; line-height:1.6;">${escapeHtml(post.desc || post.title)}</div>
             </div>
           `;
         }
@@ -784,8 +1160,20 @@
                 ${mediaHtml}
               </div>
 
-              <!-- Clean Minimal Action Rail -->
+              <!-- Instagram / LinkedIn / X Interactive Action Rail -->
               <div class="reel-action-rail">
+                <!-- Like / Heart Button -->
+                <button class="rail-btn ${isLiked ? 'liked' : ''}" id="like_btn_${post.id}" onclick="handleLikePost('${post.id}', event)" title="Like Study Material">
+                  <div class="rail-icon-circle ${isLiked ? 'liked' : ''}" style="font-size:18px;">❤️</div>
+                  <span class="rail-btn-label" id="like_count_${post.id}">${post.likes || 0}</span>
+                </button>
+
+                <!-- Comments Button -->
+                <button class="rail-btn" onclick="openCommentDrawer('${post.id}')" title="Peer Discussion">
+                  <div class="rail-icon-circle" style="color:#38bdf8; font-size:18px;">💬</div>
+                  <span class="rail-btn-label" id="comm_count_${post.id}">${(post.comments && post.comments.length) || 0}</span>
+                </button>
+
                 <!-- Share Button -->
                 <button class="rail-btn" onclick="sharePostLink('${handle}', '${post.id}')" title="Share Link">
                   <div class="rail-icon-circle" style="color:#a78bfa; font-size:18px;">🔗</div>
@@ -867,28 +1255,173 @@
       if (e.key === 'ArrowUp' || e.key === 'k') { scrollReels(-1); }
     });
 
-    function toggleStreamLike(postId) {
-      const user = Storage.getUser();
-      const handle = user ? user.username || user.handle : '@student';
-      const isNowLiked = Storage.likePost(postId, handle);
+    async function handleLikePost(postId, event) {
+      if (event) event.stopPropagation();
+      const currentUser = Storage.getUser();
+      const currentHandle = (currentUser ? currentUser.username || currentUser.handle : '@student').toLowerCase();
+      const likedKey = `cos_liked_${postId}_${currentHandle}`;
+      const isAlreadyLiked = localStorage.getItem(likedKey) === 'true';
 
-      const iconEl = document.getElementById('like_icon_' + postId);
+      const post = streamPosts.find(p => p.id === postId) || allLoadedPosts.find(p => p.id === postId);
+      if (!post) return;
+
+      const newLikes = isAlreadyLiked ? Math.max(0, (post.likes || 1) - 1) : (post.likes || 0) + 1;
+      post.likes = newLikes;
+      post.isLiked = !isAlreadyLiked;
+
+      localStorage.setItem(likedKey, !isAlreadyLiked ? 'true' : 'false');
+      Storage.updatePost(postId, { likes: newLikes });
+
       const countEl = document.getElementById('like_count_' + postId);
+      if (countEl) countEl.textContent = newLikes;
 
-      if (iconEl && countEl) {
-        let currentCount = parseInt(countEl.textContent, 10) || 0;
-        if (isNowLiked) {
-          iconEl.textContent = '❤️';
-          iconEl.style.color = '#f43f5e';
-          iconEl.style.textShadow = '0 0 12px rgba(244,63,94,0.6)';
-          countEl.textContent = currentCount + 1;
-          showToast('❤️ Liked and saved to your passport');
+      const btnEl = document.getElementById('like_btn_' + postId);
+      if (btnEl) {
+        if (!isAlreadyLiked) {
+          btnEl.classList.add('liked');
+          btnEl.querySelector('.rail-icon-circle')?.classList.add('liked');
+          showToast('❤️ Liked material');
         } else {
-          iconEl.textContent = '🤍';
-          iconEl.style.color = '#cbd5e1';
-          iconEl.style.textShadow = 'none';
-          countEl.textContent = Math.max(0, currentCount - 1);
+          btnEl.classList.remove('liked');
+          btnEl.querySelector('.rail-icon-circle')?.classList.remove('liked');
           showToast('🤍 Removed like');
+        }
+      }
+
+      // Sync backend
+      if (window.PythonAPI && PythonAPI.toggleLike) {
+        try {
+          await PythonAPI.toggleLike(postId, currentHandle);
+        } catch (e) {}
+      }
+    }
+
+    // ============================================================
+    // IN-FEED POST CREATOR
+    // ============================================================
+    function openFeedPostModal() {
+      const modal = document.getElementById('feedPostModal');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeFeedPostModal() {
+      const modal = document.getElementById('feedPostModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    let feedPostType = 'text';
+    let feedUploadedPDF = null;
+
+    function selectFeedPostType(type, btn) {
+      feedPostType = type;
+      document.querySelectorAll('.feed-type-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const textG = document.getElementById('feedTextGroup');
+      const pdfG = document.getElementById('feedPdfGroup');
+      const ytG = document.getElementById('feedYoutubeGroup');
+
+      if (textG) textG.style.display = type === 'text' ? 'block' : 'none';
+      if (pdfG) pdfG.style.display = type === 'pdf' ? 'block' : 'none';
+      if (ytG) ytG.style.display = type === 'youtube' ? 'block' : 'none';
+    }
+
+    function handleFeedPDFUpload(input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 12 * 1024 * 1024) {
+        alert('PDF size exceeds 12MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        feedUploadedPDF = {
+          fileName: file.name,
+          fileSize: (file.size / 1024 > 1024) ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' : Math.round(file.size / 1024) + ' KB',
+          pdfData: e.target.result
+        };
+        const statusEl = document.getElementById('feedPdfStatus');
+        if (statusEl) statusEl.textContent = `✓ ${file.name} (${feedUploadedPDF.fileSize})`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitFeedPost(e) {
+      e.preventDefault();
+      const currentUser = Storage.getUser();
+      if (!currentUser) {
+        alert('Please sign in to publish academic notes or study materials.');
+        window.location.href = 'auth.html';
+        return;
+      }
+
+      const titleEl = document.getElementById('feedPostTitle');
+      const subEl = document.getElementById('feedPostSubject');
+      const deptEl = document.getElementById('feedPostDept');
+      const descEl = document.getElementById('feedPostDesc');
+
+      const title = titleEl ? titleEl.value.trim() : '';
+      const subject = subEl ? subEl.value.trim() || 'General' : 'General';
+      const dept = deptEl ? deptEl.value : 'Computer Science & Engineering';
+      const desc = descEl ? descEl.value.trim() : '';
+
+      if (!title) {
+        alert('Please provide a post title.');
+        return;
+      }
+
+      const author = currentUser.displayName || currentUser.name || 'Student';
+      const rawHandle = currentUser.username || currentUser.handle || '@student';
+      const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+      const authorPhoto = Storage.getUserPhoto(handle) || currentUser.photo || null;
+
+      const pid = 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      const postPayload = {
+        id: pid,
+        type: feedPostType,
+        title: title,
+        subject: subject,
+        department: dept,
+        desc: desc,
+        author: author,
+        handle: handle,
+        authorPhoto: authorPhoto,
+        likes: 0,
+        saves: 0,
+        comments: [],
+        createdAt: Date.now()
+      };
+
+      if (feedPostType === 'pdf' && feedUploadedPDF) {
+        postPayload.fileName = feedUploadedPDF.fileName;
+        postPayload.fileSize = feedUploadedPDF.fileSize;
+        postPayload.pdfData = feedUploadedPDF.pdfData;
+      } else if (feedPostType === 'youtube') {
+        const ytIn = document.getElementById('feedPostYoutube');
+        postPayload.youtubeUrl = ytIn ? ytIn.value.trim() : '';
+      }
+
+      // Add to storage and stream in 0ms (optimistic)
+      Storage.addPost(postPayload);
+      allLoadedPosts.unshift(postPayload);
+      streamPosts.unshift(postPayload);
+      closeFeedPostModal();
+      renderStream();
+      showToast('🎉 Published to Campus Stream live!');
+
+      // Clear form
+      if (titleEl) titleEl.value = '';
+      if (descEl) descEl.value = '';
+      feedUploadedPDF = null;
+      const statusEl = document.getElementById('feedPdfStatus');
+      if (statusEl) statusEl.textContent = 'Click to select PDF from device';
+
+      // Sync to SQLite database
+      if (window.PythonAPI && PythonAPI.createPost) {
+        try {
+          await PythonAPI.createPost(postPayload);
+        } catch (err) {
+          console.warn('Backend sync notice:', err);
         }
       }
     }

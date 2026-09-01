@@ -317,17 +317,29 @@ const PythonAPI = {
     }
   },
 
+  searchAll: async function(q) {
+    if (!q || !q.trim()) return { accounts: [], posts: [], notes: [] };
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/search?q=${encodeURIComponent(q.trim())}`, {}, 5000);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
   createPost: async function(postData) {
     try {
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postData)
-      }, 1500);
+      }, 6000);
       if (!res.ok) throw new Error('Failed to create post on backend');
       const data = await res.json();
       return data.post;
     } catch (err) {
+      console.warn('API createPost error:', err);
       return postData;
     }
   },
@@ -338,7 +350,7 @@ const PythonAPI = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFields)
-      }, 1200);
+      }, 5000);
       return res.ok;
     } catch (err) {
       return false;
@@ -349,7 +361,7 @@ const PythonAPI = {
     try {
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/posts/${encodeURIComponent(postId)}`, {
         method: 'DELETE'
-      }, 1200);
+      }, 5000);
       return res.ok;
     } catch (err) {
       return false;
@@ -362,7 +374,7 @@ const PythonAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ handle: userHandle || '@student' })
-      }, 1000);
+      }, 4000);
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {

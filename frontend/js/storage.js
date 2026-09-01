@@ -119,11 +119,28 @@ var Storage = {
           this.setAccounts(Array.from(map.values()));
         }
 
-        // Sync Posts from Backend
+        // Sync Posts from Backend - merge so locally created student posts NEVER disappear!
         const posts = await PythonAPI.getPosts();
         if (posts && Array.isArray(posts)) {
-          const cleanRemotePosts = posts.filter(p => !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase()));
-          this.setPosts(cleanRemotePosts);
+          const localPosts = this.getPosts() || [];
+          const postMap = new Map();
+          posts.forEach(p => {
+            if (p && p.id && !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase())) {
+              postMap.set(p.id, p);
+            }
+          });
+          localPosts.forEach(p => {
+            if (p && p.id && !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase())) {
+              if (!postMap.has(p.id)) {
+                postMap.set(p.id, p);
+                if (window.PythonAPI && PythonAPI.createPost) {
+                  PythonAPI.createPost(p).catch(() => {});
+                }
+              }
+            }
+          });
+          const mergedPosts = Array.from(postMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          this.setPosts(mergedPosts);
         }
 
         // Sync Banners from Backend
@@ -423,6 +440,32 @@ var Storage = {
       const dept = (a.department || '').toLowerCase();
       return name.includes(q) || handle.includes(q) || usn.includes(q) || dept.includes(q);
     });
+  },
+  searchPosts(query) {
+    if (!query) return [];
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    return this.getPosts().filter(p => {
+      const title = (p.title || '').toLowerCase();
+      const subject = (p.subject || '').toLowerCase();
+      const desc = (p.desc || '').toLowerCase();
+      const author = (p.author || '').toLowerCase();
+      const handle = (p.handle || '').toLowerCase().replace(/^@/, '');
+      return title.includes(q) || subject.includes(q) || desc.includes(q) || author.includes(q) || handle.includes(q);
+    });
+  },
+  searchEverything(query) {
+    if (!query) return { accounts: [], posts: [], notes: [] };
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    return {
+      accounts: this.searchAccounts(q),
+      posts: this.searchPosts(q),
+      notes: (this.getNotes() || []).filter(n => {
+        const title = (n.title || '').toLowerCase();
+        const sub = (n.subject || '').toLowerCase();
+        const content = (n.content || '').toLowerCase();
+        return title.includes(q) || sub.includes(q) || content.includes(q);
+      })
+    };
   },
   updateAccountRole(handle, role) {
     if (!handle) return;

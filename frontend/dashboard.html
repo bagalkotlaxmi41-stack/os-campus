@@ -608,6 +608,13 @@
       <div style="font-size:15px;font-weight:600;color:var(--text-primary)" id="topbar-greeting">Good Morning</div>
       <div style="font-size:12px;color:var(--text-muted)" id="topbar-date">Loading...</div>
     </div>
+
+    <!-- Live Dashboard Search -->
+    <div class="dash-search-container" style="position:relative; flex:1; max-width:320px; margin:0 12px;">
+      <input type="text" id="dashSearchInput" class="dash-search-input" placeholder="🔍 Search peers, notes, posts..." oninput="handleDashSearch(this.value)" autocomplete="off" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:7px 14px; font-size:12.5px; color:#fff; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#8b5cf6'; this.style.boxShadow='0 0 12px rgba(124,58,237,0.3)';" onblur="setTimeout(() => { const d = document.getElementById('dashSearchDropdown'); if(d) d.style.display='none'; }, 200);" />
+      <div id="dashSearchDropdown" style="display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; background:rgba(15,12,32,0.96); backdrop-filter:blur(24px); border:1px solid rgba(139,92,246,0.35); border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,0.8); z-index:1000; max-height:360px; overflow-y:auto; padding:10px;"></div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:12px;position:relative">
       <!-- Notification Button with SVG icon & Glassmorphic Drawer -->
       <div class="nav-notification-wrapper" id="navNotificationWrapper">
@@ -1053,6 +1060,62 @@
         document.getElementById('dd-profile')?.addEventListener('click', () => {
           window.location.href = 'profile.html';
         });
+
+        // Global search handler
+        window.handleDashSearch = function(query) {
+          const dropdown = document.getElementById('dashSearchDropdown');
+          if (!dropdown) return;
+          const q = (query || '').trim().toLowerCase().replace(/^@/, '');
+          if (!q) {
+            dropdown.style.display = 'none';
+            return;
+          }
+
+          const localData = Storage.searchEverything ? Storage.searchEverything(q) : { accounts: [], posts: [], notes: [] };
+          const accounts = localData.accounts || [];
+          const posts = localData.posts || [];
+          const notes = localData.notes || [];
+
+          if (accounts.length === 0 && posts.length === 0 && notes.length === 0) {
+            dropdown.innerHTML = `<div style="padding:14px; text-align:center; font-size:12px; color:#64748b;">No results found for "${query}".</div>`;
+            dropdown.style.display = 'block';
+            return;
+          }
+
+          let html = '';
+          if (accounts.length > 0) {
+            html += `<div style="font-size:10.5px; font-weight:800; color:#a78bfa; padding:4px 8px; text-transform:uppercase;">👥 Students & Peers</div>`;
+            accounts.slice(0, 3).forEach(a => {
+              const name = a.displayName || a.name || 'Student';
+              const handle = a.handle || a.username || '@student';
+              const cleanH = handle.startsWith('@') ? handle : '@' + handle;
+              const photo = a.photo || Storage.getUserPhoto(cleanH);
+              html += `
+                <a href="profile.html?handle=${encodeURIComponent(cleanH)}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(124,58,237,0.15)'" onmouseout="this.style.background='transparent'">
+                  <div style="width:26px; height:26px; border-radius:50%; background:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; overflow:hidden;">
+                    ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;" />` : name[0]}
+                  </div>
+                  <div style="font-size:12px; font-weight:700;">${name} <span style="font-size:11px; color:#38bdf8;">${cleanH}</span></div>
+                </a>
+              `;
+            });
+          }
+
+          if (posts.length > 0) {
+            html += `<div style="font-size:10.5px; font-weight:800; color:#38bdf8; padding:6px 8px 4px; text-transform:uppercase;">📄 Feed Posts</div>`;
+            posts.slice(0, 3).forEach(p => {
+              html += `
+                <a href="feed.html" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(6,182,212,0.15)'" onmouseout="this.style.background='transparent'">
+                  <span>${p.type === 'pdf' ? '📄' : (p.type === 'youtube' ? '🎥' : '💡')}</span>
+                  <div style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                </a>
+              `;
+            });
+          }
+
+          dropdown.innerHTML = html;
+          dropdown.style.display = 'block';
+        };
 
         // Mobile menu & sidebar overlay handlers
         const mbBtn = document.getElementById('mobile-menu-btn');
