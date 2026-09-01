@@ -2186,6 +2186,22 @@ async function executeModalAccountSave(e) {
 
   const handle = '@' + rawHandle.toLowerCase();
 
+  // Enforce Unique Handle
+  if (Storage.getAccountByHandle(handle)) {
+    alert(`The handle '${handle}' is already taken by another student. Please choose a different username.`);
+    return;
+  }
+
+  if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+    try {
+      const hCheck = await PythonAPI.checkHandleAvailability(handle);
+      if (hCheck && hCheck.available === false) {
+        alert(`The handle '${handle}' is already taken by another student. Please choose a different username.`);
+        return;
+      }
+    } catch(e) {}
+  }
+
   const userAccount = {
     uid: 'user_' + Date.now(),
     displayName: name,

@@ -75,20 +75,28 @@ def init_database():
         password_hash TEXT,
         department TEXT DEFAULT 'Computer Science & Engineering',
         semester INTEGER DEFAULT 5,
+        program TEXT DEFAULT 'BCA',
+        college TEXT DEFAULT 'Campus OS Academic Network',
         usn TEXT,
         bio TEXT,
         skills TEXT DEFAULT '[]',
         photo TEXT,
         role TEXT DEFAULT 'STUDENT',
-        xp INTEGER DEFAULT 150,
+        privacy_json TEXT DEFAULT '{"profileVisibility":"public","showEmail":false,"showUSN":true}',
         created_at INTEGER,
         updated_at INTEGER
     )
     """)
-    try:
-        cursor.execute("ALTER TABLE accounts ADD COLUMN password_hash TEXT")
-    except Exception:
-        pass
+    for col_def in [
+        ("password_hash", "TEXT"),
+        ("program", "TEXT DEFAULT 'BCA'"),
+        ("college", "TEXT DEFAULT 'Campus OS Academic Network'"),
+        ("privacy_json", "TEXT DEFAULT '{\"profileVisibility\":\"public\",\"showEmail\":false,\"showUSN\":true}'")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE accounts ADD COLUMN {col_def[0]} {col_def[1]}")
+        except Exception:
+            pass
 
     # 2. Posts Table
     cursor.execute("""
@@ -284,12 +292,22 @@ def init_database():
         cursor.execute("UPDATE accounts SET display_name = 'Campus Administrator', bio = 'Official Platform Administrator & Owner for Campus OS.', password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
     # Thoroughly clean up any legacy fake demo accounts and mock posts
-    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma')
+    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma', '@alex_cs', 'alex_cs')
     fake_posts = ('post_os_01', 'post_ai_02', 'post_code_03', 'cloud-post-01', 'cloud-post-02')
-    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))})", fake_handles)
+    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR LOWER(email) IN ('demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu')", fake_handles)
     cursor.execute(f"DELETE FROM posts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_comments WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_likes WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
+
+    # Deduplicate accounts table if multiple handles have the same email (keep newest)
+    try:
+        cursor.execute("""
+        DELETE FROM accounts WHERE rowid NOT IN (
+            SELECT MAX(rowid) FROM accounts WHERE email IS NOT NULL AND email != '' GROUP BY LOWER(email)
+        ) AND email IS NOT NULL AND email != '' AND LOWER(email) != 'campus0012@gmail.com'
+        """)
+    except Exception:
+        pass
 
     conn.commit()
     conn.close()
@@ -311,12 +329,37 @@ class AccountModel(BaseModel):
     password: Optional[str] = None
     department: Optional[str] = "Computer Science & Engineering"
     semester: Optional[int] = 5
+    program: Optional[str] = "BCA"
+    college: Optional[str] = "Campus OS Academic Network"
     usn: Optional[str] = None
     bio: Optional[str] = None
     skills: Optional[List[str]] = []
     photo: Optional[str] = None
     role: Optional[str] = "STUDENT"
-    xp: Optional[int] = 150
+    privacy: Optional[Dict[str, Any]] = None
+
+
+class ProfileUpdateModel(BaseModel):
+    displayName: Optional[str] = None
+    name: Optional[str] = None
+    usn: Optional[str] = None
+    program: Optional[str] = None
+    semester: Optional[int] = None
+    department: Optional[str] = None
+    college: Optional[str] = None
+    bio: Optional[str] = None
+    skills: Optional[List[str]] = None
+    photo: Optional[str] = None
+    privacy: Optional[Dict[str, Any]] = None
+
+
+class PasswordChangeModel(BaseModel):
+    oldPassword: Optional[str] = None
+    newPassword: str
+
+
+class HandleChangeModel(BaseModel):
+    newHandle: str
 
 
 class LoginModel(BaseModel):
@@ -453,11 +496,14 @@ def get_all_accounts():
             "email": r["email"],
             "department": r["department"],
             "semester": r["semester"],
+            "program": r["program"] if "program" in r.keys() and r["program"] else "BCA",
+            "college": r["college"] if "college" in r.keys() and r["college"] else "Campus OS Academic Network",
             "usn": r["usn"],
             "bio": r["bio"],
             "skills": json.loads(r["skills"] or "[]"),
             "photo": r["photo"],
             "role": r["role"],
+            "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {"profileVisibility":"public","showEmail":False,"showUSN":True},
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"],
         })
@@ -489,11 +535,14 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
             "email": r["email"],
             "department": r["department"],
             "semester": r["semester"],
+            "program": r["program"] if "program" in r.keys() and r["program"] else "BCA",
+            "college": r["college"] if "college" in r.keys() and r["college"] else "Campus OS Academic Network",
             "usn": r["usn"],
             "bio": r["bio"],
             "skills": json.loads(r["skills"] or "[]"),
             "photo": r["photo"],
             "role": r["role"],
+            "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {"profileVisibility":"public","showEmail":False,"showUSN":True},
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"]
         })
@@ -527,11 +576,14 @@ def get_account_by_handle(handle: str):
         "email": r["email"],
         "department": r["department"],
         "semester": r["semester"],
+        "program": r["program"] if "program" in r.keys() and r["program"] else "BCA",
+        "college": r["college"] if "college" in r.keys() and r["college"] else "Campus OS Academic Network",
         "usn": r["usn"],
         "bio": r["bio"],
         "skills": json.loads(r["skills"] or "[]"),
         "photo": r["photo"],
         "role": r["role"],
+        "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {"profileVisibility":"public","showEmail":False,"showUSN":True},
         "postCount": post_count,
         "createdAt": r["created_at"],
         "updatedAt": r["updated_at"],
@@ -560,16 +612,27 @@ def create_or_update_account(acc: AccountModel):
                 detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in with your password."
             )
 
-    cursor.execute("SELECT created_at, password_hash, role FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
+    # 2. Prevent Handle Hijacking (if handle exists under a different email)
+    cursor.execute("SELECT created_at, password_hash, role, email FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
     existing = cursor.fetchone()
+    if existing and acc.email and acc.email.strip():
+        existing_email = (existing["email"] or "").strip().lower()
+        if existing_email and existing_email != acc.email.strip().lower():
+            conn.close()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Username '{handle}' is already registered by another student. Please choose a different handle."
+            )
+
     created_at = existing["created_at"] if existing else now
     role = acc.role if acc.role else (existing["role"] if existing else "STUDENT")
     pwd_hash = hash_password(acc.password) if (acc.password and acc.password.strip()) else (existing["password_hash"] if existing else None)
+    privacy_str = json.dumps(acc.privacy or {"profileVisibility": "public", "showEmail": False, "showUSN": True})
 
     cursor.execute("""
     INSERT OR REPLACE INTO accounts
-    (handle, display_name, email, password_hash, department, semester, usn, bio, skills, photo, role, xp, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (handle, display_name, email, password_hash, department, semester, program, college, usn, bio, skills, photo, role, privacy_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         handle,
         acc.displayName,
@@ -577,12 +640,14 @@ def create_or_update_account(acc: AccountModel):
         pwd_hash,
         acc.department or "Computer Science & Engineering",
         acc.semester or 5,
+        acc.program or "BCA",
+        acc.college or "Campus OS Academic Network",
         acc.usn,
         acc.bio,
         json.dumps(acc.skills or []),
         acc.photo,
         role,
-        acc.xp or 150,
+        privacy_str,
         created_at,
         now
     ))
@@ -597,11 +662,14 @@ def create_or_update_account(acc: AccountModel):
         "email": acc.email,
         "department": acc.department,
         "semester": acc.semester,
+        "program": acc.program or "BCA",
+        "college": acc.college or "Campus OS Academic Network",
         "usn": acc.usn,
         "bio": acc.bio,
         "skills": acc.skills,
         "photo": acc.photo,
-        "role": acc.role,
+        "role": role,
+        "privacy": acc.privacy or {"profileVisibility": "public", "showEmail": False, "showUSN": True},
         "createdAt": now
     }
 
@@ -684,6 +752,186 @@ def update_account_photo(handle: str, data: Dict[str, str]):
     conn.commit()
     conn.close()
     return {"status": "success", "handle": clean, "photo": photo}
+
+
+@app.get("/api/accounts/check-handle/{handle}")
+def check_handle_availability(handle: str):
+    clean = handle.strip().lower()
+    if not clean.startswith("@"): clean = "@" + clean
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM accounts WHERE LOWER(handle) = ?", (clean,))
+    exists = cursor.fetchone() is not None
+    conn.close()
+    return {
+        "available": not exists,
+        "handle": clean,
+        "message": "Handle is available" if not exists else "Handle is already taken by another student"
+    }
+
+
+@app.get("/api/accounts/check-email/{email}")
+def check_email_availability(email: str):
+    clean = email.strip().lower()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM accounts WHERE LOWER(email) = ?", (clean,))
+    exists = cursor.fetchone() is not None
+    conn.close()
+    return {
+        "available": not exists,
+        "email": clean,
+        "message": "Email is available" if not exists else "An account with this email is already registered"
+    }
+
+
+@app.put("/api/accounts/{handle}/profile")
+def update_student_profile(handle: str, data: ProfileUpdateModel):
+    clean = handle.strip()
+    if not clean.startswith("@"): clean = "@" + clean
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM accounts WHERE LOWER(handle) = ?", (clean.lower(),))
+    existing = cursor.fetchone()
+    if not existing:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student account not found")
+
+    now = int(time.time() * 1000)
+    display_name = data.displayName or data.name or existing["display_name"]
+    usn = data.usn if data.usn is not None else existing["usn"]
+    program = data.program or (existing["program"] if "program" in existing.keys() else "BCA")
+    semester = data.semester if data.semester is not None else existing["semester"]
+    department = data.department or existing["department"]
+    college = data.college or (existing["college"] if "college" in existing.keys() else "Campus OS Academic Network")
+    bio = data.bio if data.bio is not None else existing["bio"]
+    skills = json.dumps(data.skills) if data.skills is not None else (existing["skills"] or "[]")
+    photo = data.photo if data.photo is not None else existing["photo"]
+    privacy_str = json.dumps(data.privacy) if data.privacy is not None else (existing["privacy_json"] if "privacy_json" in existing.keys() else '{"profileVisibility":"public","showEmail":false,"showUSN":true}')
+
+    cursor.execute("""
+    UPDATE accounts SET
+        display_name = ?,
+        usn = ?,
+        program = ?,
+        semester = ?,
+        department = ?,
+        college = ?,
+        bio = ?,
+        skills = ?,
+        photo = ?,
+        privacy_json = ?,
+        updated_at = ?
+    WHERE LOWER(handle) = ?
+    """, (
+        display_name,
+        usn,
+        program,
+        semester,
+        department,
+        college,
+        bio,
+        skills,
+        photo,
+        privacy_str,
+        now,
+        clean.lower()
+    ))
+    conn.commit()
+
+    cursor.execute("SELECT * FROM accounts WHERE LOWER(handle) = ?", (clean.lower(),))
+    r = cursor.fetchone()
+    conn.close()
+
+    user_dict = {
+        "username": r["handle"],
+        "handle": r["handle"],
+        "displayName": r["display_name"],
+        "name": r["display_name"],
+        "email": r["email"],
+        "department": r["department"],
+        "semester": r["semester"],
+        "program": r["program"] if "program" in r.keys() and r["program"] else "BCA",
+        "college": r["college"] if "college" in r.keys() and r["college"] else "Campus OS Academic Network",
+        "usn": r["usn"],
+        "bio": r["bio"],
+        "skills": json.loads(r["skills"] or "[]"),
+        "photo": r["photo"],
+        "role": r["role"],
+        "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {},
+        "updatedAt": now
+    }
+
+    return {"status": "success", "message": "Profile updated successfully", "account": user_dict, "user": user_dict}
+
+
+@app.post("/api/accounts/{handle}/password")
+def change_student_password(handle: str, data: PasswordChangeModel):
+    clean = handle.strip()
+    if not clean.startswith("@"): clean = "@" + clean
+    if not data.newPassword or len(data.newPassword) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash FROM accounts WHERE LOWER(handle) = ?", (clean.lower(),))
+    r = cursor.fetchone()
+    if not r:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    stored_hash = r["password_hash"]
+    if stored_hash and data.oldPassword:
+        if not verify_password(data.oldPassword, stored_hash):
+            conn.close()
+            raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    new_hash = hash_password(data.newPassword)
+    cursor.execute("UPDATE accounts SET password_hash = ?, updated_at = ? WHERE LOWER(handle) = ?", (new_hash, int(time.time() * 1000), clean.lower()))
+    conn.commit()
+    conn.close()
+    return {"status": "success", "message": "Password changed successfully"}
+
+
+@app.post("/api/accounts/{handle}/change-handle")
+def change_student_handle(handle: str, data: HandleChangeModel):
+    old_clean = handle.strip()
+    if not old_clean.startswith("@"): old_clean = "@" + old_clean
+    new_clean = data.newHandle.strip().lower()
+    if not new_clean.startswith("@"): new_clean = "@" + new_clean
+
+    if len(new_clean) < 3:
+        raise HTTPException(status_code=400, detail="New handle must be at least 3 characters")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Check that old exists
+    cursor.execute("SELECT 1 FROM accounts WHERE LOWER(handle) = ?", (old_clean.lower(),))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    # Check that new does not exist
+    if old_clean.lower() != new_clean.lower():
+        cursor.execute("SELECT 1 FROM accounts WHERE LOWER(handle) = ?", (new_clean.lower(),))
+        if cursor.fetchone():
+            conn.close()
+            raise HTTPException(status_code=400, detail=f"Username '{new_clean}' is already taken by another student")
+
+    # Atomic Migration
+    now = int(time.time() * 1000)
+    cursor.execute("UPDATE accounts SET handle = ?, updated_at = ? WHERE LOWER(handle) = ?", (new_clean, now, old_clean.lower()))
+    cursor.execute("UPDATE posts SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+    cursor.execute("UPDATE post_comments SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+    cursor.execute("UPDATE post_likes SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+    cursor.execute("UPDATE notes SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+    cursor.execute("UPDATE tasks SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+    cursor.execute("UPDATE attendance SET handle = ? WHERE LOWER(handle) = ?", (new_clean, old_clean.lower()))
+
+    conn.commit()
+    conn.close()
+    return {"status": "success", "oldHandle": old_clean, "newHandle": new_clean, "message": f"Handle migrated to {new_clean}"}
 
 
 @app.put("/api/accounts/{handle}/role")

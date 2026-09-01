@@ -24,7 +24,8 @@ const KEYS = {
 const FAKE_HANDLES = [
   '@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma',
   'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma',
-  'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu'
+  'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu',
+  '@alex_cs', 'alex_cs', 'demo@collegeos.app'
 ];
 
 const FAKE_POST_IDS = [
@@ -80,28 +81,41 @@ var Storage = {
     // 2. Real-time Backend Sync
     if (window.PythonAPI) {
       try {
-        // Sync Accounts from Backend and merge with local
+        // Sync Accounts from Backend and deduplicate by handle AND email
         const remoteAccounts = await PythonAPI.getAccounts();
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           const localAccs = this.getAccounts();
           const map = new Map();
-          // First add remote real accounts
+          const emailMap = new Map();
+
+          // Add remote accounts
           remoteAccounts.forEach(acc => {
-            const h = (acc.username || acc.handle || '').toLowerCase();
-            const em = (acc.email || '').toLowerCase();
+            const rawH = (acc.username || acc.handle || '').toLowerCase();
+            const h = rawH.startsWith('@') ? rawH : '@' + rawH;
+            const em = (acc.email || '').trim().toLowerCase();
             if (h && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em)) {
+              acc.username = h;
+              acc.handle = h;
               map.set(h, acc);
+              if (em && em !== 'campus0012@gmail.com') emailMap.set(em, h);
             }
           });
-          // Then merge local on top so recent creations/edits are preserved
+
+          // Merge local accounts
           localAccs.forEach(a => {
-            const h = (a.username || a.handle || '').toLowerCase();
-            const em = (a.email || '').toLowerCase();
+            const rawH = (a.username || a.handle || '').toLowerCase();
+            const h = rawH.startsWith('@') ? rawH : '@' + rawH;
+            const em = (a.email || '').trim().toLowerCase();
             if (h && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em)) {
-              const existing = map.get(h) || {};
-              map.set(h, { ...existing, ...a });
+              let targetHandle = h;
+              if (em && emailMap.has(em)) {
+                targetHandle = emailMap.get(em);
+              }
+              const existing = map.get(targetHandle) || {};
+              map.set(targetHandle, { ...existing, ...a, username: targetHandle, handle: targetHandle });
             }
           });
+
           this.setAccounts(Array.from(map.values()));
         }
 
@@ -209,17 +223,31 @@ var Storage = {
   },
   setAccounts(accounts) {
     const deleted = this.getDeletedHandles();
-    const cleanList = (accounts || []).filter(a => {
-      const h = (a.username || a.handle || '').toLowerCase();
-      const em = (a.email || '').toLowerCase();
-      return !deleted.includes(h) && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em);
+    const seenHandles = new Set();
+    const seenEmails = new Set();
+    const cleanList = [];
+
+    (accounts || []).forEach(a => {
+      const rawH = (a.username || a.handle || '').toLowerCase();
+      const h = rawH.startsWith('@') ? rawH : '@' + rawH;
+      const em = (a.email || '').trim().toLowerCase();
+      if (!h || deleted.includes(h) || FAKE_HANDLES.includes(h) || (em && FAKE_HANDLES.includes(em))) {
+        return;
+      }
+      if (seenHandles.has(h)) return;
+      if (em && seenEmails.has(em) && em !== 'campus0012@gmail.com') return;
+
+      seenHandles.add(h);
+      if (em) seenEmails.add(em);
+      cleanList.push({ ...a, username: h, handle: h });
     });
+
     return this.set(KEYS.ACCOUNTS, cleanList);
   },
   isEmailTaken(email, excludeHandle = null) {
     if (!email || !email.trim()) return false;
     const cleanEmail = email.trim().toLowerCase();
-    const cleanExclude = excludeHandle ? excludeHandle.trim().toLowerCase() : '';
+    const cleanExclude = excludeHandle ? (excludeHandle.trim().toLowerCase().startsWith('@') ? excludeHandle.trim().toLowerCase() : '@' + excludeHandle.trim().toLowerCase()) : '';
     const accounts = this.getAccounts();
     return accounts.some(a => {
       const aEmail = (a.email || '').trim().toLowerCase();
@@ -230,7 +258,7 @@ var Storage = {
   addAccount(account) {
     if (!account) return;
     const rawHandle = account.username || account.handle || (account.name ? '@' + account.name.toLowerCase().replace(/\s+/g, '_') : '@student');
-    const handle = rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle;
+    const handle = rawHandle.startsWith('@') ? rawHandle.toLowerCase() : '@' + rawHandle.toLowerCase();
     const emailClean = (account.email || '').trim().toLowerCase();
     
     // Remove from deleted list if re-registered
@@ -246,6 +274,12 @@ var Storage = {
       email: account.email || '',
       department: account.department || 'Computer Science & Engineering',
       semester: Number(account.semester) || 5,
+      program: account.program || 'BCA',
+      college: account.college || 'Campus OS Academic Network',
+      usn: account.usn || null,
+      bio: account.bio || '',
+      skills: account.skills || [],
+      privacy: account.privacy || { profileVisibility: 'public', showEmail: false, showUSN: true },
       updatedAt: Date.now()
     };
 
@@ -253,7 +287,7 @@ var Storage = {
     const index = accounts.findIndex(a => {
       const aHandle = (a.username || a.handle || '').toLowerCase();
       const aEmail = (a.email || '').trim().toLowerCase();
-      return aHandle === handle.toLowerCase() || (emailClean && aEmail === emailClean);
+      return aHandle === handle || (emailClean && emailClean !== 'campus0012@gmail.com' && aEmail === emailClean);
     });
 
     if (index >= 0) {
@@ -274,6 +308,86 @@ var Storage = {
     }
 
     return updatedAccount;
+  },
+  changeAccountHandle(oldHandle, newHandle) {
+    if (!oldHandle || !newHandle) return false;
+    const oldClean = oldHandle.startsWith('@') ? oldHandle.toLowerCase() : '@' + oldHandle.toLowerCase();
+    const newClean = newHandle.startsWith('@') ? newHandle.toLowerCase() : '@' + newHandle.toLowerCase();
+    if (oldClean === newClean) return true;
+
+    // 1. Update Accounts Directory
+    const accounts = this.getAccounts();
+    const existing = accounts.find(a => (a.username || a.handle || '').toLowerCase() === oldClean);
+    if (existing) {
+      existing.username = newClean;
+      existing.handle = newClean;
+      existing.updatedAt = Date.now();
+      const filtered = accounts.filter(a => (a.username || a.handle || '').toLowerCase() !== oldClean);
+      filtered.unshift(existing);
+      this.setAccounts(filtered);
+    }
+
+    // 2. Update Current User Session if matched
+    const cur = this.getUser();
+    if (cur && (cur.username || cur.handle || '').toLowerCase() === oldClean) {
+      cur.username = newClean;
+      cur.handle = newClean;
+      this.setUser(cur);
+    }
+
+    // 3. Migrate Photo in localStorage
+    const oldPhoto = this.getUserPhoto(oldClean);
+    if (oldPhoto) {
+      this.setUserPhoto(newClean, oldPhoto);
+      try { localStorage.removeItem('cos_photo_' + oldClean); } catch(e) {}
+    }
+
+    // 4. Update all posts in cos_posts created by this handle
+    const posts = this.getPosts();
+    let postsChanged = false;
+    posts.forEach(p => {
+      if ((p.handle || '').toLowerCase() === oldClean) {
+        p.handle = newClean;
+        postsChanged = true;
+      }
+      if (p.comments && Array.isArray(p.comments)) {
+        p.comments.forEach(c => {
+          if ((c.handle || '').toLowerCase() === oldClean) {
+            c.handle = newClean;
+            postsChanged = true;
+          }
+        });
+      }
+    });
+    if (postsChanged) this.setPosts(posts);
+
+    // 5. Update notes, tasks
+    const notes = this.getNotes();
+    let notesChanged = false;
+    notes.forEach(n => {
+      if ((n.handle || '').toLowerCase() === oldClean) {
+        n.handle = newClean;
+        notesChanged = true;
+      }
+    });
+    if (notesChanged) this.setNotes(notes);
+
+    const tasks = this.getTasks();
+    let tasksChanged = false;
+    tasks.forEach(t => {
+      if ((t.handle || '').toLowerCase() === oldClean) {
+        t.handle = newClean;
+        tasksChanged = true;
+      }
+    });
+    if (tasksChanged) this.setTasks(tasks);
+
+    // 6. Backend API sync
+    if (window.PythonAPI && PythonAPI.changeHandle) {
+      PythonAPI.changeHandle(oldClean, newClean).catch(e => console.warn('changeHandle API sync:', e));
+    }
+
+    return true;
   },
   getAccountByHandle(handle) {
     if (!handle) return null;

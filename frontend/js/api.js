@@ -3,8 +3,8 @@
 // Connects Frontend to SQLite Realtime Database Engine
 // ============================================
 
-// Fast Non-blocking Fetch with Timeout (prevents UI freeze/lags when backend is offline or on serverless)
-async function fastFetch(url, options = {}, timeoutMs = 1200) {
+// Fast Fetch with configurable timeout (default 5000ms to tolerate serverless cold starts)
+async function fastFetch(url, options = {}, timeoutMs = 5000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -42,7 +42,7 @@ const PythonAPI = {
    */
   checkHealth: async function() {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/health`, {}, 600);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/health`, {}, 2500);
       if (!res.ok) return false;
       const data = await res.json();
       return data.status === 'online';
@@ -56,7 +56,7 @@ const PythonAPI = {
   // ============================================================
   getAccounts: async function() {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts`, {}, 900);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts`, {}, 4000);
       if (!res.ok) return [];
       return await res.json();
     } catch (err) {
@@ -66,7 +66,7 @@ const PythonAPI = {
 
   searchAccounts: async function(query) {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/search?q=${encodeURIComponent(query)}`, {}, 900);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/search?q=${encodeURIComponent(query)}`, {}, 3500);
       if (!res.ok) return [];
       return await res.json();
     } catch (err) {
@@ -77,11 +77,32 @@ const PythonAPI = {
   getAccount: async function(handle) {
     try {
       const clean = handle.startsWith('@') ? handle : '@' + handle;
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}`, {}, 900);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}`, {}, 3500);
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
       return null;
+    }
+  },
+
+  checkHandleAvailability: async function(handle) {
+    try {
+      const clean = handle.startsWith('@') ? handle : '@' + handle;
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/check-handle/${encodeURIComponent(clean)}`, {}, 3000);
+      if (!res.ok) return { available: true };
+      return await res.json();
+    } catch (e) {
+      return { available: true };
+    }
+  },
+
+  checkEmailAvailability: async function(email) {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/check-email/${encodeURIComponent(email)}`, {}, 3000);
+      if (!res.ok) return { available: true };
+      return await res.json();
+    } catch (e) {
+      return { available: true };
     }
   },
 
@@ -98,13 +119,16 @@ const PythonAPI = {
           password: account.password || null,
           department: account.department || 'Computer Science & Engineering',
           semester: Number(account.semester) || 5,
+          program: account.program || 'BCA',
+          college: account.college || 'Campus OS Academic Network',
           usn: account.usn || null,
           bio: account.bio || '',
           skills: account.skills || [],
           photo: account.photo || null,
-          role: account.role || 'STUDENT'
+          role: account.role || 'STUDENT',
+          privacy: account.privacy || { profileVisibility: 'public', showEmail: false, showUSN: true }
         })
-      }, 1500);
+      }, 6000);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Failed to save account to backend');
@@ -112,8 +136,67 @@ const PythonAPI = {
       const data = await res.json();
       return data.account;
     } catch (err) {
-      console.warn('API saveAccount fallback to local:', err);
-      return account;
+      console.warn('API saveAccount notice:', err);
+      throw err;
+    }
+  },
+
+  updateProfile: async function(handle, profileData) {
+    try {
+      const clean = handle.startsWith('@') ? handle : '@' + handle;
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      }, 6000);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to update profile');
+      }
+      const data = await res.json();
+      return data.account;
+    } catch (e) {
+      console.warn('API updateProfile notice:', e);
+      throw e;
+    }
+  },
+
+  changePassword: async function(handle, oldPassword, newPassword) {
+    try {
+      const clean = handle.startsWith('@') ? handle : '@' + handle;
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}/password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword, newPassword })
+      }, 5000);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to change password');
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn('API changePassword notice:', e);
+      throw e;
+    }
+  },
+
+  changeHandle: async function(oldHandle, newHandle) {
+    try {
+      const cleanOld = oldHandle.startsWith('@') ? oldHandle : '@' + oldHandle;
+      const cleanNew = newHandle.startsWith('@') ? newHandle : '@' + newHandle;
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(cleanOld)}/change-handle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newHandle: cleanNew })
+      }, 6000);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Failed to change username');
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn('API changeHandle notice:', e);
+      throw e;
     }
   },
 
@@ -123,7 +206,7 @@ const PythonAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password })
-      }, 1500);
+      }, 6000);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.detail || 'Login failed');
@@ -144,7 +227,7 @@ const PythonAPI = {
       const clean = handle.startsWith('@') ? handle : '@' + handle;
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts/${encodeURIComponent(clean)}`, {
         method: 'DELETE'
-      }, 1200);
+      }, 4000);
       return res.ok;
     } catch (err) {
       return false;
@@ -158,7 +241,7 @@ const PythonAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo: photoBase64 })
-      }, 1500);
+      }, 6000);
       return res.ok;
     } catch (err) {
       return false;
@@ -172,7 +255,7 @@ const PythonAPI = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: role })
-      }, 1200);
+      }, 4000);
       return res.ok;
     } catch (err) {
       return false;
@@ -186,10 +269,28 @@ const PythonAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ handle: clean, password: newPassword })
-      }, 1200);
+      }, 4000);
       return res.ok;
     } catch (err) {
       return false;
+    }
+  },
+
+  adminLogin: async function(password, identifier) {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password, identifier: identifier || '' })
+      }, 5000);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Admin login failed');
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn('API adminLogin error:', e);
+      throw e;
     }
   },
 

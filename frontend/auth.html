@@ -658,19 +658,24 @@
     // Check if account with this email already exists
     const existingAcc = Storage.getAccounts().find(a => (a.email || '').toLowerCase() === email.toLowerCase());
     if (existingAcc) {
-      // Check if password matches
-      if (existingAcc.password === pass || !existingAcc.password) {
-        Storage.setUser(existingAcc);
-        alert(`👋 Welcome back, ${existingAcc.displayName || existingAcc.name}! Your account was already registered. Signed you in automatically.`);
-        window.location.href = 'profile.html';
-        return;
-      } else {
-        alert(`⚠️ An account with email "${email}" is already registered. Please sign in with your password.`);
-        document.getElementById('loginEmail').value = email;
-        document.getElementById('loginPass').value = '';
-        showPanel('login');
-        return;
-      }
+      alert(`⚠️ An account with email "${email}" is already registered. Please sign in with your password.`);
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPass').value = '';
+      showPanel('login');
+      return;
+    }
+
+    if (window.PythonAPI && PythonAPI.checkEmailAvailability) {
+      try {
+        const emailCheck = await PythonAPI.checkEmailAvailability(email);
+        if (emailCheck && emailCheck.available === false) {
+          alert(`⚠️ An account with email "${email}" is already registered. Please sign in with your password.`);
+          document.getElementById('loginEmail').value = email;
+          document.getElementById('loginPass').value = '';
+          showPanel('login');
+          return;
+        }
+      } catch(e) {}
     }
 
     // Pre-fill username from email
@@ -692,18 +697,38 @@
     var val = input.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
     input.value = val;
     var status = document.getElementById('usernameStatus');
-    if (val.length < 3) { status.textContent = ''; status.className = 'username-status'; return; }
+    if (val.length < 3) {
+      status.textContent = 'Username must be at least 3 characters';
+      status.className = 'username-status taken';
+      return;
+    }
     clearTimeout(_uTimer);
-    _uTimer = setTimeout(function() {
-      var taken = ['admin', 'campusos', 'test', 'student', 'root'];
-      if (taken.indexOf(val) !== -1) {
+    status.textContent = 'Checking availability…';
+    status.className = 'username-status';
+
+    _uTimer = setTimeout(async function() {
+      const handle = '@' + val;
+      const localAcc = Storage.getAccountByHandle(handle);
+      if (localAcc) {
         status.textContent = '✕ @' + val + ' is already taken';
         status.className = 'username-status taken';
-      } else {
-        status.textContent = '✓ @' + val + ' is available!';
-        status.className = 'username-status ok';
+        return;
       }
-    }, 350);
+
+      if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+        try {
+          const res = await PythonAPI.checkHandleAvailability(val);
+          if (res && res.available === false) {
+            status.textContent = '✕ @' + val + ' is already taken';
+            status.className = 'username-status taken';
+            return;
+          }
+        } catch(e) {}
+      }
+
+      status.textContent = '✓ @' + val + ' is available!';
+      status.className = 'username-status ok';
+    }, 300);
   }
 
   // =====================================================
@@ -746,13 +771,26 @@
     var name  = (document.getElementById('regName').value  || '').trim();
     var email = (document.getElementById('regEmail').value || '').trim();
     var pass  = (document.getElementById('regPass').value  || '');
-    var handle = '@' + username.replace(/^@/, '');
+    var handle = '@' + username.replace(/^@/, '').toLowerCase();
     var usn = (document.getElementById('regUSN')?.value || '').trim();
     var college = (document.getElementById('regCollege')?.value || '').trim() || 'Campus OS Academic Network';
     var dept = document.getElementById('regDept').value;
     var program = document.getElementById('regProgram').value;
     var sem = parseInt(document.getElementById('regSem').value, 10) || 5;
     var bio = (document.getElementById('regBio')?.value || '').trim() || `${program} Student studying ${dept}`;
+
+    // Verify handle availability one final time before committing
+    if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+      try {
+        const check = await PythonAPI.checkHandleAvailability(handle);
+        if (check && check.available === false) {
+          btn.disabled = false;
+          btn.textContent = '🚀 Create My Account';
+          alert(`✕ Username "${handle}" is already taken by another student. Please choose a different username.`);
+          return;
+        }
+      } catch(e) {}
+    }
 
     var user = {
       uid:         'user-' + Date.now(),

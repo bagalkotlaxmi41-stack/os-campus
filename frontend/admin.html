@@ -1973,25 +1973,34 @@
         ]);
 
         const accountMap = new Map();
+        const emailMap = new Map();
         accountMap.set('@campus_admin', officialAdmin);
+        emailMap.set('campus0012@gmail.com', '@campus_admin');
 
-        allAdminAccounts.forEach(a => {
+        function mergeAccount(a) {
           const rawH = (a.handle || a.username || '').toLowerCase();
-          if (rawH && !deletedHandles.includes(rawH)) {
-            const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-            accountMap.set(formattedH, { ...a, handle: formattedH, username: formattedH });
+          const em = (a.email || '').trim().toLowerCase();
+          if (!rawH || deletedHandles.includes(rawH)) return;
+          const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
+          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs'].includes(formattedH)) return;
+          if (['demo@collegeos.app'].includes(em)) return;
+
+          let targetKey = formattedH;
+          if (em && em !== 'campus0012@gmail.com' && emailMap.has(em)) {
+            targetKey = emailMap.get(em);
           }
-        });
+
+          const existing = accountMap.get(targetKey) || {};
+          accountMap.set(targetKey, { ...existing, ...a, handle: targetKey, username: targetKey });
+          if (em && em !== 'campus0012@gmail.com') {
+            emailMap.set(em, targetKey);
+          }
+        }
+
+        allAdminAccounts.forEach(mergeAccount);
 
         if (remoteAccs.status === 'fulfilled' && Array.isArray(remoteAccs.value)) {
-          remoteAccs.value.forEach(a => {
-            const rawH = (a.handle || a.username || '').toLowerCase();
-            if (rawH && !deletedHandles.includes(rawH)) {
-              const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-              const existing = accountMap.get(formattedH) || {};
-              accountMap.set(formattedH, { ...existing, ...a, handle: formattedH, username: formattedH });
-            }
-          });
+          remoteAccs.value.forEach(mergeAccount);
         }
 
         allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));

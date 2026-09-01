@@ -36,32 +36,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('go-to-signup')?.addEventListener('click', e => { e.preventDefault(); switchTab('signup'); });
   document.getElementById('go-to-login')?.addEventListener('click', e => { e.preventDefault(); switchTab('login'); });
 
-  // Demo login
+  // Demo student access (pre-fills form for testing without injecting fake accounts)
   document.getElementById('demo-btn')?.addEventListener('click', () => {
-    const demoHandle = '@alex_cs';
-    const demoUser = {
-      uid: 'user_demo',
-      displayName: 'Alex Student',
-      name: 'Alex Student',
-      username: demoHandle,
-      handle: demoHandle,
-      email: 'demo@collegeos.app',
-      college: "Campus OS Academic Network",
-      department: 'Computer Science & Engineering',
-      program: 'BCA',
-      semester: 5,
-      bio: 'Student at Campus OS exploring software engineering and AI.',
-      skills: ['Python', 'Web Dev', 'Data Structures'],
-      role: 'STUDENT',
-      status: 'ACTIVE',
-      joinedAt: Date.now()
-    };
-    Storage.setUser(demoUser);
-    Storage.addAccount(demoUser);
-    if (window.PythonAPI && PythonAPI.saveAccount) PythonAPI.saveAccount(demoUser).catch(() => {});
-    if (window.FirebaseService && FirebaseService.createAccount) FirebaseService.createAccount(demoUser).catch(() => {});
-    showToast('Welcome!', 'Logged in as demo user 🎉', 'success');
-    setTimeout(() => window.location.href = 'profile.html', 600);
+    const existingAccounts = Storage.getAccounts();
+    if (existingAccounts.length > 0) {
+      const realAcc = existingAccounts.find(a => a.role === 'STUDENT') || existingAccounts[0];
+      const emailField = document.getElementById('login-email');
+      if (emailField) emailField.value = realAcc.email || realAcc.handle || realAcc.username;
+      showToast('Account Ready', 'Pre-filled with registered student account. Enter password to sign in.', 'info');
+    } else {
+      switchTab('signup');
+      showToast('New Student', 'Please enter your student details to register your passport.', 'info');
+    }
   });
 
   // Login

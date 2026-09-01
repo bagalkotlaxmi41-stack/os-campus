@@ -712,91 +712,214 @@
     </div>
 
     <!-- Tab 4: In-page Account Settings -->
+    <!-- ===================== TAB 4: COMPLETE INSTAGRAM-STYLE SETTINGS ===================== -->
     <div class="tab-content-panel" id="tab-settings">
-      <div style="max-width:720px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:20px; padding:24px;">
-        <h3 style="font-size:16px; font-weight:900; color:#fff; margin-bottom:6px;">⚙️ Student Passport & Account Customization</h3>
-        <p style="font-size:12px; color:#94a3b8; margin-bottom:20px;">Update your academic credentials, profile bio, and preferences.</p>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-          <div class="form-group">
-            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name</label>
-            <input type="text" class="form-input" id="inpageFullName" placeholder="Full Name" />
+      <div style="max-width:760px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:24px; padding:28px; box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+        
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <h3 style="font-size:18px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+              <span>⚙️</span> Student Profile & Account Center
+            </h3>
+            <p style="font-size:12.5px; color:#94a3b8; margin-top:4px;">Manage your profile photo, academic identity, handle, password, privacy, and account data.</p>
           </div>
-          <div class="form-group">
-            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">USN / Roll Number</label>
-            <input type="text" class="form-input" id="inpageUSN" placeholder="e.g. 2BL22CS045" />
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-          <div class="form-group">
-            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
-            <select class="form-select" id="inpageProgramSelect">
-              <option value="BCA">BCA (Bachelor of Computer Applications)</option>
-              <option value="BSc">BSc (Bachelor of Science)</option>
-              <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
-              <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
-              <option value="B.E.">B.E. (Bachelor of Engineering)</option>
-              <option value="BBA">BBA (Bachelor of Business Admin)</option>
-              <option value="B.Com">B.Com (Bachelor of Commerce)</option>
-              <option value="BA">BA (Bachelor of Arts)</option>
-              <option value="MCA">MCA (Master of Computer Applications)</option>
-              <option value="M.Tech">M.Tech (Master of Technology)</option>
-              <option value="Other">Other Degree</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
-            <select class="form-select" id="inpageSemSelect">
-              <option value="1">1st Semester</option>
-              <option value="2">2nd Semester</option>
-              <option value="3">3rd Semester</option>
-              <option value="4">4th Semester</option>
-              <option value="5">5th Semester</option>
-              <option value="6">6th Semester</option>
-              <option value="7">7th Semester</option>
-              <option value="8">8th Semester</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Department / Branch</label>
-          <select class="form-select" id="inpageDeptSelect">
-            <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
-            <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
-            <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
-            <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
-            <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
-            <option value="Mechanical Engineering">Mechanical Engineering</option>
-            <option value="Civil Engineering">Civil Engineering</option>
-            <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
-            <option value="Commerce & Accountancy">Commerce & Accountancy</option>
-            <option value="General">General Academic</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
-          <textarea class="form-textarea" id="inpageBioText" style="min-height:70px;" placeholder="Brief summary of your academic interests, focus, and projects..."></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom:18px;">
-          <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Technical Skills (comma separated)</label>
-          <input type="text" class="form-input" id="inpageSkillsInput" placeholder="Python, DSA, Web Dev, React" />
-        </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="passport-btn primary" onclick="saveInpageProfile()" style="padding:10px 22px;">
-            <span>💾 Save Changes</span>
-          </button>
-          <button class="passport-btn" onclick="document.getElementById('profilePhotoFileInput').click()">
-            <span>📸 Change Photo</span>
-          </button>
-          <button class="passport-btn" onclick="executeSignOut()" style="color:#fca5a5; border-color:rgba(239,68,68,0.3);">
-            <span>🚪 Logout</span>
+          <button class="passport-btn" onclick="executeSignOut()" style="color:#fca5a5; border-color:rgba(239,68,68,0.3); font-size:12px; padding:6px 14px;">
+            <span>🚪 Sign Out</span>
           </button>
         </div>
+
+        <!-- Section 1: Profile Photo Management -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">📸 Profile Picture</div>
+          <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+            <div style="width:68px; height:68px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:22px; color:#fff; overflow:hidden; border:2px solid #a78bfa; flex-shrink:0;" id="settingsAvatarPreview">
+              S
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="passport-btn primary" onclick="document.getElementById('profilePhotoFileInput').click()" style="font-size:12px; padding:7px 16px;">
+                  <span>📸 Upload Photo</span>
+                </button>
+                <button class="passport-btn" onclick="removeProfilePhoto()" style="font-size:12px; padding:7px 16px; color:#fca5a5; border-color:rgba(239,68,68,0.3);">
+                  <span>🗑️ Remove Photo</span>
+                </button>
+              </div>
+              <span style="font-size:11px; color:#94a3b8;">Supports JPG, PNG, WebP up to 5MB. Photo updates in real-time across your posts, navbar, and admin console.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Personal & Academic Credentials -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">🎓 Academic & Student Identity</div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Full Name *</label>
+              <input type="text" class="form-input" id="inpageFullName" placeholder="Full Name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">University Seat Number (USN)</label>
+              <input type="text" class="form-input" id="inpageUSN" placeholder="e.g. 2BL22CS045" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Degree / Program</label>
+              <select class="form-select" id="inpageProgramSelect">
+                <option value="BCA">BCA (Bachelor of Computer Applications)</option>
+                <option value="BSc">BSc (Bachelor of Science)</option>
+                <option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option>
+                <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+                <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+                <option value="BBA">BBA (Bachelor of Business Admin)</option>
+                <option value="B.Com">B.Com (Bachelor of Commerce)</option>
+                <option value="BA">BA (Bachelor of Arts)</option>
+                <option value="MCA">MCA (Master of Computer Applications)</option>
+                <option value="M.Tech">M.Tech (Master of Technology)</option>
+                <option value="Other">Other Degree</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Semester</label>
+              <select class="form-select" id="inpageSemSelect">
+                <option value="1">1st Semester</option>
+                <option value="2">2nd Semester</option>
+                <option value="3">3rd Semester</option>
+                <option value="4">4th Semester</option>
+                <option value="5">5th Semester</option>
+                <option value="6">6th Semester</option>
+                <option value="7">7th Semester</option>
+                <option value="8">8th Semester</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Department / Branch</label>
+              <select class="form-select" id="inpageDeptSelect">
+                <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+                <option value="Information Science & Tech">Information Science & Tech (ISE)</option>
+                <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+                <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Pharmacy & Pharmaceutics">Pharmacy & Pharmaceutics</option>
+                <option value="Commerce & Accountancy">Commerce & Accountancy</option>
+                <option value="General">General Academic</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Institution / College</label>
+              <input type="text" class="form-input" id="inpageCollegeInput" placeholder="Campus OS Academic Network" />
+            </div>
+          </div>
+
+          <button class="passport-btn primary" onclick="saveInpageProfile()" style="padding:9px 20px; font-size:12.5px;">
+            <span>💾 Save Academic Identity</span>
+          </button>
+        </div>
+
+        <!-- Section 3: Instagram-Style Username / Handle Change -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">🏷️ Handle & Username</div>
+          <p style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Changing your username will atomically update all your shared posts, comments, likes, and notes without losing any academic data.</p>
+          
+          <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+            <div style="flex:1; min-width:240px;">
+              <input type="text" class="form-input" id="inpageHandleInput" placeholder="@username" oninput="handleInpageHandleInput(this)" />
+              <div id="inpageHandleStatus" style="font-size:11.5px; margin-top:5px; color:#94a3b8;"></div>
+            </div>
+            <button class="passport-btn" onclick="executeInpageHandleChange()" id="btnInpageChangeHandle" style="padding:9px 18px; font-size:12.5px; color:#38bdf8; border-color:rgba(56,189,248,0.35);">
+              <span>🔄 Update Handle</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 4: Bio & Tech Skills -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">📝 Bio & Skills</div>
+          
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Study Focus / Bio</label>
+            <textarea class="form-textarea" id="inpageBioText" style="min-height:70px;" placeholder="Brief summary of your academic interests, focus, and projects..."></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Technical Skills (comma separated)</label>
+            <input type="text" class="form-input" id="inpageSkillsInput" placeholder="Python, DSA, Web Dev, React, SQL" />
+          </div>
+
+          <button class="passport-btn primary" onclick="saveInpageBioAndSkills()" style="padding:9px 20px; font-size:12.5px;">
+            <span>💾 Save Bio & Skills</span>
+          </button>
+        </div>
+
+        <!-- Section 5: Security & Password Update -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">🔒 Password & Security</div>
+          <p style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Update your password regularly to keep your student passport and account secure.</p>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Current Password</label>
+              <input type="password" class="form-input" id="inpageCurrentPassword" placeholder="Current password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">New Password (min 6 chars)</label>
+              <input type="password" class="form-input" id="inpageNewPassword" placeholder="New secure password" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label" style="font-size:11px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">Confirm New Password</label>
+            <input type="password" class="form-input" id="inpageConfirmPassword" placeholder="Re-type new password" />
+          </div>
+
+          <button class="passport-btn" onclick="executeInpagePasswordChange()" style="padding:9px 20px; font-size:12.5px; color:#34d399; border-color:rgba(16,185,129,0.35);">
+            <span>🔑 Update Password</span>
+          </button>
+        </div>
+
+        <!-- Section 6: Privacy & Visibility Controls (Instagram-Style) -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px; margin-bottom:22px;">
+          <div style="font-size:12px; font-weight:800; color:#a78bfa; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">👁️ Privacy & Visibility</div>
+          
+          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#e2e8f0;">
+              <input type="checkbox" id="privacyShowEmailCheckbox" style="width:18px; height:18px; accent-color:#8b5cf6;" />
+              <span>Show email address on public student passport card</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#e2e8f0;">
+              <input type="checkbox" id="privacyShowUSNCheckbox" checked style="width:18px; height:18px; accent-color:#8b5cf6;" />
+              <span>Show University Seat Number (USN) on public student passport card</span>
+            </label>
+          </div>
+
+          <button class="passport-btn" onclick="saveInpagePrivacy()" style="padding:8px 18px; font-size:12px; color:#c4b5fd; border-color:rgba(139,92,246,0.35);">
+            <span>🛡️ Save Privacy Preferences</span>
+          </button>
+        </div>
+
+        <!-- Section 7: Data Export & Danger Zone -->
+        <div style="background:rgba(239,68,68,0.04); border:1px solid rgba(239,68,68,0.2); border-radius:18px; padding:18px;">
+          <div style="font-size:12px; font-weight:800; color:#f87171; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">⚠️ Data Backup & Danger Zone</div>
+          <p style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Download a portable JSON archive of your study records, or permanently delete your account.</p>
+          
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="passport-btn" onclick="exportPassportDataBackup()" style="font-size:12px; padding:7px 16px;">
+              <span>📥 Export JSON Backup</span>
+            </button>
+            <button class="passport-btn" onclick="executeDeleteAccount()" style="font-size:12px; padding:7px 16px; color:#ef4444; border-color:rgba(239,68,68,0.4);">
+              <span>🗑️ Delete Account Permanently</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1672,7 +1795,26 @@ function renderStudentProfile(profile, isOwn) {
     if (document.getElementById('inpageProgramSelect')) document.getElementById('inpageProgramSelect').value = profile.program || 'BCA';
     if (document.getElementById('inpageDeptSelect')) document.getElementById('inpageDeptSelect').value = profile.department || 'Computer Science & Engineering';
     if (document.getElementById('inpageSemSelect')) document.getElementById('inpageSemSelect').value = profile.semester || 5;
+    if (document.getElementById('inpageCollegeInput')) document.getElementById('inpageCollegeInput').value = profile.college || 'Campus OS Academic Network';
+    if (document.getElementById('inpageHandleInput')) document.getElementById('inpageHandleInput').value = handle;
     if (document.getElementById('inpageSkillsInput')) document.getElementById('inpageSkillsInput').value = (profile.skills || []).join(', ');
+    
+    // Preview avatar
+    const setAv = document.getElementById('settingsAvatarPreview');
+    if (setAv) {
+      if (photo) {
+        setAv.innerHTML = `<img src="${photo}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />`;
+      } else {
+        setAv.textContent = initial;
+      }
+    }
+
+    // Privacy checkboxes
+    const privacy = profile.privacy || { showEmail: false, showUSN: true };
+    const emailCb = document.getElementById('privacyShowEmailCheckbox');
+    if (emailCb) emailCb.checked = !!privacy.showEmail;
+    const usnCb = document.getElementById('privacyShowUSNCheckbox');
+    if (usnCb) usnCb.checked = privacy.showUSN !== false;
   }
 
   const actCol = document.getElementById('passportActions');
@@ -1717,7 +1859,6 @@ function saveInpageProfile() {
   user.displayName = document.getElementById('inpageFullName').value.trim() || user.displayName || 'Student';
   user.name = user.displayName;
   user.usn = document.getElementById('inpageUSN').value.trim();
-  user.bio = document.getElementById('inpageBioText').value.trim();
   if (document.getElementById('inpageProgramSelect')) {
     user.program = document.getElementById('inpageProgramSelect').value;
   }
@@ -1727,18 +1868,268 @@ function saveInpageProfile() {
   if (document.getElementById('inpageSemSelect')) {
     user.semester = parseInt(document.getElementById('inpageSemSelect').value, 10);
   }
+  if (document.getElementById('inpageCollegeInput')) {
+    user.college = document.getElementById('inpageCollegeInput').value.trim() || 'Campus OS Academic Network';
+  }
+
+  Storage.setUser(user);
+  Storage.addAccount(user);
+  if (window.PythonAPI && PythonAPI.updateProfile) {
+    const handle = user.username || user.handle;
+    PythonAPI.updateProfile(handle, {
+      displayName: user.displayName,
+      usn: user.usn,
+      program: user.program,
+      semester: user.semester,
+      department: user.department,
+      college: user.college
+    }).catch(err => console.warn('Profile update API sync:', err));
+  }
+  currentUser = user;
+  renderStudentProfile(user, true);
+  showToast('💾 Academic identity saved successfully!');
+}
+
+function saveInpageBioAndSkills() {
+  const user = Storage.getUser() || currentUser || {};
+  user.bio = document.getElementById('inpageBioText').value.trim();
   if (document.getElementById('inpageSkillsInput')) {
     user.skills = document.getElementById('inpageSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
   }
 
   Storage.setUser(user);
   Storage.addAccount(user);
-  if (window.PythonAPI && PythonAPI.saveAccount) {
-    PythonAPI.saveAccount(user).catch(err => console.warn('Account sync API:', err));
+  if (window.PythonAPI && PythonAPI.updateProfile) {
+    const handle = user.username || user.handle;
+    PythonAPI.updateProfile(handle, {
+      bio: user.bio,
+      skills: user.skills
+    }).catch(err => console.warn('Bio update API sync:', err));
   }
   currentUser = user;
   renderStudentProfile(user, true);
-  showToast('💾 Profile & passport updated successfully!');
+  showToast('💾 Bio and technical skills saved!');
+}
+
+function removeProfilePhoto() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) return;
+  const handle = user.username || user.handle;
+  if (!confirm('Are you sure you want to remove your profile picture?')) return;
+
+  user.photo = null;
+  Storage.setUser(user);
+  Storage.setUserPhoto(handle, null);
+  Storage.addAccount(user);
+
+  if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
+    PythonAPI.updateAccountPhoto(handle, null).catch(err => console.warn('Remove photo API sync:', err));
+  }
+
+  currentUser = user;
+  renderStudentProfile(user, true);
+  showToast('🗑️ Profile picture removed.');
+}
+
+var _inpageHandleTimer = null;
+function handleInpageHandleInput(input) {
+  let val = input.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  if (!val.startsWith('@')) val = '@' + val;
+  input.value = val;
+
+  const statusEl = document.getElementById('inpageHandleStatus');
+  if (!statusEl) return;
+
+  const user = Storage.getUser() || currentUser || {};
+  const currentH = (user.username || user.handle || '').toLowerCase();
+  if (val.toLowerCase() === currentH) {
+    statusEl.textContent = 'This is your current handle.';
+    statusEl.style.color = '#94a3b8';
+    return;
+  }
+
+  if (val.length < 4) {
+    statusEl.textContent = 'Handle must be at least 3 characters.';
+    statusEl.style.color = '#f87171';
+    return;
+  }
+
+  clearTimeout(_inpageHandleTimer);
+  statusEl.textContent = 'Checking availability...';
+  statusEl.style.color = '#94a3b8';
+
+  _inpageHandleTimer = setTimeout(async () => {
+    const localTaken = Storage.getAccountByHandle(val);
+    if (localTaken && (localTaken.username || localTaken.handle || '').toLowerCase() !== currentH) {
+      statusEl.textContent = `✕ Handle ${val} is already taken by another student.`;
+      statusEl.style.color = '#f87171';
+      return;
+    }
+
+    if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+      try {
+        const res = await PythonAPI.checkHandleAvailability(val);
+        if (res && res.available === false) {
+          statusEl.textContent = `✕ Handle ${val} is already taken by another student.`;
+          statusEl.style.color = '#f87171';
+          return;
+        }
+      } catch(e) {}
+    }
+
+    statusEl.textContent = `✓ Handle ${val} is available!`;
+    statusEl.style.color = '#34d399';
+  }, 350);
+}
+
+async function executeInpageHandleChange() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) return;
+  const oldHandle = user.username || user.handle;
+  const input = document.getElementById('inpageHandleInput');
+  if (!input) return;
+
+  let newHandle = input.value.trim().toLowerCase();
+  if (!newHandle.startsWith('@')) newHandle = '@' + newHandle;
+
+  if (newHandle === oldHandle.toLowerCase()) {
+    alert('Please enter a new handle to update.');
+    return;
+  }
+
+  if (newHandle.length < 4) {
+    alert('Handle must be at least 3 characters.');
+    return;
+  }
+
+  const btn = document.getElementById('btnInpageChangeHandle');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Migrating handle...</span>';
+  }
+
+  try {
+    // Check availability
+    if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+      const check = await PythonAPI.checkHandleAvailability(newHandle);
+      if (check && check.available === false) {
+        alert(`Handle ${newHandle} is already taken by another student.`);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄 Update Handle</span>'; }
+        return;
+      }
+    }
+
+    // Atomic rename in local storage and backend
+    Storage.changeAccountHandle(oldHandle, newHandle);
+
+    // Update URL parameter
+    const url = new URL(window.location);
+    url.searchParams.set('handle', newHandle);
+    window.history.replaceState({}, '', url);
+
+    user.username = newHandle;
+    user.handle = newHandle;
+    currentUser = user;
+
+    renderStudentProfile(user, true);
+    showToast(`🎉 Username updated to ${newHandle}! All your records were migrated.`);
+  } catch (err) {
+    alert(err.message || 'Failed to update handle.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🔄 Update Handle</span>';
+    }
+  }
+}
+
+async function executeInpagePasswordChange() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) return;
+  const handle = user.username || user.handle;
+
+  const curPass = document.getElementById('inpageCurrentPassword').value;
+  const newPass = document.getElementById('inpageNewPassword').value;
+  const confPass = document.getElementById('inpageConfirmPassword').value;
+
+  if (!newPass || newPass.length < 6) {
+    alert('New password must be at least 6 characters long.');
+    return;
+  }
+
+  if (newPass !== confPass) {
+    alert('New password and confirmation do not match.');
+    return;
+  }
+
+  try {
+    if (window.PythonAPI && PythonAPI.changePassword) {
+      await PythonAPI.changePassword(handle, curPass, newPass);
+    }
+    user.password = newPass;
+    Storage.setUser(user);
+    Storage.addAccount(user);
+
+    document.getElementById('inpageCurrentPassword').value = '';
+    document.getElementById('inpageNewPassword').value = '';
+    document.getElementById('inpageConfirmPassword').value = '';
+
+    showToast('🔑 Password changed successfully!');
+  } catch (err) {
+    alert(err.message || 'Failed to change password. Please verify your current password.');
+  }
+}
+
+function saveInpagePrivacy() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) return;
+  const handle = user.username || user.handle;
+
+  const showEmail = !!document.getElementById('privacyShowEmailCheckbox').checked;
+  const showUSN = !!document.getElementById('privacyShowUSNCheckbox').checked;
+
+  user.privacy = {
+    profileVisibility: 'public',
+    showEmail: showEmail,
+    showUSN: showUSN
+  };
+
+  Storage.setUser(user);
+  Storage.addAccount(user);
+
+  if (window.PythonAPI && PythonAPI.updateProfile) {
+    PythonAPI.updateProfile(handle, { privacy: user.privacy }).catch(err => console.warn('Privacy sync API:', err));
+  }
+
+  renderStudentProfile(user, true);
+  showToast('🛡️ Privacy preferences updated!');
+}
+
+function exportPassportDataBackup() {
+  const user = Storage.getUser() || currentUser;
+  if (!user) return;
+  const handle = user.username || user.handle;
+  const userPosts = Storage.getPosts().filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
+  const userNotes = Storage.getNotes().filter(n => (n.handle || '').toLowerCase() === handle.toLowerCase());
+  const userTasks = Storage.getTasks().filter(t => (t.handle || '').toLowerCase() === handle.toLowerCase());
+
+  const archive = {
+    exportDate: new Date().toISOString(),
+    account: user,
+    posts: userPosts,
+    notes: userNotes,
+    tasks: userTasks
+  };
+
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(archive, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute('href', dataStr);
+  downloadAnchor.setAttribute('download', `campus_os_${handle.replace('@', '')}_backup.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+
+  showToast('📥 Backup exported successfully!');
 }
 
 async function toggleStudentRoleFromProfile(handle, currentRole) {
