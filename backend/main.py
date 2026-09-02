@@ -302,9 +302,9 @@ def init_database():
         cursor.execute("UPDATE accounts SET display_name = 'Campus Administrator', bio = 'Official Platform Administrator & Owner for Campus OS.', password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
     # Thoroughly clean up any legacy fake demo accounts and mock posts
-    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma', '@alex_cs', 'alex_cs')
+    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma', '@alex_cs', 'alex_cs', '@laxmi_patil', 'laxmi_patil', '@channu patil', 'channu patil', '@channu_patil', 'channu_patil')
     fake_posts = ('post_os_01', 'post_ai_02', 'post_code_03', 'cloud-post-01', 'cloud-post-02')
-    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR LOWER(email) IN ('demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu')", fake_handles)
+    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR LOWER(email) IN ('demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu', 'laxmi.patil@campus.edu', 'channupatil299@gmail.com')", fake_handles)
     cursor.execute(f"DELETE FROM posts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_comments WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_likes WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)

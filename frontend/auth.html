@@ -537,8 +537,8 @@
             <div class="success-sub" id="successMsg">Welcome to Campus OS. Your profile is ready.</div>
             <div id="emailNotice" style="font-size:13px;color:var(--text-secondary);margin:8px 0 16px;padding:8px 14px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.22);border-radius:10px;text-align:center;"></div>
             <div class="success-btns">
-              <a href="dashboard.html" class="btn btn-primary">Go to Dashboard →</a>
-              <a href="index.html"     class="btn btn-secondary">Explore Feed</a>
+              <a href="index.html" class="btn btn-primary" style="background:#7c3aed; color:#fff; font-weight:800;">🚀 Enter Main Campus OS →</a>
+              <a href="profile.html" class="btn btn-secondary">👤 View Student Profile</a>
             </div>
           </div>
         </div>
@@ -640,7 +640,7 @@
 
       if (user) {
         Storage.setUser(user);
-        window.location.href = 'profile.html';
+        window.location.href = 'index.html';
       } else {
         btn.disabled = false;
         btn.textContent = 'Sign In →';
@@ -859,10 +859,13 @@
 
     // Update success message
     document.getElementById('successMsg').textContent =
-      'Welcome, ' + name + '! Your ' + user.program + ' (' + user.department + ') student profile is ready.';
+      'Welcome, ' + name + '! Your student account is ready. Taking you to Main Campus OS...';
 
-    // Show success immediately
+    // Show success and auto-redirect to main app
     showPanel('success');
+    setTimeout(function() {
+      window.location.href = 'index.html';
+    }, 1200);
   }
 
   // =====================================================

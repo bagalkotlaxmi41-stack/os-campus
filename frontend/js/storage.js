@@ -25,7 +25,9 @@ const FAKE_HANDLES = [
   '@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma',
   'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma',
   'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu',
-  '@alex_cs', 'alex_cs', 'demo@collegeos.app'
+  '@alex_cs', 'alex_cs', 'demo@collegeos.app',
+  '@laxmi_patil', 'laxmi_patil', 'laxmi.patil@campus.edu',
+  '@channu patil', 'channu patil', '@channu_patil', 'channu_patil', 'channupatil299@gmail.com'
 ];
 
 const FAKE_POST_IDS = [
@@ -54,8 +56,18 @@ var Storage = {
     // Guard: only run init ONCE per page load to prevent API floods
     if (this._initDone) return;
     this._initDone = true;
-    // 1. Clean up legacy fake accounts and mock posts from localStorage
+    // 1. Clean up legacy fake accounts, test user sessions, and mock posts from localStorage
     try {
+      // Clear legacy/test active session if it belonged to a purged test user
+      const currentUser = this.getUser();
+      if (currentUser) {
+        const uH = (currentUser.username || currentUser.handle || '').toLowerCase();
+        const uEm = (currentUser.email || '').toLowerCase();
+        if (FAKE_HANDLES.includes(uH) || FAKE_HANDLES.includes(uEm)) {
+          this.clearUser();
+        }
+      }
+
       const localAccs = this.get(KEYS.ACCOUNTS, []);
       if (Array.isArray(localAccs) && localAccs.length > 0) {
         const cleanedAccs = localAccs.filter(a => {
@@ -66,6 +78,29 @@ var Storage = {
         if (cleanedAccs.length !== localAccs.length) {
           this.set(KEYS.ACCOUNTS, cleanedAccs);
         }
+      }
+
+      // Ensure official admin account exists in accounts directory
+      const accountsList = this.get(KEYS.ACCOUNTS, []);
+      if (!accountsList.some(a => (a.username || a.handle || '').toLowerCase() === '@campus_admin')) {
+        accountsList.unshift({
+          username: '@campus_admin',
+          handle: '@campus_admin',
+          displayName: 'Campus Administrator',
+          name: 'Campus Administrator',
+          email: 'campus0012@gmail.com',
+          department: 'Central Administration',
+          semester: 8,
+          usn: 'ADMIN-001',
+          program: 'BCA',
+          college: 'Campus OS Academic Network',
+          bio: 'Official Platform Administrator & Owner for Campus OS.',
+          skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
+          role: 'OWNER_ADMIN',
+          status: 'ACTIVE',
+          updatedAt: Date.now()
+        });
+        this.set(KEYS.ACCOUNTS, accountsList);
       }
 
       const localPosts = this.get(KEYS.POSTS, []);
@@ -273,6 +308,83 @@ var Storage = {
     });
 
     return this.set(KEYS.ACCOUNTS, cleanList);
+  },
+  // ============================================================
+  // UNIVERSAL REAL-TIME SEARCH ENGINE (STUDENTS, POSTS, NOTES)
+  // ============================================================
+  searchEverything(query) {
+    const q = (query || '').trim().toLowerCase().replace(/^@/, '');
+    const accounts = this.getAccounts();
+    const posts = this.getPosts() || [];
+    const notes = this.getNotes() || [];
+
+    if (!q) {
+      // Return real registered students (excluding admin if requested or sorted nicely)
+      return {
+        accounts: accounts,
+        posts: posts.slice(0, 10),
+        notes: notes.slice(0, 10),
+        total: accounts.length + posts.length + notes.length
+      };
+    }
+
+    // Match accounts by name, handle, usn, email, department, college, skills, program
+    const matchedAccounts = accounts.filter(a => {
+      const name = (a.displayName || a.name || '').toLowerCase();
+      const handle = (a.username || a.handle || '').toLowerCase().replace(/^@/, '');
+      const usn = (a.usn || '').toLowerCase();
+      const email = (a.email || '').toLowerCase();
+      const dept = (a.department || '').toLowerCase();
+      const coll = (a.college || '').toLowerCase();
+      const prog = (a.program || '').toLowerCase();
+      const skills = Array.isArray(a.skills) ? a.skills.join(' ').toLowerCase() : '';
+
+      return name.includes(q) ||
+             handle.includes(q) ||
+             usn.includes(q) ||
+             email.includes(q) ||
+             dept.includes(q) ||
+             coll.includes(q) ||
+             prog.includes(q) ||
+             skills.includes(q);
+    });
+
+    // Match posts by title, description, subject, author name, author handle, department
+    const matchedPosts = posts.filter(p => {
+      const title = (p.title || '').toLowerCase();
+      const desc = (p.desc || '').toLowerCase();
+      const author = (p.author || '').toLowerCase();
+      const handle = (p.handle || '').toLowerCase().replace(/^@/, '');
+      const subject = (p.subject || '').toLowerCase();
+      const dept = (p.department || '').toLowerCase();
+
+      return title.includes(q) ||
+             desc.includes(q) ||
+             author.includes(q) ||
+             handle.includes(q) ||
+             subject.includes(q) ||
+             dept.includes(q);
+    });
+
+    // Match notes by title, content, subject, tags
+    const matchedNotes = notes.filter(n => {
+      const title = (n.title || '').toLowerCase();
+      const content = (n.content || '').toLowerCase();
+      const subject = (n.subject || '').toLowerCase();
+      const tags = Array.isArray(n.tags) ? n.tags.join(' ').toLowerCase() : '';
+
+      return title.includes(q) ||
+             content.includes(q) ||
+             subject.includes(q) ||
+             tags.includes(q);
+    });
+
+    return {
+      accounts: matchedAccounts,
+      posts: matchedPosts,
+      notes: matchedNotes,
+      total: matchedAccounts.length + matchedPosts.length + matchedNotes.length
+    };
   },
   isEmailTaken(email, excludeHandle = null) {
     if (!email || !email.trim()) return false;

@@ -2001,8 +2001,8 @@
           const em = (a.email || '').trim().toLowerCase();
           if (!rawH || deletedHandles.includes(rawH)) return;
           const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs'].includes(formattedH)) return;
-          if (['demo@collegeos.app'].includes(em)) return;
+          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs', '@laxmi_patil', 'laxmi_patil', '@channu patil', '@channu_patil'].includes(formattedH)) return;
+          if (['demo@collegeos.app', 'laxmi.patil@campus.edu', 'channupatil299@gmail.com'].includes(em)) return;
 
           let targetKey = formattedH;
           if (em && em !== 'campus0012@gmail.com' && emailMap.has(em)) {

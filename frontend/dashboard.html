@@ -517,8 +517,64 @@
         font-size: 12.5px;
       }
       .topbar {
-        padding: 0 12px;
-        height: 58px;
+        left: 0 !important;
+        width: 100% !important;
+        padding: 0 12px !important;
+        height: 56px !important;
+        gap: 8px !important;
+        justify-content: space-between !important;
+        box-sizing: border-box !important;
+      }
+      .mobile-menu-btn {
+        display: flex !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+      }
+      .topbar-greeting-wrap {
+        margin-left: 2px !important;
+      }
+      #topbar-greeting {
+        font-size: 13.5px !important;
+        max-width: 130px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .topbar-date-text {
+        display: none !important;
+      }
+      .dash-search-container {
+        display: none !important;
+      }
+      .mobile-search-trigger-btn {
+        display: flex !important;
+      }
+      .topbar-right-actions {
+        gap: 8px !important;
+      }
+      .nav-notification-btn {
+        width: 36px !important;
+        height: 36px !important;
+      }
+      #topbar-avatar {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 13px !important;
+      }
+      #dashSearchDropdown {
+        position: fixed !important;
+        top: 60px !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-height: calc(100dvh - 75px) !important;
+        z-index: 10002 !important;
       }
       .notification-dropdown-popover {
         position: fixed !important;
@@ -531,6 +587,86 @@
         max-height: calc(100dvh - 75px) !important;
         z-index: 10000 !important;
       }
+    }
+
+    /* ---- Topbar Elements & Mobile Search Styling ---- */
+    .topbar-greeting-wrap {
+      flex: 1;
+      min-width: 0;
+      margin-left: 6px;
+      overflow: hidden;
+    }
+
+    .mobile-search-trigger-btn {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-search-trigger-btn:hover,
+    .mobile-search-trigger-btn:active {
+      background: rgba(124, 58, 237, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #fff;
+    }
+
+    .mobile-search-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 8, 22, 0.98);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      align-items: center;
+      padding: 0 12px;
+      z-index: 50;
+      gap: 8px;
+    }
+
+    .mobile-search-overlay.open {
+      display: flex;
+    }
+
+    .mobile-search-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 20px;
+      padding: 6px 14px;
+      gap: 8px;
+    }
+
+    .mobile-search-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .mobile-search-close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -603,19 +739,27 @@
 
   <!-- Topbar -->
   <header class="topbar">
-    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
-    <div style="flex:1">
-      <div style="font-size:15px;font-weight:600;color:var(--text-primary)" id="topbar-greeting">Good Morning</div>
-      <div style="font-size:12px;color:var(--text-muted)" id="topbar-date">Loading...</div>
+    <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle navigation menu">☰</button>
+    
+    <div class="topbar-greeting-wrap">
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="topbar-greeting">Good Morning</div>
+      <div class="topbar-date-text" style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="topbar-date">Loading...</div>
     </div>
 
-    <!-- Live Dashboard Search -->
+    <!-- Live Dashboard Search (Desktop Centered) -->
     <div class="dash-search-container" style="position:relative; flex:1; max-width:320px; margin:0 12px;">
       <input type="text" id="dashSearchInput" class="dash-search-input" placeholder="🔍 Search peers, notes, posts..." oninput="handleDashSearch(this.value)" autocomplete="off" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:7px 14px; font-size:12.5px; color:#fff; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#8b5cf6'; this.style.boxShadow='0 0 12px rgba(124,58,237,0.3)';" onblur="setTimeout(() => { const d = document.getElementById('dashSearchDropdown'); if(d) d.style.display='none'; }, 200);" />
-      <div id="dashSearchDropdown" style="display:none; position:absolute; top:calc(100% + 8px); left:0; right:0; background:rgba(15,12,32,0.96); backdrop-filter:blur(24px); border:1px solid rgba(139,92,246,0.35); border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,0.8); z-index:1000; max-height:360px; overflow-y:auto; padding:10px;"></div>
     </div>
 
-    <div style="display:flex;align-items:center;gap:12px;position:relative">
+    <div class="topbar-right-actions" style="display:flex;align-items:center;gap:10px;position:relative;flex-shrink:0;">
+      <!-- Mobile Search Button (Shows on mobile only) -->
+      <button class="mobile-search-trigger-btn" id="mobileSearchTriggerBtn" onclick="toggleMobileDashSearch(true)" aria-label="Search" title="Search students & notes">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+
       <!-- Notification Button with SVG icon & Glassmorphic Drawer -->
       <div class="nav-notification-wrapper" id="navNotificationWrapper">
         <button class="nav-notification-btn" id="navNotificationBtn" onclick="toggleNotificationDropdown(event)" aria-label="Notifications" title="Student & Campus Notifications">
@@ -668,6 +812,21 @@
         <div class="dropdown-item danger" id="dd-logout">🚪 Logout</div>
       </div>
     </div>
+
+    <!-- Expandable Mobile Search Overlay -->
+    <div class="mobile-search-overlay" id="mobileSearchOverlay">
+      <div class="mobile-search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="mobileDashSearchInput" placeholder="Search students, notes, posts..." oninput="handleDashSearch(this.value)" autocomplete="off" />
+        <button type="button" class="mobile-search-close-btn" onclick="toggleMobileDashSearch(false)" aria-label="Close search">✕</button>
+      </div>
+    </div>
+
+    <!-- Search Dropdown Results Popover (Positioned dynamically) -->
+    <div id="dashSearchDropdown" style="display:none; position:absolute; top:calc(100% + 8px); left:auto; right:auto; background:rgba(15,12,32,0.96); backdrop-filter:blur(24px); border:1px solid rgba(139,92,246,0.35); border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,0.8); z-index:1000; max-height:360px; overflow-y:auto; padding:10px;"></div>
   </header>
 
   <!-- Main Content -->
@@ -1116,6 +1275,37 @@
           dropdown.innerHTML = html;
           dropdown.style.display = 'block';
         };
+
+        // Mobile search toggle handler
+        window.toggleMobileDashSearch = function(open) {
+          const overlay = document.getElementById('mobileSearchOverlay');
+          const input = document.getElementById('mobileDashSearchInput');
+          const dropdown = document.getElementById('dashSearchDropdown');
+          if (!overlay) return;
+          if (open) {
+            overlay.classList.add('open');
+            if (input) {
+              input.value = '';
+              setTimeout(() => input.focus(), 120);
+            }
+          } else {
+            overlay.classList.remove('open');
+            if (dropdown) dropdown.style.display = 'none';
+          }
+        };
+
+        // Close search dropdown and mobile overlay on outside tap
+        document.addEventListener('click', (e) => {
+          const searchContainer = document.querySelector('.dash-search-container');
+          const mobileOverlay = document.getElementById('mobileSearchOverlay');
+          const mobileTrigger = document.getElementById('mobileSearchTriggerBtn');
+          const dropdown = document.getElementById('dashSearchDropdown');
+          if (dropdown && dropdown.style.display === 'block') {
+            if (!e.target.closest('#dashSearchDropdown') && !e.target.closest('.dash-search-container') && !e.target.closest('#mobileSearchOverlay') && !e.target.closest('#mobileSearchTriggerBtn')) {
+              dropdown.style.display = 'none';
+            }
+          }
+        });
 
         // Mobile menu & sidebar overlay handlers
         const mbBtn = document.getElementById('mobile-menu-btn');
