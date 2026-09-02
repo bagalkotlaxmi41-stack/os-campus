@@ -309,7 +309,8 @@ const PythonAPI = {
       if (filter.handle) url += `handle=${encodeURIComponent(filter.handle)}&`;
       if (filter.type) url += `type=${encodeURIComponent(filter.type)}&`;
       if (filter.q) url += `q=${encodeURIComponent(filter.q)}&`;
-      const res = await fastFetch(url, {}, 1000);
+      // Increased from 1000ms — 1s was too short for serverless cold starts
+      const res = await fastFetch(url, {}, 4000);
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
@@ -380,6 +381,10 @@ const PythonAPI = {
     } catch (err) {
       return null;
     }
+  },
+  // Alias for backward compatibility
+  likePost: async function(postId, userHandle) {
+    return this.toggleLike(postId, userHandle);
   },
 
   getLiveStats: async function() {
@@ -472,22 +477,8 @@ const PythonAPI = {
   // ============================================================
   // OWNER & ADMINISTRATOR API METHODS
   // ============================================================
-  adminLogin: async function(key, email) {
-    try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, email, identifier: email, password: key, master_key: key })
-      }, 1500);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Authentication failed' }));
-        throw new Error(err.detail || 'Access denied');
-      }
-      return await res.json();
-    } catch (e) {
-      throw e;
-    }
-  },
+  // NOTE: adminLogin is defined above at line ~284 targeting /api/admin/login
+  // This section previously had a duplicate definition that was removed to prevent silent override
 
   getAdminStats: async function() {
     try {

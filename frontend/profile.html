@@ -1602,7 +1602,7 @@ function submitNewPost() {
   closeCreatePostModal();
   renderStudentProfile(user, true);
 
-  alert('🎉 Academic material published successfully!');
+  showToast('🎉 Academic material published successfully!');
 }
 
 function togglePostLike(postId) {
@@ -1872,8 +1872,8 @@ function saveInpageProfile() {
     user.college = document.getElementById('inpageCollegeInput').value.trim() || 'Campus OS Academic Network';
   }
 
-  Storage.setUser(user);
-  Storage.addAccount(user);
+  Storage.set('cos_user', user); // Direct set to avoid chain reaction
+  Storage.addAccount(user);      // Persist to accounts directory + backend
   if (window.PythonAPI && PythonAPI.updateProfile) {
     const handle = user.username || user.handle;
     PythonAPI.updateProfile(handle, {
@@ -1897,8 +1897,8 @@ function saveInpageBioAndSkills() {
     user.skills = document.getElementById('inpageSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
   }
 
-  Storage.setUser(user);
-  Storage.addAccount(user);
+  Storage.set('cos_user', user); // Direct set to avoid chain reaction
+  Storage.addAccount(user);      // Persist to accounts directory + backend
   if (window.PythonAPI && PythonAPI.updateProfile) {
     const handle = user.username || user.handle;
     PythonAPI.updateProfile(handle, {
@@ -2105,32 +2105,7 @@ function saveInpagePrivacy() {
   showToast('🛡️ Privacy preferences updated!');
 }
 
-function exportPassportDataBackup() {
-  const user = Storage.getUser() || currentUser;
-  if (!user) return;
-  const handle = user.username || user.handle;
-  const userPosts = Storage.getPosts().filter(p => (p.handle || '').toLowerCase() === handle.toLowerCase());
-  const userNotes = Storage.getNotes().filter(n => (n.handle || '').toLowerCase() === handle.toLowerCase());
-  const userTasks = Storage.getTasks().filter(t => (t.handle || '').toLowerCase() === handle.toLowerCase());
-
-  const archive = {
-    exportDate: new Date().toISOString(),
-    account: user,
-    posts: userPosts,
-    notes: userNotes,
-    tasks: userTasks
-  };
-
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(archive, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `campus_os_${handle.replace('@', '')}_backup.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-
-  showToast('📥 Backup exported successfully!');
-}
+// exportPassportDataBackup is defined below near the data panel
 
 async function toggleStudentRoleFromProfile(handle, currentRole) {
   const isCurrentlyAdmin = currentRole === 'ADMIN' || currentRole === 'OWNER_ADMIN';
@@ -2333,8 +2308,8 @@ document.getElementById('photoUploadTrigger')?.addEventListener('click', () => {
 document.getElementById('profilePhotoFileInput')?.addEventListener('change', function() {
   if (!this.files || !this.files[0]) return;
   const file = this.files[0];
-  if (!file.type.startsWith('image/')) { alert('Please choose an image.'); return; }
-  if (file.size > 3 * 1024 * 1024) { alert('Max 3MB.'); return; }
+  if (!file.type.startsWith('image/')) { showToast('⚠️ Please choose an image file.'); return; }
+  if (file.size > 3 * 1024 * 1024) { showToast('⚠️ Max photo size is 3MB.'); return; }
 
   const reader = new FileReader();
   reader.onload = function(ev) {
@@ -2342,13 +2317,18 @@ document.getElementById('profilePhotoFileInput')?.addEventListener('change', fun
     const user = Storage.getUser() || currentUser;
     if (user) {
       const handle = user.username || user.handle || '@student';
+      // Update photo in localStorage and accounts
       Storage.setUserPhoto(handle, data);
       user.photo = data;
-      Storage.setUser(user);
+      Storage.set('cos_user', user); // Direct set to avoid triggering addAccount chain
       currentUser = user;
+      // Sync photo to backend
+      if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
+        PythonAPI.updateAccountPhoto(handle, data).catch(() => {});
+      }
     }
-    renderStudentProfile(user, true);
-    alert('🎉 Profile photo updated across all your posts and passport!');
+    renderStudentProfile(user || currentUser, true);
+    showToast('🎉 Profile photo updated successfully!');
   };
   reader.readAsDataURL(file);
 });
@@ -2399,6 +2379,7 @@ function applyAppTheme(themeName) {
 
 function saveEditedProfile() {
   const user = Storage.getUser() || currentUser || {};
+  const prevDisplayName = user.displayName;
   user.displayName = document.getElementById('editFullName').value.trim() || user.displayName;
   user.name = user.displayName;
   user.usn = document.getElementById('editUSN').value.trim();
@@ -2410,18 +2391,27 @@ function saveEditedProfile() {
   user.semester = parseInt(document.getElementById('editSemSelect').value, 10);
   user.skills = document.getElementById('editSkillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
 
-  Storage.setUser(user);
-  Storage.addAccount(user);
-  if (window.PythonAPI && PythonAPI.saveAccount) {
-    PythonAPI.saveAccount(user).catch(err => console.warn('Account sync API:', err));
-  }
-  if (window.FirebaseService && FirebaseService.createAccount) {
-    FirebaseService.createAccount(user).catch(err => console.warn('Firebase sync:', err));
+  // Save locally first for instant feedback
+  Storage.set('cos_user', user); // Direct set to avoid chain
+  Storage.addAccount(user);      // Persist to accounts + backend via addAccount
+
+  // Use updateProfile (PUT) for clean profile update without sending password
+  if (window.PythonAPI && PythonAPI.updateProfile) {
+    const handle = user.username || user.handle;
+    PythonAPI.updateProfile(handle, {
+      displayName: user.displayName,
+      usn: user.usn,
+      bio: user.bio,
+      program: user.program,
+      semester: user.semester,
+      department: user.department,
+      skills: user.skills
+    }).catch(err => console.warn('Profile update API sync:', err));
   }
   currentUser = user;
   closeSettingsModal();
   renderStudentProfile(user, true);
-  alert('🎉 Profile settings updated successfully!');
+  showToast('🎉 Profile settings updated successfully!');
 }
 
 function exportPassportDataBackup() {

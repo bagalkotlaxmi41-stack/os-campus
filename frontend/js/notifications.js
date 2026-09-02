@@ -8,6 +8,7 @@ const NotificationsManager = {
   activeTab: 'all',
   lastSeenPostId: null,
   pollTimer: null,
+  _initialized: false,
 
   getReadIds() {
     try {
@@ -33,7 +34,7 @@ const NotificationsManager = {
 
   setReadIds(ids) {
     try {
-      localStorage.setItem('cos_read_notifs', JSON.stringify(ids));
+      localStorage.setItem('cos_read_notif_ids', JSON.stringify(ids));
     } catch (e) {
       console.warn('Storage error:', e);
     }
@@ -278,7 +279,7 @@ const NotificationsManager = {
     const dropdown = document.getElementById('notificationDropdown');
     if (dropdown) dropdown.classList.remove('open');
     document.removeEventListener('click', this._outsideClickListener);
-    this.render();
+    // Do NOT call render() on close — wasteful and causes jank
   },
 
   _outsideClickListener(e) {
@@ -325,23 +326,26 @@ const NotificationsManager = {
   },
 
   async pollRemotePosts() {
+    // Skip polling if tab is hidden (saves battery + bandwidth)
+    if (document.hidden) return;
     if (!window.PythonAPI || !PythonAPI.getPosts) return;
     try {
       const posts = await PythonAPI.getPosts();
       if (posts && Array.isArray(posts) && posts.length > 0) {
         const latestPost = posts[0];
-        if (this.lastSeenPostId && latestPost.id !== this.lastSeenPostId) {
-          // New post detected!
-          if (window.Storage) Storage.setPosts(posts);
+        const isNew = this.lastSeenPostId && latestPost.id !== this.lastSeenPostId;
+        // Single atomic write (was double-write causing double localStorage hit)
+        if (window.Storage) Storage.setPosts(posts);
+        if (isNew) {
+          // New post detected — animate bell and show toast
           this.triggerBellAnimation();
           this.showToast(`${latestPost.author || 'A student'} posted: "${latestPost.title}"`);
+          this.render(); // Only render when there is actually new data
         }
         this.lastSeenPostId = latestPost.id;
-        if (window.Storage) Storage.setPosts(posts);
-        this.render();
       }
     } catch (e) {
-      // Quiet poll
+      // Quiet poll failure
     }
   },
 
@@ -351,6 +355,10 @@ const NotificationsManager = {
   },
 
   init() {
+    // Guard against multiple initializations
+    if (this._initialized) return;
+    this._initialized = true;
+
     this._outsideClickListener = this._outsideClickListener.bind(this);
     this.render();
 
@@ -360,11 +368,25 @@ const NotificationsManager = {
       this.lastSeenPostId = posts[0].id;
     }
 
-    // Start Realtime Polling (Every 6 seconds)
+    // Pause polling when tab is hidden (Page Visibility API)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (this.pollTimer) clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      } else {
+        // Tab became visible — restart polling
+        if (!this.pollTimer) {
+          this.pollTimer = setInterval(() => this.pollRemotePosts(), 45000);
+          this.pollRemotePosts(); // Immediate poll on focus
+        }
+      }
+    });
+
+    // Start Realtime Polling every 45 seconds (was 6s — too aggressive, caused Page Unresponsive)
     if (this.pollTimer) clearInterval(this.pollTimer);
     this.pollTimer = setInterval(() => {
       this.pollRemotePosts();
-    }, 6000);
+    }, 45000);
   }
 };
 

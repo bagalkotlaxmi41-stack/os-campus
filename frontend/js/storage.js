@@ -33,6 +33,7 @@ const FAKE_POST_IDS = [
 ];
 
 var Storage = {
+  _initDone: false,
   // Generic
   get(key, fallback = null) {
     try {
@@ -50,6 +51,9 @@ var Storage = {
   // INITIALIZATION & REALTIME BACKGROUND SYNC
   // ============================================================
   async init() {
+    // Guard: only run init ONCE per page load to prevent API floods
+    if (this._initDone) return;
+    this._initDone = true;
     // 1. Clean up legacy fake accounts and mock posts from localStorage
     try {
       const localAccs = this.get(KEYS.ACCOUNTS, []);
@@ -129,18 +133,27 @@ var Storage = {
               postMap.set(p.id, p);
             }
           });
+          // Collect local posts not yet on backend for deferred batch sync
+          const toSyncToBackend = [];
           localPosts.forEach(p => {
             if (p && p.id && !FAKE_POST_IDS.includes(p.id) && !FAKE_HANDLES.includes((p.handle || '').toLowerCase())) {
               if (!postMap.has(p.id)) {
                 postMap.set(p.id, p);
-                if (window.PythonAPI && PythonAPI.createPost) {
-                  PythonAPI.createPost(p).catch(() => {});
-                }
+                toSyncToBackend.push(p);
               }
             }
           });
           const mergedPosts = Array.from(postMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           this.setPosts(mergedPosts);
+          // Batch sync local-only posts to backend with staggered delays
+          // to avoid flooding the API with simultaneous requests
+          if (toSyncToBackend.length > 0 && window.PythonAPI && PythonAPI.createPost) {
+            toSyncToBackend.forEach((p, i) => {
+              setTimeout(() => {
+                PythonAPI.createPost(p).catch(() => {});
+              }, 1500 + (i * 800)); // stagger by 800ms each
+            });
+          }
         }
 
         // Sync Banners from Backend
@@ -177,9 +190,9 @@ var Storage = {
       }
     }
     this.set(KEYS.USER, u);
-    if (u && (u.username || u.handle)) {
-      this.addAccount(u);
-    }
+    // NOTE: We do NOT call addAccount() here to avoid triggering
+    // backend syncs on every getUser/setUser operation. Call addAccount()
+    // explicitly when you need to persist account changes.
     return true;
   },
   clearUser() { this.remove(KEYS.USER); },
@@ -532,8 +545,27 @@ var Storage = {
     return null;
   },
   setUserPhoto(handle, photoBase64) {
-    if (!handle || !photoBase64) return;
+    if (!handle) return;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    
+    // Fix: null/undefined means REMOVE the photo, not store string "null"
+    if (!photoBase64) {
+      try { localStorage.removeItem('cos_photo_' + clean); } catch(e) {}
+      // Also clear it from the accounts array and current user
+      const accounts = this.getAccounts();
+      const acc = accounts.find(a => (a.username || a.handle || '').toLowerCase() === clean);
+      if (acc) {
+        delete acc.photo;
+        this.setAccounts(accounts);
+      }
+      const cur = this.getUser();
+      if (cur && (cur.username || cur.handle || '').toLowerCase() === clean) {
+        delete cur.photo;
+        this.set(KEYS.USER, cur);
+      }
+      return;
+    }
+
     try {
       localStorage.setItem('cos_photo_' + clean, photoBase64);
     } catch (e) {
@@ -550,7 +582,7 @@ var Storage = {
     const cur = this.getUser();
     if (cur && (cur.username || cur.handle || '').toLowerCase() === clean) {
       cur.photo = photoBase64;
-      this.setUser(cur);
+      this.set(KEYS.USER, cur); // use set() not setUser() to avoid triggering addAccount again
     }
 
     if (window.PythonAPI && PythonAPI.updateAccountPhoto) {
