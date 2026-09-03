@@ -553,6 +553,52 @@ const PythonAPI = {
       if (!res.ok) return [];
       return await res.json();
     } catch (e) { return []; }
+  },
+
+  // ============================================================
+  // CLOUD SYNC API (Cross-Device Discovery via Vercel Blob)
+  // ============================================================
+  getCloudAccounts: async function() {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/accounts`, {}, 6000);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (err) {
+      console.warn('[CloudSync] getCloudAccounts fallback:', err);
+      return this.getAccounts();
+    }
+  },
+
+  searchCloudAccounts: async function(query) {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/accounts/search?q=${encodeURIComponent(query)}`, {}, 5000);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (err) {
+      console.warn('[CloudSync] searchCloudAccounts fallback:', err);
+      return this.searchAccounts(query);
+    }
+  },
+
+  getCloudPosts: async function() {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/posts`, {}, 6000);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (err) {
+      console.warn('[CloudSync] getCloudPosts fallback:', err);
+      return this.getPosts();
+    }
+  },
+
+  getCloudNotifications: async function() {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/notifications`, {}, 5000);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (err) {
+      return [];
+    }
   }
 };
 

@@ -202,6 +202,61 @@ var Storage = {
             }
           }
         }
+
+        // ── Cross-Device Cloud Sync from Vercel Blob ──
+        // Pull accounts and posts from persistent cloud storage
+        // so friends registered on any device show up instantly
+        if (PythonAPI.getCloudAccounts) {
+          try {
+            const cloudAccounts = await PythonAPI.getCloudAccounts();
+            if (cloudAccounts && Array.isArray(cloudAccounts) && cloudAccounts.length > 0) {
+              const localAccs = this.getAccounts();
+              const map = new Map();
+              localAccs.forEach(a => {
+                const h = ((a.username || a.handle || '').toLowerCase());
+                const hc = h.startsWith('@') ? h : '@' + h;
+                map.set(hc, a);
+              });
+              cloudAccounts.forEach(a => {
+                const rawH = (a.username || a.handle || '').toLowerCase();
+                const h = rawH.startsWith('@') ? rawH : '@' + rawH;
+                const em = (a.email || '').trim().toLowerCase();
+                if (h && !FAKE_HANDLES.includes(h) && !FAKE_HANDLES.includes(em)) {
+                  if (!map.has(h)) {
+                    a.username = h;
+                    a.handle = h;
+                    map.set(h, a);
+                  }
+                }
+              });
+              this.setAccounts(Array.from(map.values()));
+              console.log('[CloudSync] Merged', cloudAccounts.length, 'cloud accounts');
+            }
+          } catch (e) {
+            console.warn('[CloudSync] Cloud accounts sync note:', e);
+          }
+        }
+
+        if (PythonAPI.getCloudPosts) {
+          try {
+            const cloudPosts = await PythonAPI.getCloudPosts();
+            if (cloudPosts && Array.isArray(cloudPosts) && cloudPosts.length > 0) {
+              const localPosts = this.getPosts() || [];
+              const postMap = new Map();
+              localPosts.forEach(p => { if (p && p.id) postMap.set(p.id, p); });
+              cloudPosts.forEach(p => {
+                if (p && p.id && !postMap.has(p.id) && !FAKE_POST_IDS.includes(p.id)) {
+                  postMap.set(p.id, p);
+                }
+              });
+              const allPosts = Array.from(postMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              this.setPosts(allPosts);
+              console.log('[CloudSync] Merged', cloudPosts.length, 'cloud posts');
+            }
+          } catch (e) {
+            console.warn('[CloudSync] Cloud posts sync note:', e);
+          }
+        }
       } catch (e) {
         console.warn('Realtime sync background boot note:', e);
       }
@@ -378,6 +433,38 @@ var Storage = {
              subject.includes(q) ||
              tags.includes(q);
     });
+
+    // ── Also kick off async cloud search for cross-device discovery ──
+    // This will merge results when they arrive
+    if (window.PythonAPI && PythonAPI.searchCloudAccounts && q.length >= 2) {
+      PythonAPI.searchCloudAccounts(q).then(cloudResults => {
+        if (cloudResults && Array.isArray(cloudResults) && cloudResults.length > 0) {
+          const existingHandles = new Set(this.getAccounts().map(a => (a.username || a.handle || '').toLowerCase()));
+          let added = 0;
+          cloudResults.forEach(a => {
+            const h = ((a.username || a.handle || '').toLowerCase());
+            const hc = h.startsWith('@') ? h : '@' + h;
+            if (!existingHandles.has(hc) && !FAKE_HANDLES.includes(hc)) {
+              a.username = hc;
+              a.handle = hc;
+              existingHandles.add(hc);
+              added++;
+            }
+          });
+          if (added > 0) {
+            // Merge cloud accounts into local storage for future searches
+            const allAccs = this.getAccounts();
+            cloudResults.forEach(a => {
+              const h = (a.username || a.handle || '').toLowerCase();
+              if (!allAccs.some(x => (x.username || x.handle || '').toLowerCase() === h)) {
+                allAccs.push(a);
+              }
+            });
+            this.setAccounts(allAccs);
+          }
+        }
+      }).catch(() => {});
+    }
 
     return {
       accounts: matchedAccounts,

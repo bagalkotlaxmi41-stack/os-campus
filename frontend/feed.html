@@ -846,25 +846,7 @@
     <button class="stream-filter-chip" data-cat="text" onclick="setCategoryFilter('text', this)">💡 Insights</button>
   </div>
 
-  <!-- Comments Discussion Drawer -->
-  <div class="stream-comment-overlay" id="commentOverlay" onclick="closeCommentDrawer(event)">
-    <div class="stream-comment-drawer">
-      <div class="comment-drawer-header">
-        <div>
-          <h3 style="font-size:16px; font-weight:800; color:#fff;" id="commentDrawerTitle">Peer Discussion</h3>
-          <div style="font-size:11px; color:#94a3b8;">Academic discussion and study notes queries</div>
-        </div>
-        <button onclick="closeCommentDrawer()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer;">✕</button>
-      </div>
-      <div class="comment-list-scroll" id="commentListScroll">
-        <!-- Comments rendered dynamically -->
-      </div>
-      <form class="comment-input-bar" onsubmit="submitComment(event)">
-        <input type="text" class="comment-input-field" id="commentTextInput" placeholder="Write a comment or question..." required />
-        <button type="submit" class="comment-submit-btn">Send</button>
-      </form>
-    </div>
-  </div>
+  <!-- Comments drawer removed per user requirements -->
 
   <!-- In-Feed Post Creator Modal -->
   <div class="stream-modal-backdrop" id="feedPostModal">
@@ -1162,18 +1144,6 @@
 
               <!-- Instagram / LinkedIn / X Interactive Action Rail -->
               <div class="reel-action-rail">
-                <!-- Like / Heart Button -->
-                <button class="rail-btn ${isLiked ? 'liked' : ''}" id="like_btn_${post.id}" onclick="handleLikePost('${post.id}', event)" title="Like Study Material">
-                  <div class="rail-icon-circle ${isLiked ? 'liked' : ''}" style="font-size:18px;">❤️</div>
-                  <span class="rail-btn-label" id="like_count_${post.id}">${post.likes || 0}</span>
-                </button>
-
-                <!-- Comments Button -->
-                <button class="rail-btn" onclick="openCommentDrawer('${post.id}')" title="Peer Discussion">
-                  <div class="rail-icon-circle" style="color:#38bdf8; font-size:18px;">💬</div>
-                  <span class="rail-btn-label" id="comm_count_${post.id}">${(post.comments && post.comments.length) || 0}</span>
-                </button>
-
                 <!-- Share Button -->
                 <button class="rail-btn" onclick="sharePostLink('${handle}', '${post.id}')" title="Share Link">
                   <div class="rail-icon-circle" style="color:#a78bfa; font-size:18px;">🔗</div>

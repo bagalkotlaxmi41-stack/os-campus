@@ -1230,50 +1230,75 @@
             return;
           }
 
-          const localData = Storage.searchEverything ? Storage.searchEverything(q) : { accounts: [], posts: [], notes: [] };
-          const accounts = localData.accounts || [];
-          const posts = localData.posts || [];
-          const notes = localData.notes || [];
+          function renderDashResults(accounts, posts) {
+            if (accounts.length === 0 && posts.length === 0) {
+              dropdown.innerHTML = `<div style="padding:14px; text-align:center; font-size:12px; color:#64748b;">No results found for "${query}".</div>`;
+              dropdown.style.display = 'block';
+              return;
+            }
 
-          if (accounts.length === 0 && posts.length === 0 && notes.length === 0) {
-            dropdown.innerHTML = `<div style="padding:14px; text-align:center; font-size:12px; color:#64748b;">No results found for "${query}".</div>`;
+            let html = '';
+            if (accounts.length > 0) {
+              html += `<div style="font-size:10.5px; font-weight:800; color:#a78bfa; padding:4px 8px; text-transform:uppercase;">👥 Students & Peers</div>`;
+              accounts.slice(0, 4).forEach(a => {
+                const name = a.displayName || a.name || 'Student';
+                const handle = a.handle || a.username || '@student';
+                const cleanH = handle.startsWith('@') ? handle : '@' + handle;
+                const photo = a.photo || (window.Storage ? Storage.getUserPhoto(cleanH) : null);
+                html += `
+                  <a href="profile.html?handle=${encodeURIComponent(cleanH)}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(124,58,237,0.15)'" onmouseout="this.style.background='transparent'">
+                    <div style="width:26px; height:26px; border-radius:50%; background:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; overflow:hidden;">
+                      ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;" />` : name[0]}
+                    </div>
+                    <div style="font-size:12px; font-weight:700;">${name} <span style="font-size:11px; color:#38bdf8;">${cleanH}</span></div>
+                  </a>
+                `;
+              });
+            }
+
+            if (posts.length > 0) {
+              html += `<div style="font-size:10.5px; font-weight:800; color:#38bdf8; padding:6px 8px 4px; text-transform:uppercase;">📄 Feed Posts</div>`;
+              posts.slice(0, 3).forEach(p => {
+                html += `
+                  <a href="feed.html" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(6,182,212,0.15)'" onmouseout="this.style.background='transparent'">
+                    <span>${p.type === 'pdf' ? '📄' : (p.type === 'youtube' ? '🎥' : '💡')}</span>
+                    <div style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+                  </a>
+                `;
+              });
+            }
+
+            dropdown.innerHTML = html;
             dropdown.style.display = 'block';
-            return;
           }
 
-          let html = '';
-          if (accounts.length > 0) {
-            html += `<div style="font-size:10.5px; font-weight:800; color:#a78bfa; padding:4px 8px; text-transform:uppercase;">👥 Students & Peers</div>`;
-            accounts.slice(0, 3).forEach(a => {
-              const name = a.displayName || a.name || 'Student';
-              const handle = a.handle || a.username || '@student';
-              const cleanH = handle.startsWith('@') ? handle : '@' + handle;
-              const photo = a.photo || Storage.getUserPhoto(cleanH);
-              html += `
-                <a href="profile.html?handle=${encodeURIComponent(cleanH)}" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(124,58,237,0.15)'" onmouseout="this.style.background='transparent'">
-                  <div style="width:26px; height:26px; border-radius:50%; background:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; overflow:hidden;">
-                    ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;" />` : name[0]}
-                  </div>
-                  <div style="font-size:12px; font-weight:700;">${name} <span style="font-size:11px; color:#38bdf8;">${cleanH}</span></div>
-                </a>
-              `;
-            });
-          }
+          const localData = Storage.searchEverything ? Storage.searchEverything(q) : { accounts: [], posts: [], notes: [] };
+          let accounts = localData.accounts || [];
+          const posts = localData.posts || [];
+          renderDashResults(accounts, posts);
 
-          if (posts.length > 0) {
-            html += `<div style="font-size:10.5px; font-weight:800; color:#38bdf8; padding:6px 8px 4px; text-transform:uppercase;">📄 Feed Posts</div>`;
-            posts.slice(0, 3).forEach(p => {
-              html += `
-                <a href="feed.html" style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; text-decoration:none; color:#fff;" onmouseover="this.style.background='rgba(6,182,212,0.15)'" onmouseout="this.style.background='transparent'">
-                  <span>${p.type === 'pdf' ? '📄' : (p.type === 'youtube' ? '🎥' : '💡')}</span>
-                  <div style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
-                </a>
-              `;
-            });
+          // Asynchronously query live cloud storage (Vercel Blob)
+          if (window.PythonAPI && q.length >= 2) {
+            const searchFn = (PythonAPI.searchCloudAccounts || PythonAPI.searchAccounts).bind(PythonAPI);
+            searchFn(q).then(cloudAccounts => {
+              if (cloudAccounts && Array.isArray(cloudAccounts) && cloudAccounts.length > 0) {
+                const handles = new Set(accounts.map(a => (a.handle || a.username || '').toLowerCase()));
+                let added = false;
+                cloudAccounts.forEach(ca => {
+                  const h = (ca.handle || ca.username || '').toLowerCase();
+                  if (h && !handles.has(h)) {
+                    accounts.push(ca);
+                    handles.add(h);
+                    added = true;
+                  }
+                  if (window.Storage && Storage.addAccount) Storage.addAccount(ca);
+                });
+                if (added) {
+                  renderDashResults(accounts, posts);
+                }
+              }
+            }).catch(() => {});
           }
-
-          dropdown.innerHTML = html;
-          dropdown.style.display = 'block';
         };
 
         // Mobile search toggle handler

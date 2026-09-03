@@ -328,13 +328,14 @@ const NotificationsManager = {
   async pollRemotePosts() {
     // Skip polling if tab is hidden (saves battery + bandwidth)
     if (document.hidden) return;
-    if (!window.PythonAPI || !PythonAPI.getPosts) return;
+    if (!window.PythonAPI) return;
     try {
-      const posts = await PythonAPI.getPosts();
+      const getPostsFn = (PythonAPI.getCloudPosts || PythonAPI.getPosts).bind(PythonAPI);
+      const posts = await getPostsFn();
       if (posts && Array.isArray(posts) && posts.length > 0) {
         const latestPost = posts[0];
         const isNew = this.lastSeenPostId && latestPost.id !== this.lastSeenPostId;
-        // Single atomic write (was double-write causing double localStorage hit)
+        // Single atomic write
         if (window.Storage) Storage.setPosts(posts);
         if (isNew) {
           // New post detected — animate bell and show toast

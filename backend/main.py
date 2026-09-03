@@ -10,6 +10,25 @@ from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# Cloud persistence for cross-device data sharing
+try:
+    from backend.cloud_store import (
+        cloud_upsert_account, cloud_delete_account, cloud_get_accounts, cloud_search_accounts,
+        cloud_add_post, cloud_delete_post, cloud_get_posts,
+        cloud_add_notification, cloud_get_notifications,
+    )
+    CLOUD_ENABLED = True
+except ImportError:
+    try:
+        from cloud_store import (
+            cloud_upsert_account, cloud_delete_account, cloud_get_accounts, cloud_search_accounts,
+            cloud_add_post, cloud_delete_post, cloud_get_posts,
+            cloud_add_notification, cloud_get_notifications,
+        )
+        CLOUD_ENABLED = True
+    except ImportError:
+        CLOUD_ENABLED = False
+
 START_TIME = time.time()
 
 if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
@@ -326,6 +345,94 @@ def init_database():
 
 # Initialize on startup
 init_database()
+
+
+def sync_cloud_to_sqlite():
+    """On cold start, pull all accounts and posts from Vercel Blob into ephemeral SQLite."""
+    if not CLOUD_ENABLED:
+        return
+    try:
+        cloud_accounts = cloud_get_accounts()
+        if cloud_accounts:
+            conn = get_db()
+            cursor = conn.cursor()
+            for a in cloud_accounts:
+                handle = (a.get("handle") or a.get("username") or "").strip()
+                if not handle:
+                    continue
+                if not handle.startswith("@"):
+                    handle = "@" + handle
+                cursor.execute("SELECT handle FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
+                if cursor.fetchone():
+                    continue  # Already exists in SQLite
+                cursor.execute("""
+                INSERT OR IGNORE INTO accounts
+                (handle, display_name, email, password_hash, department, semester, program, college, usn, bio, skills, photo, role, privacy_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    handle,
+                    a.get("displayName") or a.get("name") or "Student",
+                    a.get("email"),
+                    a.get("password_hash") or a.get("passwordHash"),
+                    a.get("department", "Computer Science & Engineering"),
+                    a.get("semester", 5),
+                    a.get("program", "BCA"),
+                    a.get("college", "Campus OS Academic Network"),
+                    a.get("usn"),
+                    a.get("bio"),
+                    json.dumps(a.get("skills") or []),
+                    a.get("photo"),
+                    a.get("role", "STUDENT"),
+                    json.dumps(a.get("privacy") or {"profileVisibility": "public", "showEmail": False, "showUSN": True}),
+                    a.get("createdAt") or int(time.time() * 1000),
+                    a.get("updatedAt") or int(time.time() * 1000)
+                ))
+            conn.commit()
+            conn.close()
+            print(f"[CloudSync] Loaded {len(cloud_accounts)} accounts from cloud into SQLite")
+
+        cloud_posts = cloud_get_posts()
+        if cloud_posts:
+            conn = get_db()
+            cursor = conn.cursor()
+            for p in cloud_posts:
+                pid = p.get("id", "")
+                if not pid:
+                    continue
+                cursor.execute("SELECT id FROM posts WHERE id = ?", (pid,))
+                if cursor.fetchone():
+                    continue
+                handle = (p.get("handle") or "@student").strip()
+                if not handle.startswith("@"):
+                    handle = "@" + handle
+                cursor.execute("""
+                INSERT OR IGNORE INTO posts
+                (id, type, title, subject, department, desc, author, handle, file_name, file_size, pdf_data, youtube_url, likes, saves, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
+                """, (
+                    pid,
+                    p.get("type", "text"),
+                    p.get("title", ""),
+                    p.get("subject", "General"),
+                    p.get("department", "Computer Science & Engineering"),
+                    p.get("desc", ""),
+                    p.get("author", "Student"),
+                    handle,
+                    p.get("fileName"),
+                    p.get("fileSize"),
+                    p.get("pdfData"),
+                    p.get("youtubeUrl"),
+                    p.get("createdAt") or int(time.time() * 1000)
+                ))
+            conn.commit()
+            conn.close()
+            print(f"[CloudSync] Loaded {len(cloud_posts)} posts from cloud into SQLite")
+    except Exception as e:
+        print(f"[CloudSync] Error syncing cloud data: {e}")
+
+
+# Sync cloud data into SQLite on cold start
+sync_cloud_to_sqlite()
 
 
 # ============================================================
@@ -683,6 +790,15 @@ def create_or_update_account(acc: AccountModel):
         "createdAt": now
     }
 
+    # ── Sync to Vercel Blob Cloud for cross-device discovery ──
+    if CLOUD_ENABLED:
+        try:
+            cloud_dict = dict(user_dict)
+            cloud_dict["password_hash"] = pwd_hash
+            cloud_upsert_account(cloud_dict)
+        except Exception as e:
+            print(f"[CloudSync] Account sync error: {e}")
+
     return {
         "status": "success",
         "message": "Account registered / updated successfully",
@@ -747,6 +863,14 @@ def delete_account(handle: str):
 
     conn.commit()
     conn.close()
+
+    # ── Sync deletion to cloud ──
+    if CLOUD_ENABLED:
+        try:
+            cloud_delete_account(clean)
+        except Exception as e:
+            print(f"[CloudSync] Account delete sync error: {e}")
+
     return {"status": "success", "message": f"Account {clean} and all related study records permanently deleted."}
 
 
@@ -1234,27 +1358,44 @@ def create_post(post: PostCreateModel):
     conn.commit()
     conn.close()
 
+    post_dict = {
+        "id": pid,
+        "type": post.type or "text",
+        "title": post.title,
+        "subject": post.subject,
+        "department": post.department,
+        "desc": post.desc,
+        "author": post.author,
+        "handle": handle,
+        "fileName": post.fileName,
+        "fileSize": post.fileSize,
+        "youtubeUrl": post.youtubeUrl,
+        "likes": 0,
+        "saves": 0,
+        "isLiked": False,
+        "comments": [],
+        "createdAt": now
+    }
+
+    # ── Sync to Vercel Blob Cloud ──
+    if CLOUD_ENABLED:
+        try:
+            cloud_add_post(post_dict)
+            cloud_add_notification({
+                "id": f"notif_{pid}",
+                "type": "post",
+                "title": f"New post by {post.author}",
+                "desc": post.title,
+                "handle": handle,
+                "time": now
+            })
+        except Exception as e:
+            print(f"[CloudSync] Post sync error: {e}")
+
     return {
         "status": "success",
         "message": "Post published in real-time",
-        "post": {
-            "id": pid,
-            "type": post.type or "text",
-            "title": post.title,
-            "subject": post.subject,
-            "department": post.department,
-            "desc": post.desc,
-            "author": post.author,
-            "handle": handle,
-            "fileName": post.fileName,
-            "fileSize": post.fileSize,
-            "youtubeUrl": post.youtubeUrl,
-            "likes": 0,
-            "saves": 0,
-            "isLiked": False,
-            "comments": [],
-            "createdAt": now
-        }
+        "post": post_dict
     }
 
 
@@ -1297,6 +1438,14 @@ def delete_post(post_id: str):
     cursor.execute("DELETE FROM post_likes WHERE post_id = ?", (post_id,))
     conn.commit()
     conn.close()
+
+    # ── Sync deletion to cloud ──
+    if CLOUD_ENABLED:
+        try:
+            cloud_delete_post(post_id)
+        except Exception as e:
+            print(f"[CloudSync] Post delete sync error: {e}")
+
     return {"status": "success", "message": "Post deleted successfully"}
 
 
@@ -2239,6 +2388,56 @@ def serve_resources():
 def serve_auth():
     p = os.path.join(frontend_dir, "auth.html")
     return FileResponse(p) if os.path.isfile(p) else health()
+
+
+# ============================================================
+# CLOUD SYNC API ENDPOINTS (Cross-Device Discovery)
+# ============================================================
+
+@app.get("/api/cloud/accounts")
+def cloud_accounts_endpoint():
+    """Get all accounts from Vercel Blob cloud store (live cross-device data)."""
+    if not CLOUD_ENABLED:
+        # Fallback to SQLite
+        return get_all_accounts()
+    try:
+        return cloud_get_accounts()
+    except Exception:
+        return get_all_accounts()
+
+
+@app.get("/api/cloud/accounts/search")
+def cloud_search_endpoint(q: str = ""):
+    """Search accounts in Vercel Blob cloud store (finds friends on any device)."""
+    if not CLOUD_ENABLED:
+        return search_accounts(q)
+    try:
+        return cloud_search_accounts(q)
+    except Exception:
+        return search_accounts(q)
+
+
+@app.get("/api/cloud/posts")
+def cloud_posts_endpoint():
+    """Get all posts from Vercel Blob cloud store."""
+    if not CLOUD_ENABLED:
+        return get_posts()
+    try:
+        return cloud_get_posts()
+    except Exception:
+        return get_posts()
+
+
+@app.get("/api/cloud/notifications")
+def cloud_notifications_endpoint():
+    """Get post notifications from Vercel Blob cloud store."""
+    if not CLOUD_ENABLED:
+        return []
+    try:
+        return cloud_get_notifications()
+    except Exception:
+        return []
+
 
 if os.path.isdir(frontend_dir):
     from fastapi.staticfiles import StaticFiles
