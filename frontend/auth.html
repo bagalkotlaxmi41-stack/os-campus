@@ -640,6 +640,18 @@
 
       if (user) {
         Storage.setUser(user);
+        btn.textContent = 'Verifying & signing in…';
+        // Send login alert email via EmailJS (matching user's template)
+        if (user.email && window.CampusEmailService) {
+          try {
+            await Promise.race([
+              window.CampusEmailService.sendLoginNotification(user),
+              new Promise(r => setTimeout(r, 1200)) // Max 1.2s wait
+            ]);
+          } catch(emailErr) {
+            console.warn('Sign-in email notice:', emailErr);
+          }
+        }
         window.location.href = 'index.html';
       } else {
         btn.disabled = false;
@@ -877,53 +889,10 @@
   // Welcome Email Service (EmailJS v4)
   // =====================================================
   async function sendWelcomeEmail(user) {
-    if (!user || !user.email) return false;
-    if (typeof emailjs === 'undefined') {
-      console.warn('EmailJS SDK not available.');
-      return false;
+    if (window.CampusEmailService && window.CampusEmailService.sendLoginNotification) {
+      return await window.CampusEmailService.sendLoginNotification(user);
     }
-
-    try {
-      emailjs.init({ publicKey: "MQxZeO4-7lL0-gfX7" });
-    } catch(e) {}
-
-    const templateParams = {
-      to_name: user.displayName || user.name || 'Student',
-      to_email: user.email,
-      recipient_email: user.email,
-      user_name: user.displayName || user.name || 'Student',
-      user_email: user.email,
-      email: user.email,
-      name: user.displayName || user.name || 'Student',
-      user_handle: user.handle || user.username || '',
-      handle: user.handle || user.username || '',
-      college: user.college || 'Campus OS Academic Network',
-      program: user.program || 'Student',
-      department: user.department || 'Engineering & Science',
-      semester: user.semester || 5,
-      joined_date: new Date().toLocaleDateString(),
-      app_name: 'Campus OS',
-      message: `Welcome to Campus OS, ${user.displayName || user.name}! Your student profile (${user.handle}) has been successfully created.`
-    };
-
-    const serviceIds = [window.EMAILJS_SERVICE_ID, 'service_campus_os', 'service_default', 'default_service'].filter(Boolean);
-    const templateIds = [window.EMAILJS_TEMPLATE_ID, 'template_welcome', 'template_signup', 'template_default'].filter(Boolean);
-
-    let sent = false;
-    for (const sId of serviceIds) {
-      if (sent) break;
-      for (const tId of templateIds) {
-        try {
-          const res = await emailjs.send(sId, tId, templateParams, "MQxZeO4-7lL0-gfX7");
-          console.log('✅ Welcome email sent via EmailJS:', res);
-          sent = true;
-          break;
-        } catch (err) {
-          console.debug(`EmailJS attempt (${sId}, ${tId}):`, err?.text || err?.message || err);
-        }
-      }
-    }
-    return sent;
+    return false;
   }
 
   // =====================================================

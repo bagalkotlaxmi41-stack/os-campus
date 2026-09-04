@@ -14,6 +14,18 @@
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/animations.css" />
 
+  <!-- EmailJS SDK Integration -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+      if (typeof emailjs !== 'undefined') {
+        emailjs.init({
+          publicKey: "MQxZeO4-7lL0-gfX7",
+        });
+      }
+    })();
+  </script>
+
   <style>
     :root {
       --admin-bg: #070512;

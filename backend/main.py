@@ -662,9 +662,11 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
     rows = cursor.fetchall()
     conn.close()
 
-    result = []
+    result_map = {}
     for r in rows:
-        result.append({
+        h = r["handle"].strip().lower()
+        if not h.startswith("@"): h = "@" + h
+        result_map[h] = {
             "username": r["handle"],
             "handle": r["handle"],
             "displayName": r["display_name"],
@@ -682,8 +684,21 @@ def search_accounts(q: str = Query("", description="Search term for name, handle
             "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {"profileVisibility":"public","showEmail":False,"showUSN":True},
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"]
-        })
-    return result
+        }
+
+    # Merge cloud search results for cross-device discovery
+    if CLOUD_ENABLED:
+        try:
+            cloud_results = cloud_search_accounts(q)
+            for ca in cloud_results:
+                ca_h = (ca.get("handle") or ca.get("username") or "").strip().lower()
+                if not ca_h.startswith("@"): ca_h = "@" + ca_h
+                if ca_h not in result_map:
+                    result_map[ca_h] = ca
+        except Exception as e:
+            print(f"[CloudSync] Search merge error: {e}")
+
+    return list(result_map.values())
 
 
 @app.get("/api/accounts/{handle}")
@@ -698,6 +713,36 @@ def get_account_by_handle(handle: str):
 
     if not r:
         conn.close()
+        # Cloud fallback: check Vercel Blob for cross-device accounts
+        if CLOUD_ENABLED:
+            try:
+                cloud_accs = cloud_get_accounts()
+                for ca in cloud_accs:
+                    ca_h = (ca.get("handle") or ca.get("username") or "").strip().lower()
+                    if not ca_h.startswith("@"): ca_h = "@" + ca_h
+                    if ca_h == clean.lower():
+                        return {
+                            "username": ca.get("handle") or ca.get("username"),
+                            "handle": ca.get("handle") or ca.get("username"),
+                            "displayName": ca.get("displayName") or ca.get("name") or "Student",
+                            "name": ca.get("displayName") or ca.get("name") or "Student",
+                            "email": ca.get("email"),
+                            "department": ca.get("department", "Computer Science & Engineering"),
+                            "semester": ca.get("semester", 5),
+                            "program": ca.get("program", "BCA"),
+                            "college": ca.get("college", "Campus OS Academic Network"),
+                            "usn": ca.get("usn"),
+                            "bio": ca.get("bio"),
+                            "skills": ca.get("skills") or [],
+                            "photo": ca.get("photo"),
+                            "role": ca.get("role", "STUDENT"),
+                            "privacy": ca.get("privacy", {"profileVisibility":"public","showEmail":False,"showUSN":True}),
+                            "postCount": 0,
+                            "createdAt": ca.get("createdAt") or ca.get("created_at"),
+                            "updatedAt": ca.get("updatedAt"),
+                        }
+            except Exception as e:
+                print(f"[CloudSync] Account lookup cloud fallback error: {e}")
         raise HTTPException(status_code=404, detail="Student profile not found")
 
     # Fetch user's post count and liked count
@@ -835,6 +880,43 @@ def auth_login(data: LoginModel):
     cursor.execute("SELECT * FROM accounts WHERE LOWER(email) = ? OR LOWER(handle) = ?", (ident, ident if ident.startswith("@") else "@" + ident))
     r = cursor.fetchone()
     conn.close()
+
+    # Cloud fallback: if not in ephemeral SQLite, check Vercel Blob
+    if not r and CLOUD_ENABLED:
+        try:
+            cloud_accs = cloud_get_accounts()
+            handle_check = ident if ident.startswith("@") else "@" + ident
+            for ca in cloud_accs:
+                ca_h = (ca.get("handle") or ca.get("username") or "").strip().lower()
+                ca_em = (ca.get("email") or "").strip().lower()
+                if ca_h == handle_check or ca_em == ident:
+                    # Found in cloud — verify password
+                    stored_hash = ca.get("password_hash") or ca.get("passwordHash") or ""
+                    if stored_hash and not verify_password(data.password, stored_hash):
+                        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+                    acc_dict = {
+                        "username": ca.get("handle") or ca.get("username"),
+                        "handle": ca.get("handle") or ca.get("username"),
+                        "displayName": ca.get("displayName") or ca.get("name") or "Student",
+                        "name": ca.get("displayName") or ca.get("name") or "Student",
+                        "email": ca.get("email"),
+                        "department": ca.get("department", "Computer Science & Engineering"),
+                        "semester": ca.get("semester", 5),
+                        "usn": ca.get("usn"),
+                        "bio": ca.get("bio"),
+                        "skills": ca.get("skills") or [],
+                        "photo": ca.get("photo"),
+                        "role": ca.get("role", "STUDENT"),
+                        "createdAt": ca.get("createdAt") or ca.get("created_at")
+                    }
+                    return {
+                        "status": "success",
+                        "message": "Login successful",
+                        "account": acc_dict,
+                        "user": acc_dict
+                    }
+        except Exception as e:
+            print(f"[CloudSync] Login cloud fallback error: {e}")
 
     if not r:
         raise HTTPException(status_code=404, detail="Account not found. Please check your email/handle or sign up.")
@@ -1251,7 +1333,7 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
     if clean_user and not clean_user.startswith("@"): clean_user = "@" + clean_user
 
     # Load comments and like status for each post
-    result = []
+    result_map = {}
     for r in rows:
         pid = r["id"]
         cursor.execute("SELECT * FROM post_comments WHERE post_id = ? ORDER BY created_at ASC", (pid,))
@@ -1269,7 +1351,7 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
         prow = cursor.fetchone()
         author_photo = prow[0] if prow else None
 
-        result.append({
+        result_map[pid] = {
             "id": r["id"],
             "type": r["type"],
             "title": r["title"],
@@ -1288,9 +1370,37 @@ def get_posts(handle: Optional[str] = None, type: Optional[str] = None, q: Optio
             "isLiked": is_liked,
             "comments": comments,
             "createdAt": r["created_at"]
-        })
+        }
 
     conn.close()
+
+    # Merge cloud posts to ensure cross-device posts appear on serverless cold starts
+    if CLOUD_ENABLED:
+        try:
+            cloud_posts = cloud_get_posts()
+            for cp in cloud_posts:
+                cpid = cp.get("id", "")
+                if cpid and cpid not in result_map:
+                    # Apply any handle/type/query filters
+                    if handle:
+                        cp_handle = (cp.get("handle") or "").strip().lower()
+                        if not cp_handle.startswith("@"): cp_handle = "@" + cp_handle
+                        filter_h = handle.strip().lower()
+                        if not filter_h.startswith("@"): filter_h = "@" + filter_h
+                        if cp_handle != filter_h:
+                            continue
+                    if type and type != "all" and cp.get("type") != type:
+                        continue
+                    if q:
+                        q_lower = q.lower().strip()
+                        searchable = f"{cp.get('title','')}{cp.get('subject','')}{cp.get('desc','')}{cp.get('author','')}".lower()
+                        if q_lower not in searchable:
+                            continue
+                    result_map[cpid] = cp
+        except Exception as e:
+            print(f"[CloudSync] Posts merge error: {e}")
+
+    result = sorted(result_map.values(), key=lambda x: x.get("createdAt") or 0, reverse=True)
     return result
 
 
@@ -1387,6 +1497,7 @@ def create_post(post: PostCreateModel):
         "desc": post.desc,
         "author": post.author,
         "handle": handle,
+        "authorPhoto": None,
         "fileName": post.fileName,
         "fileSize": post.fileSize,
         "youtubeUrl": post.youtubeUrl,
@@ -2468,6 +2579,60 @@ def cloud_notifications_endpoint():
         return cloud_get_notifications()
     except Exception:
         return []
+
+
+@app.post("/api/cloud/posts")
+def cloud_posts_create_endpoint(post: PostCreateModel):
+    """Publish a post directly to Vercel Blob cloud store."""
+    if not CLOUD_ENABLED:
+        return create_post(post)
+    pid = post.id or f"post_{int(time.time() * 1000)}_{os.urandom(2).hex()}"
+    handle = post.handle.strip() if post.handle else "@student"
+    if not handle.startswith("@"): handle = "@" + handle
+    now = int(time.time() * 1000)
+    post_dict = {
+        "id": pid,
+        "type": post.type or "text",
+        "title": post.title,
+        "subject": post.subject,
+        "department": post.department,
+        "desc": post.desc or "",
+        "author": post.author or "Student",
+        "handle": handle,
+        "authorPhoto": None,
+        "fileName": post.fileName,
+        "fileSize": post.fileSize,
+        "youtubeUrl": post.youtubeUrl,
+        "likes": 0,
+        "saves": 0,
+        "comments": [],
+        "createdAt": now
+    }
+    try:
+        cloud_add_post(post_dict)
+        cloud_add_notification({
+            "id": f"notif_{pid}",
+            "type": "post",
+            "title": f"New post by {post.author or 'Student'}",
+            "desc": post.title,
+            "handle": handle,
+            "time": now
+        })
+    except Exception as e:
+        print(f"[CloudSync] Direct cloud post error: {e}")
+    return {"status": "success", "post": post_dict}
+
+
+@app.post("/api/cloud/notifications")
+def cloud_notifications_create_endpoint(data: dict):
+    """Add a notification directly to Vercel Blob cloud store."""
+    if not CLOUD_ENABLED:
+        return {"status": "skipped"}
+    try:
+        cloud_add_notification(data)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 if os.path.isdir(frontend_dir):

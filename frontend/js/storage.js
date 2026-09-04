@@ -34,6 +34,7 @@ const FAKE_POST_IDS = [
 
 var Storage = {
   _initDone: false,
+  _syncDone: false,
   // Generic
   get(key, fallback = null) {
     try {
@@ -51,7 +52,7 @@ var Storage = {
   // INITIALIZATION & REALTIME BACKGROUND SYNC
   // ============================================================
   async init() {
-    // Guard: only run init ONCE per page load to prevent API floods
+    // Guard: only run init ONCE per page load
     if (this._initDone) return;
     this._initDone = true;
     // 1. Clean up legacy fake accounts, test user sessions, and mock posts from localStorage
@@ -114,9 +115,16 @@ var Storage = {
     } catch (e) {
       console.warn('Legacy data purge note:', e);
     }
+    // NOTE: Remote sync is NOT done here. It is triggered from api.js after PythonAPI is ready.
+  },
 
-    // 2. Real-time Backend Sync
-    if (window.PythonAPI) {
+  // ============================================================
+  // REMOTE SYNC (called from api.js when PythonAPI is available)
+  // ============================================================
+  async syncWithBackend() {
+    if (this._syncDone) return;
+    this._syncDone = true;
+    if (!window.PythonAPI) return;
       try {
         // Sync Accounts from Vercel Blob Cloud / Backend and deduplicate by handle AND email
         const getAccFn = (PythonAPI.getCloudAccounts || PythonAPI.getAccounts).bind(PythonAPI);
@@ -1264,7 +1272,7 @@ window.genId = function() {
   return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
 };
 
-// Initialize Storage and kick off real-time backend sync
+// Initialize Storage local cleanup (no API calls — those happen in api.js)
 Storage.init();
 
 // Export to window reliably avoiding native non-writable window.Storage collision

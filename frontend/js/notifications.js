@@ -383,11 +383,16 @@ const NotificationsManager = {
       }
     });
 
-    // Start Realtime Polling every 45 seconds (was 6s — too aggressive, caused Page Unresponsive)
+    // Start Realtime Polling every 30 seconds
     if (this.pollTimer) clearInterval(this.pollTimer);
     this.pollTimer = setInterval(() => {
       this.pollRemotePosts();
-    }, 45000);
+    }, 30000);
+
+    // Initial check 600ms after boot once PythonAPI is mounted
+    setTimeout(() => {
+      this.pollRemotePosts();
+    }, 600);
   }
 };
 

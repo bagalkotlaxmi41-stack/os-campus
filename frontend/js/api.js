@@ -608,6 +608,54 @@ const PythonAPI = {
 const CampusEmailService = {
   publicKey: "MQxZeO4-7lL0-gfX7",
 
+  getDevice() {
+    if (typeof navigator === 'undefined') return 'Personal Computer';
+    const ua = navigator.userAgent || '';
+    if (/android/i.test(ua)) return 'Mobile (Android)';
+    if (/iPad|iPhone|iPod/.test(ua)) return 'Mobile (iOS / iPhone)';
+    if (/Windows/i.test(ua)) return 'Desktop (Windows PC)';
+    if (/Macintosh|Mac OS/i.test(ua)) return 'Desktop (Apple macOS)';
+    if (/Linux/i.test(ua)) return 'Desktop (Linux)';
+    if (/mobile/i.test(ua)) return 'Mobile Device';
+    return 'Web Device';
+  },
+
+  getBrowser() {
+    if (typeof navigator === 'undefined') return 'Web Browser';
+    const ua = navigator.userAgent || '';
+    if (ua.includes('Edg/')) return 'Microsoft Edge';
+    if (ua.includes('Chrome/') && !ua.includes('Edg/')) return 'Google Chrome';
+    if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Apple Safari';
+    if (ua.includes('Firefox/')) return 'Mozilla Firefox';
+    if (ua.includes('OPR/') || ua.includes('Opera')) return 'Opera';
+    return 'Modern Browser';
+  },
+
+  getLoginTime() {
+    const now = new Date();
+    try {
+      return now.toLocaleString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (e) {
+      return now.toISOString();
+    }
+  },
+
+  getLocation() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) return `${tz} · Campus Network`;
+    } catch (e) {}
+    return 'Campus OS Academic Network';
+  },
+
   getServiceId() {
     return localStorage.getItem('cos_emailjs_service_id') || window.EMAILJS_SERVICE_ID || 'service_campus_os';
   },
@@ -621,7 +669,11 @@ const CampusEmailService = {
     if (templateId) localStorage.setItem('cos_emailjs_template_id', templateId.trim());
   },
 
-  async sendWelcome(user) {
+  /**
+   * Dispatch Login / Account Creation Notification via EmailJS
+   * Template parameters match: {{full_name}}, {{login_time}}, {{device}}, {{browser}}, {{location}}
+   */
+  async sendLoginNotification(user) {
     if (!user || !user.email) return { success: false, message: "No email provided" };
 
     if (typeof emailjs === 'undefined') {
@@ -633,30 +685,63 @@ const CampusEmailService = {
       emailjs.init({ publicKey: this.publicKey });
     } catch(e) {}
 
+    const fullName = user.displayName || user.name || user.fullName || 'Student';
+    const email = (user.email || '').trim();
+    const loginTime = this.getLoginTime();
+    const device = this.getDevice();
+    const browser = this.getBrowser();
+    const location = this.getLocation();
+
     const templateParams = {
-      to_name: user.displayName || user.name || 'Student',
-      to_email: user.email,
-      recipient_email: user.email,
-      user_name: user.displayName || user.name || 'Student',
-      user_email: user.email,
-      email: user.email,
-      name: user.displayName || user.name || 'Student',
-      user_handle: user.handle || user.username || '',
-      handle: user.handle || user.username || '',
+      // Direct template variables from EmailJS template
+      full_name: fullName,
+      login_time: loginTime,
+      device: device,
+      browser: browser,
+      location: location,
+
+      // Recipient fields for EmailJS header & To Email field
+      to_email: email,
+      email: email,
+      user_email: email,
+      recipient_email: email,
+      reply_to: email,
+      to_name: fullName,
+      name: fullName,
+      user_name: fullName,
+
+      // Extra metadata
+      handle: user.handle || user.username || '@student',
+      user_handle: user.handle || user.username || '@student',
       college: user.college || 'Campus OS Academic Network',
-      program: user.program || 'Student',
-      department: user.department || 'Engineering & Science',
+      department: user.department || 'Computer Science & Engineering',
       semester: user.semester || 5,
       joined_date: new Date().toLocaleDateString(),
       app_name: 'Campus OS',
-      message: `Welcome to Campus OS, ${user.displayName || user.name}! Your student account (${user.handle || user.username}) has been successfully created. Access your student passport at https://os-campus.vercel.app`
+      message: `Your Campus OS account was successfully signed in on ${device} via ${browser} at ${loginTime}.`
     };
 
     const sId = this.getServiceId();
     const tId = this.getTemplateId();
 
-    const serviceCandidates = [sId, window.EMAILJS_SERVICE_ID, 'service_campus_os', 'service_gmail', 'service_default', 'default_service'].filter(Boolean);
-    const templateCandidates = [tId, window.EMAILJS_TEMPLATE_ID, 'template_welcome', 'template_signup', 'template_default'].filter(Boolean);
+    const serviceCandidates = [
+      sId,
+      window.EMAILJS_SERVICE_ID,
+      'service_campus_os',
+      'service_gmail',
+      'service_default',
+      'default_service'
+    ].filter(Boolean);
+
+    const templateCandidates = [
+      tId,
+      window.EMAILJS_TEMPLATE_ID,
+      'template_welcome',
+      'template_login',
+      'template_signin',
+      'template_signup',
+      'template_default'
+    ].filter(Boolean);
 
     let sent = false;
     let lastErr = null;
@@ -666,7 +751,7 @@ const CampusEmailService = {
       for (const t of Array.from(new Set(templateCandidates))) {
         try {
           const res = await emailjs.send(s, t, templateParams, this.publicKey);
-          console.log('✅ Welcome email dispatched via EmailJS:', res);
+          console.log('✅ Sign-in email dispatched via EmailJS:', res);
           sent = true;
           break;
         } catch (err) {
@@ -678,15 +763,31 @@ const CampusEmailService = {
 
     return {
       success: sent,
-      email: user.email,
+      email: email,
       error: sent ? null : (lastErr?.text || lastErr?.message || "Service ID or Template ID not configured")
     };
+  },
+
+  async sendWelcome(user) {
+    return this.sendLoginNotification(user);
   }
 };
 
 window.CampusEmailService = CampusEmailService;
 window.sendWelcomeEmail = function(user) {
-  return CampusEmailService.sendWelcome(user);
+  return CampusEmailService.sendLoginNotification(user);
 };
 
 window.PythonAPI = PythonAPI;
+
+// ── Trigger remote sync NOW that PythonAPI is available ──
+// This fixes the race condition where storage.js ran init() before api.js loaded,
+// permanently locking out cloud sync and leaving localStorage empty on new devices.
+(function triggerBackendSync() {
+  const S = window.Storage || window.CampusStorage || window.COS_Storage;
+  if (S && S.syncWithBackend) {
+    S.syncWithBackend().catch(function(e) {
+      console.warn('[API] Storage syncWithBackend note:', e);
+    });
+  }
+})();

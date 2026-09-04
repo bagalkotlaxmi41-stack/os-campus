@@ -1996,11 +1996,59 @@ async function executeGlobalSpotlightSearch(query) {
 
   const q = (query || '').trim().toLowerCase().replace(/^@/, '');
 
-  // 1. Get local accounts & posts
+  // 1. Get local accounts & posts (instant 0ms)
   const localData = Storage.searchEverything ? Storage.searchEverything(q) : { accounts: [], posts: [], notes: [] };
   let accounts = localData.accounts || [];
   let posts = localData.posts || [];
   let notes = localData.notes || [];
+
+  // Render local results immediately
+  _renderSpotlightResults(container, query, q, accounts, posts, notes);
+
+  // 2. Async cloud discovery: fetch from backend to find accounts created on other devices
+  if (window.PythonAPI && q.length >= 1) {
+    try {
+      const searchFn = (PythonAPI.searchCloudAccounts || PythonAPI.searchAccounts);
+      if (searchFn) {
+        const cloudAccounts = await searchFn.call(PythonAPI, q);
+        if (cloudAccounts && Array.isArray(cloudAccounts) && cloudAccounts.length > 0) {
+          const existingHandles = new Set(accounts.map(a => (a.handle || a.username || '').toLowerCase()));
+          let added = false;
+          cloudAccounts.forEach(ca => {
+            const h = (ca.handle || ca.username || '').toLowerCase();
+            const hc = h.startsWith('@') ? h : '@' + h;
+            if (!existingHandles.has(hc) && !existingHandles.has(h)) {
+              ca.handle = hc;
+              ca.username = hc;
+              accounts.push(ca);
+              existingHandles.add(hc);
+              added = true;
+            }
+          });
+          if (added) {
+            // Re-render with merged cloud results
+            _renderSpotlightResults(container, query, q, accounts, posts, notes);
+            // Also save to local storage for future searches
+            if (Storage.setAccounts) {
+              const allAccs = Storage.getAccounts();
+              cloudAccounts.forEach(ca => {
+                const ch = (ca.handle || ca.username || '').toLowerCase();
+                if (!allAccs.some(x => (x.handle || x.username || '').toLowerCase() === ch)) {
+                  allAccs.push(ca);
+                }
+              });
+              Storage.setAccounts(allAccs);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[SpotlightSearch] Cloud discovery note:', e);
+    }
+  }
+}
+
+function _renderSpotlightResults(container, query, q, accounts, posts, notes) {
 
   // Default quick tools
   const workspaceTools = [

@@ -981,10 +981,11 @@
       // 1. Get real student posts from local storage
       let posts = Storage.getPosts() || [];
 
-      // 2. Fetch fresh real-time posts from Python API and merge
-      if (window.PythonAPI && PythonAPI.getPosts) {
+      // 2. Fetch fresh real-time posts from Cloud Store first, then API fallback
+      if (window.PythonAPI) {
         try {
-          const remote = await PythonAPI.getPosts();
+          const getPostsFn = (PythonAPI.getCloudPosts || PythonAPI.getPosts);
+          const remote = await getPostsFn.call(PythonAPI);
           if (remote && Array.isArray(remote)) {
             const map = new Map();
             remote.forEach(p => { if (p && p.id) map.set(p.id, p); });
@@ -1386,7 +1387,7 @@
       const statusEl = document.getElementById('feedPdfStatus');
       if (statusEl) statusEl.textContent = 'Click to select PDF from device';
 
-      // Sync to SQLite database
+      // Sync to SQLite database AND Cloud Store
       if (window.PythonAPI && PythonAPI.createPost) {
         try {
           await PythonAPI.createPost(postPayload);
