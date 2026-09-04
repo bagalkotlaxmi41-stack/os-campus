@@ -1,15 +1,5 @@
 # 🎓 Campus OS — Smart Academic Operating Platform
 
-> **Modern, high-performance, real-time academic operating platform engineered for universities and student communities everywhere.**
-
-[![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg)]()
-[![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20HTML5%20%7C%20CSS3%20%7C%20JS-8b5cf6.svg)]()
-[![Backend](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.10+-38bdf8.svg)]()
-[![Database](https://img.shields.io/badge/Database-Firebase%20Firestore%20%2B%20SQLite-10b981.svg)]()
-
----
-
-## 🌟 Key Features
 
 ### 📊 Academic Dashboard (`dashboard.html`)
 - Unified academic overview with GPA target tracking, today's schedule, quick internal test scores, and active task progress.
@@ -19,7 +9,7 @@
 - Period timings, classroom/lab locators, and interactive slot editing.
 
 ### 📈 75% Attendance Radar (`attendance.html`)
-- Automated University 75% minimum criteria calculator.
+- Automated VTU / University 75% minimum criteria calculator.
 - Real-time Safe Bunk Margin indicator and class eligibility predictor.
 
 ### 📝 Smart Notes Vault (`notes.html`)
@@ -28,17 +18,18 @@
 ### ✅ Kanban Task & Assignment Planner (`tasks.html`)
 - Visual Kanban workflow (`To Do` → `In Progress` → `Done`) for assignments, seminars, and internal exams.
 
-### 📚 University Question Bank (`resources.html`)
+### 📚 VTU / University Question Bank (`resources.html`)
 - Previous years' university question papers, lab manuals, and official syllabus schemes.
 
 ### 👤 Student Passport & Real Student Directory (`profile.html`)
-- Authentic student profiles with degree, branch (BCA, BSc, B.Pharm, B.Tech, BBA, B.Com, etc.), USN, verified status, and custom profile photo upload.
+- Authentic student profiles with degree, branch (BCA, BSc, B.Pharm, B.Tech, BBA, B.Com, etc.), USN, custom profile photo upload, and XP badges.
 - Global Search overlay (`Ctrl+K`) for finding real registered classmates across branches.
 
 ### 📢 Campus Intelligence & Noticeboard (`index.html`)
-- Live official Administrator broadcast and circulars stream.
-- Dynamic unlimited hero banner carousel managed by campus administrators.
+- Live semester milestone countdown radar (University Finals, IA-2, SSP Scholarship Deadline, Lab Record Submissions).
+- Official categorized noticeboard (Exams, Scholarships, Placements, Library).
 - Daily Concept & Placement Aptitude Challenge with step-by-step solution reveals.
+- Departmental helpline directory.
 
 ---
 
@@ -75,9 +66,9 @@ Backend API runs at `http://localhost:8000` (Swagger docs: `http://localhost:800
 cd ../frontend
 python -m http.server 8080
 ```
-Visit `http://localhost:8080` in your web browser.
+Visit `https://os-campus.vercel.app/` in your web browser.
 
----
+
 
 ## 📁 Project Structure
 
@@ -106,4 +97,4 @@ os-campus/
 ---
 
 ## 📜 License
-Campus OS — Universal Open Academic Operating Platform.
+Developed for **LAXMI BAGALKOT, Jamkhandi**.

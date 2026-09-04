@@ -690,7 +690,7 @@
       <span class="sidebar-nav-icon">🔴</span>
       Campus Stream (Reels)
     </a>
-    <a href="profile.html" class="sidebar-nav-item">
+    <a href="profile.html" class="sidebar-nav-item" id="sidebarNavPassport">
       <span class="sidebar-nav-icon">👤</span>
       Student Passport
     </a>
@@ -1009,6 +1009,16 @@
         const sbCollege = document.getElementById('sidebar-college');
         if (sbCollege) {
           sbCollege.textContent = (`${user.department || user.branch || 'CSE'} · Sem ${user.semester || 5}`).trim() || user.college || "Campus OS";
+        }
+
+        const profileUrl = `profile.html?handle=${encodeURIComponent(user.username || user.handle || '')}`;
+        const sbUser = document.getElementById('sidebar-user');
+        if (sbUser) sbUser.href = profileUrl;
+        const sbNavP = document.getElementById('sidebarNavPassport');
+        if (sbNavP) sbNavP.href = profileUrl;
+        if (tbAvatar) {
+          tbAvatar.onclick = () => window.location.href = profileUrl;
+          tbAvatar.style.cursor = 'pointer';
         }
 
         // ---- Greeting ----

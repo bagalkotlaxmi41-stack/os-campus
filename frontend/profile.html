@@ -2166,24 +2166,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderStudentProfile({
         displayName: viewHandle.replace('@', ''),
         username: viewHandle,
+        handle: viewHandle,
         program: 'BCA',
         department: 'Computer Science & Engineering',
         semester: 5,
         bio: 'Student at Campus OS Academic Platform.'
       }, false);
     }
-  } else if (!currentUser) {
-    document.getElementById('createProfileModal').classList.add('open');
-    renderStudentProfile({
-      displayName: 'New Student',
-      username: '@student',
-      program: 'BCA',
-      department: 'Computer Science & Engineering',
-      semester: 1,
-      bio: 'Set up your student profile to access timetables, attendance radar, and notes.'
-    }, true);
   } else {
-    renderStudentProfile(currentUser, true);
+    // Viewing own profile
+    currentUser = Storage.getUser();
+    if (!currentUser) {
+      // Check if a registered account exists in local directory to restore session
+      const accs = Storage.getAccounts() || [];
+      const myAcc = accs.find(a => a.email && a.email !== 'campus0012@gmail.com') || accs[0];
+      if (myAcc) {
+        Storage.setUser(myAcc);
+        currentUser = myAcc;
+        renderStudentProfile(currentUser, true);
+      } else {
+        // Not logged in — redirect to official sign in
+        window.location.href = 'auth.html?mode=login';
+        return;
+      }
+    } else {
+      renderStudentProfile(currentUser, true);
+    }
   }
 
   // Restore initial option from query/hash if requested
@@ -3099,45 +3107,10 @@ function deletePostHandler(postId) {
   showToast('🗑️ Post deleted.');
 }
 
-// First time profile creation
+// First time profile creation redirects to full secure auth
 function saveNewProfile() {
-  const name = document.getElementById('createFullName').value.trim();
-  let username = document.getElementById('createUsername').value.trim();
-  const usn = document.getElementById('createUSN').value.trim();
-  const program = document.getElementById('createProgram')?.value || 'BCA';
-  const sem = parseInt(document.getElementById('createSem').value, 10) || 5;
-
-  if (!name || !username) {
-    alert('Full Name and Username are required!');
-    return;
-  }
-  if (!username.startsWith('@')) username = '@' + username;
-
-  const newUser = {
-    uid: 'user_' + Date.now().toString(36),
-    displayName: name,
-    name: name,
-    username,
-    handle: username,
-    usn: usn || 'Verified',
-    college: "Campus OS Academic Network",
-    program,
-    department: 'Computer Science & Engineering',
-    semester: sem,
-    skills: ['Academic Learner'],
-    bio: 'Student at Campus OS Academic Platform.',
-    status: 'ACTIVE',
-    verified: true,
-    createdAt: Date.now()
-  };
-
-  Storage.setUser(newUser);
-  Storage.addAccount(newUser);
-  currentUser = newUser;
-
-  document.getElementById('createProfileModal').classList.remove('open');
-  renderStudentProfile(newUser, true);
-  showToast('🎉 Welcome to Campus OS!');
+  document.getElementById('createProfileModal')?.classList.remove('open');
+  window.location.href = 'auth.html';
 }
 
 async function toggleStudentRoleFromProfile(handle, currentRole) {

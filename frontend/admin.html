@@ -1591,6 +1591,45 @@
               <span>⚡ Send Live Campus Broadcast</span>
             </button>
           </form>
+
+          <!-- EmailJS Welcome Dispatch Settings Card -->
+          <div class="admin-card" style="margin-top:24px;border:1px solid rgba(139,92,246,0.3);background:rgba(18,14,38,0.7);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <div>
+                <h3 style="font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                  <span>📧</span> Automated Welcome Email Dispatch (EmailJS v4)
+                </h3>
+                <p style="font-size:12px;color:var(--admin-text-muted);margin-top:2px;">Dispatches verification & welcome confirmation emails automatically when new students create their accounts.</p>
+              </div>
+              <span style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">
+                ● Active Integration
+              </span>
+            </div>
+
+            <div class="admin-form-row">
+              <div class="admin-form-group">
+                <label class="admin-form-label">EMAILJS PUBLIC KEY</label>
+                <input type="text" class="admin-form-input" id="adminEmailjsPublicKey" value="MQxZeO4-7lL0-gfX7" readonly style="opacity:0.8;cursor:not-allowed;" />
+              </div>
+              <div class="admin-form-group">
+                <label class="admin-form-label">SERVICE ID</label>
+                <input type="text" class="admin-form-input" id="adminEmailjsServiceId" placeholder="e.g. service_campus_os or service_xxxxxxx" />
+              </div>
+              <div class="admin-form-group">
+                <label class="admin-form-label">TEMPLATE ID</label>
+                <input type="text" class="admin-form-input" id="adminEmailjsTemplateId" placeholder="e.g. template_welcome or template_xxxxxxx" />
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+              <button type="button" class="admin-btn-primary" onclick="saveEmailjsSettings()" style="padding:9px 18px;font-size:13px;">
+                💾 Save EmailJS IDs
+              </button>
+              <button type="button" class="admin-btn-secondary" onclick="testWelcomeEmail()" style="padding:9px 18px;font-size:13px;">
+                🧪 Send Test Email
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1983,12 +2022,16 @@
       // Render KPIs & Tables instantly
       updateAdminDashboardUI();
 
-      // 2. Fast Non-blocking Background Sync
+      // 2. Fast Non-blocking Background Sync from Cloud Store & API
       try {
+        const getAccFn = (window.PythonAPI && (PythonAPI.getCloudAccounts || PythonAPI.getAccounts)) ? (PythonAPI.getCloudAccounts || PythonAPI.getAccounts).bind(PythonAPI) : () => Promise.resolve(null);
+        const getPostsFn = (window.PythonAPI && (PythonAPI.getCloudPosts || PythonAPI.getPosts)) ? (PythonAPI.getCloudPosts || PythonAPI.getPosts).bind(PythonAPI) : () => Promise.resolve(null);
+        const getBannersFn = (window.PythonAPI && PythonAPI.getAdminBanners) ? PythonAPI.getAdminBanners.bind(PythonAPI) : () => Promise.resolve(null);
+
         const [remoteAccs, remoteBanners, remotePosts] = await Promise.allSettled([
-          (window.PythonAPI && PythonAPI.getAccounts) ? PythonAPI.getAccounts() : Promise.resolve(null),
-          (window.PythonAPI && PythonAPI.getAdminBanners) ? PythonAPI.getAdminBanners() : Promise.resolve(null),
-          (window.PythonAPI && PythonAPI.getPosts) ? PythonAPI.getPosts() : Promise.resolve(null)
+          getAccFn(),
+          getBannersFn(),
+          getPostsFn()
         ]);
 
         const accountMap = new Map();
@@ -1997,12 +2040,14 @@
         emailMap.set('campus0012@gmail.com', '@campus_admin');
 
         function mergeAccount(a) {
-          const rawH = (a.handle || a.username || '').toLowerCase();
+          if (!a) return;
+          const rawH = (a.handle || a.username || '').toLowerCase().trim();
           const em = (a.email || '').trim().toLowerCase();
           if (!rawH || deletedHandles.includes(rawH)) return;
           const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs', '@laxmi_patil', 'laxmi_patil', '@channu patil', '@channu_patil'].includes(formattedH)) return;
-          if (['demo@collegeos.app', 'laxmi.patil@campus.edu', 'channupatil299@gmail.com'].includes(em)) return;
+          // Filter only legacy placeholder mock accounts
+          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs'].includes(formattedH)) return;
+          if (['demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu'].includes(em)) return;
 
           let targetKey = formattedH;
           if (em && em !== 'campus0012@gmail.com' && emailMap.has(em)) {
@@ -2041,12 +2086,63 @@
         }
 
         updateAdminDashboardUI();
+        loadEmailjsSettings();
 
         if (isManualRefresh) {
           showAdminToast('🔄 All student accounts & system metrics updated!');
         }
       } catch (err) {
         console.warn('Background admin sync note:', err);
+      }
+    }
+
+    function loadEmailjsSettings() {
+      const sInput = document.getElementById('adminEmailjsServiceId');
+      const tInput = document.getElementById('adminEmailjsTemplateId');
+      if (sInput && !sInput.value) {
+        sInput.value = localStorage.getItem('cos_emailjs_service_id') || 'service_campus_os';
+      }
+      if (tInput && !tInput.value) {
+        tInput.value = localStorage.getItem('cos_emailjs_template_id') || 'template_welcome';
+      }
+    }
+
+    function saveEmailjsSettings() {
+      const sVal = document.getElementById('adminEmailjsServiceId')?.value.trim();
+      const tVal = document.getElementById('adminEmailjsTemplateId')?.value.trim();
+      if (sVal) localStorage.setItem('cos_emailjs_service_id', sVal);
+      if (tVal) localStorage.setItem('cos_emailjs_template_id', tVal);
+      if (window.CampusEmailService) {
+        CampusEmailService.setCredentials(sVal, tVal);
+      }
+      showAdminToast('✅ EmailJS Service & Template IDs saved successfully!');
+    }
+
+    async function testWelcomeEmail() {
+      const testEmail = prompt('Enter recipient email address for test welcome email:', 'campus0012@gmail.com');
+      if (!testEmail) return;
+      showAdminToast('🚀 Sending test welcome email via EmailJS...');
+      const testUser = {
+        displayName: 'Test Student',
+        name: 'Test Student',
+        handle: '@test_student',
+        username: '@test_student',
+        email: testEmail.trim(),
+        college: 'Campus OS Academic Network',
+        department: 'Computer Science & Engineering',
+        semester: 5
+      };
+      try {
+        const sendFn = window.sendWelcomeEmail || (window.CampusEmailService ? window.CampusEmailService.sendWelcome.bind(window.CampusEmailService) : null);
+        if (!sendFn) throw new Error('Email service unavailable');
+        const res = await sendFn(testUser);
+        if (res && res.success) {
+          alert(`🎉 Test welcome email successfully dispatched to ${testEmail}! Check your inbox / spam folder.`);
+        } else {
+          alert(`⚠️ EmailJS note: ${res?.error || 'Email dispatch completed or queued'}. Ensure Service ID and Template ID match your EmailJS dashboard.`);
+        }
+      } catch (err) {
+        alert(`❌ Email dispatch error: ${err.message || err}`);
       }
     }
 

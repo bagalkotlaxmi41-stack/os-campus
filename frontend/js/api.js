@@ -602,4 +602,91 @@ const PythonAPI = {
   }
 };
 
+// ============================================================
+// CAMPUS EMAIL SERVICE (EmailJS Integration)
+// ============================================================
+const CampusEmailService = {
+  publicKey: "MQxZeO4-7lL0-gfX7",
+
+  getServiceId() {
+    return localStorage.getItem('cos_emailjs_service_id') || window.EMAILJS_SERVICE_ID || 'service_campus_os';
+  },
+
+  getTemplateId() {
+    return localStorage.getItem('cos_emailjs_template_id') || window.EMAILJS_TEMPLATE_ID || 'template_welcome';
+  },
+
+  setCredentials(serviceId, templateId) {
+    if (serviceId) localStorage.setItem('cos_emailjs_service_id', serviceId.trim());
+    if (templateId) localStorage.setItem('cos_emailjs_template_id', templateId.trim());
+  },
+
+  async sendWelcome(user) {
+    if (!user || !user.email) return { success: false, message: "No email provided" };
+
+    if (typeof emailjs === 'undefined') {
+      console.warn('[CampusEmail] EmailJS SDK not available on page.');
+      return { success: false, message: "EmailJS SDK not loaded" };
+    }
+
+    try {
+      emailjs.init({ publicKey: this.publicKey });
+    } catch(e) {}
+
+    const templateParams = {
+      to_name: user.displayName || user.name || 'Student',
+      to_email: user.email,
+      recipient_email: user.email,
+      user_name: user.displayName || user.name || 'Student',
+      user_email: user.email,
+      email: user.email,
+      name: user.displayName || user.name || 'Student',
+      user_handle: user.handle || user.username || '',
+      handle: user.handle || user.username || '',
+      college: user.college || 'Campus OS Academic Network',
+      program: user.program || 'Student',
+      department: user.department || 'Engineering & Science',
+      semester: user.semester || 5,
+      joined_date: new Date().toLocaleDateString(),
+      app_name: 'Campus OS',
+      message: `Welcome to Campus OS, ${user.displayName || user.name}! Your student account (${user.handle || user.username}) has been successfully created. Access your student passport at https://os-campus.vercel.app`
+    };
+
+    const sId = this.getServiceId();
+    const tId = this.getTemplateId();
+
+    const serviceCandidates = [sId, window.EMAILJS_SERVICE_ID, 'service_campus_os', 'service_gmail', 'service_default', 'default_service'].filter(Boolean);
+    const templateCandidates = [tId, window.EMAILJS_TEMPLATE_ID, 'template_welcome', 'template_signup', 'template_default'].filter(Boolean);
+
+    let sent = false;
+    let lastErr = null;
+
+    for (const s of Array.from(new Set(serviceCandidates))) {
+      if (sent) break;
+      for (const t of Array.from(new Set(templateCandidates))) {
+        try {
+          const res = await emailjs.send(s, t, templateParams, this.publicKey);
+          console.log('✅ Welcome email dispatched via EmailJS:', res);
+          sent = true;
+          break;
+        } catch (err) {
+          lastErr = err;
+          console.debug(`[CampusEmail] Attempt (${s}, ${t}):`, err?.text || err?.message || err);
+        }
+      }
+    }
+
+    return {
+      success: sent,
+      email: user.email,
+      error: sent ? null : (lastErr?.text || lastErr?.message || "Service ID or Template ID not configured")
+    };
+  }
+};
+
+window.CampusEmailService = CampusEmailService;
+window.sendWelcomeEmail = function(user) {
+  return CampusEmailService.sendWelcome(user);
+};
+
 window.PythonAPI = PythonAPI;

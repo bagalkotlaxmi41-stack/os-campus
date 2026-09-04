@@ -320,10 +320,10 @@ def init_database():
     else:
         cursor.execute("UPDATE accounts SET display_name = 'Campus Administrator', bio = 'Official Platform Administrator & Owner for Campus OS.', password_hash = ?, role = 'OWNER_ADMIN', email = 'campus0012@gmail.com' WHERE LOWER(email) = 'campus0012@gmail.com' OR handle = '@campus_admin'", (admin_pass_hash,))
 
-    # Thoroughly clean up any legacy fake demo accounts and mock posts
-    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma', '@alex_cs', 'alex_cs', '@laxmi_patil', 'laxmi_patil', '@channu patil', 'channu patil', '@channu_patil', 'channu_patil')
+    # Clean up legacy template placeholder mock accounts and mock posts
+    fake_handles = ('@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', 'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma', '@alex_cs', 'alex_cs')
     fake_posts = ('post_os_01', 'post_ai_02', 'post_code_03', 'cloud-post-01', 'cloud-post-02')
-    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR LOWER(email) IN ('demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu', 'laxmi.patil@campus.edu', 'channupatil299@gmail.com')", fake_handles)
+    cursor.execute(f"DELETE FROM accounts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR LOWER(email) IN ('demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu')", fake_handles)
     cursor.execute(f"DELETE FROM posts WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_comments WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
     cursor.execute(f"DELETE FROM post_likes WHERE handle IN ({','.join(['?']*len(fake_handles))}) OR post_id IN ({','.join(['?']*len(fake_posts))})", fake_handles + fake_posts)
@@ -597,15 +597,28 @@ class AttendanceModel(BaseModel):
 
 @app.get("/api/accounts")
 def get_all_accounts():
+    cloud_accs = cloud_get_accounts() if CLOUD_ENABLED else []
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM accounts ORDER BY created_at DESC")
     rows = cursor.fetchall()
     conn.close()
 
-    result = []
+    account_map = {}
+    # Index cloud accounts
+    for a in cloud_accs:
+        h = (a.get("handle") or a.get("username") or "").strip().lower()
+        if h:
+            if not h.startswith("@"):
+                h = "@" + h
+            account_map[h] = a
+
+    # Merge SQLite accounts
     for r in rows:
-        result.append({
+        h = r["handle"].strip().lower()
+        if not h.startswith("@"):
+            h = "@" + h
+        sqlite_acc = {
             "username": r["handle"],
             "handle": r["handle"],
             "displayName": r["display_name"],
@@ -623,7 +636,14 @@ def get_all_accounts():
             "privacy": json.loads(r["privacy_json"] or "{}") if "privacy_json" in r.keys() and r["privacy_json"] else {"profileVisibility":"public","showEmail":False,"showUSN":True},
             "createdAt": r["created_at"],
             "updatedAt": r["updated_at"],
-        })
+        }
+        if h in account_map:
+            account_map[h] = {**sqlite_acc, **account_map[h]}
+        else:
+            account_map[h] = sqlite_acc
+
+    result = list(account_map.values())
+    result.sort(key=lambda x: x.get("updatedAt") or x.get("createdAt") or 0, reverse=True)
     return result
 
 
@@ -2065,6 +2085,12 @@ def admin_auth(data: AdminAuthModel):
 
 @app.get("/api/admin/stats")
 def admin_stats():
+    if CLOUD_ENABLED:
+        try:
+            sync_cloud_to_sqlite()
+        except Exception as e:
+            print(f"[AdminStats] Sync notice: {e}")
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -2128,6 +2154,11 @@ def admin_stats():
         "recent_students": recent_students,
         "recent_posts": recent_posts
     }
+
+
+@app.get("/api/admin/accounts")
+def get_admin_accounts():
+    return get_all_accounts()
 
 
 @app.get("/api/banners")

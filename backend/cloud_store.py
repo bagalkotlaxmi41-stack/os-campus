@@ -43,7 +43,7 @@ def _get_blob_url(filename):
 
 
 def put_cloud_json(filename, data):
-    """Upload JSON data to Vercel Blob. Returns the public URL."""
+    """Upload JSON data to Vercel Blob with deterministic filename (no random suffix). Returns the public URL."""
     token = _get_token()
     if not token:
         return None
@@ -56,6 +56,7 @@ def put_cloud_json(filename, data):
                 "authorization": f"Bearer {token}",
                 "x-api-version": "7",
                 "content-type": "application/json",
+                "x-add-random-suffix": "false",
             },
             method="PUT",
         )
@@ -70,7 +71,7 @@ def put_cloud_json(filename, data):
 
 
 def get_cloud_json(filename, default=None):
-    """Download JSON data from Vercel Blob. Uses in-memory cache."""
+    """Download JSON data from Vercel Blob. Uses in-memory cache and falls back to listing."""
     token = _get_token()
     if not token:
         return default
@@ -80,10 +81,23 @@ def get_cloud_json(filename, default=None):
     if filename in _cache and (now - _cache_ts.get(filename, 0)) < CACHE_TTL:
         return _cache[filename]
 
+    # 1. Try direct canonical URL first (when x-add-random-suffix: false is used)
+    direct_url = f"https://vecycnq2hep3nnfw.public.blob.vercel-storage.com/{filename}?cb={int(now)}"
     try:
-        # Vercel Blob prefix matches the base name
+        req = urllib.request.Request(direct_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                _cache[filename] = data
+                _cache_ts[filename] = now
+                return data
+    except Exception:
+        pass
+
+    # 2. Fallback to listing blobs (limit 1000 to find the most recent upload)
+    try:
         prefix = filename.split(".")[0]
-        list_url = f"{BLOB_API_URL}?prefix={prefix}&limit=20"
+        list_url = f"{BLOB_API_URL}?prefix={prefix}&limit=1000"
         req = urllib.request.Request(
             list_url,
             headers={
@@ -95,6 +109,9 @@ def get_cloud_json(filename, default=None):
             listing = json.loads(resp.read().decode("utf-8"))
 
         blobs = [b for b in listing.get("blobs", []) if b.get("pathname") == filename]
+        if not blobs:
+            # Also match blobs whose pathname starts with prefix
+            blobs = [b for b in listing.get("blobs", []) if b.get("pathname", "").startswith(prefix)]
         if not blobs:
             return default
 
@@ -121,26 +138,91 @@ def get_cloud_json(filename, default=None):
 # HIGH-LEVEL CLOUD DATA OPERATIONS
 # ============================================================
 
+def deduplicate_accounts_list(accounts_list):
+    """Cleanly merge duplicate accounts for the same user (by handle or email)."""
+    if not accounts_list or not isinstance(accounts_list, list):
+        return []
+
+    merged = {}
+    email_to_key = {}
+
+    for acc in accounts_list:
+        raw_h = (acc.get("handle") or acc.get("username") or "").strip()
+        if not raw_h:
+            continue
+        h = raw_h.lower() if raw_h.startswith("@") else "@" + raw_h.lower()
+        em = (acc.get("email") or "").strip().lower()
+
+        # Canonical key
+        key = h
+        if em and em != "campus0012@gmail.com" and em in email_to_key:
+            key = email_to_key[em]
+
+        if key in merged:
+            # Merge fields (keep best data)
+            existing = merged[key]
+            for field in ["email", "photo", "password_hash", "password", "bio", "usn", "department", "semester", "program", "college"]:
+                if acc.get(field) and not existing.get(field):
+                    existing[field] = acc.get(field)
+            if (acc.get("updatedAt") or 0) > (existing.get("updatedAt") or 0):
+                existing["updatedAt"] = acc.get("updatedAt")
+            if acc.get("role") in ["OWNER_ADMIN", "ADMIN"]:
+                existing["role"] = acc.get("role")
+        else:
+            acc_copy = dict(acc)
+            acc_copy["handle"] = h
+            acc_copy["username"] = h
+            merged[key] = acc_copy
+            if em and em != "campus0012@gmail.com":
+                email_to_key[em] = key
+
+    # Return list sorted by updatedAt or createdAt desc
+    return sorted(list(merged.values()), key=lambda x: x.get("updatedAt") or x.get("createdAt") or 0, reverse=True)
+
+
 def cloud_get_accounts():
-    """Get all accounts from cloud storage."""
-    return get_cloud_json("campus_accounts.json", default=[])
+    """Get all accounts from cloud storage (deduplicated)."""
+    raw = get_cloud_json("campus_accounts.json", default=[])
+    return deduplicate_accounts_list(raw)
 
 
 def cloud_save_accounts(accounts_list):
-    """Save full accounts list to cloud."""
-    return put_cloud_json("campus_accounts.json", accounts_list)
+    """Save full accounts list to cloud after deduplication."""
+    clean_list = deduplicate_accounts_list(accounts_list)
+    return put_cloud_json("campus_accounts.json", clean_list)
 
 
 def cloud_upsert_account(account_dict):
     """Add or update a single account in the cloud accounts list."""
     accounts = cloud_get_accounts()
-    handle = (account_dict.get("handle") or account_dict.get("username") or "").lower()
-    if not handle:
+    raw_h = (account_dict.get("handle") or account_dict.get("username") or "").strip()
+    if not raw_h:
         return
+    handle = raw_h.lower() if raw_h.startswith("@") else "@" + raw_h.lower()
+    email_clean = (account_dict.get("email") or "").strip().lower()
 
-    # Remove existing entry with same handle
-    accounts = [a for a in accounts if (a.get("handle") or a.get("username") or "").lower() != handle]
-    accounts.insert(0, account_dict)
+    # Find existing by handle OR non-empty email
+    matched_idx = -1
+    for idx, a in enumerate(accounts):
+        a_h = (a.get("handle") or a.get("username") or "").strip().lower()
+        if not a_h.startswith("@"):
+            a_h = "@" + a_h
+        a_em = (a.get("email") or "").strip().lower()
+        if a_h == handle or (email_clean and email_clean != "campus0012@gmail.com" and a_em == email_clean):
+            matched_idx = idx
+            break
+
+    account_dict["handle"] = handle
+    account_dict["username"] = handle
+    account_dict["updatedAt"] = int(time.time() * 1000)
+
+    if matched_idx >= 0:
+        # Merge onto existing
+        existing = accounts[matched_idx]
+        merged = {**existing, **account_dict}
+        accounts[matched_idx] = merged
+    else:
+        accounts.insert(0, account_dict)
 
     cloud_save_accounts(accounts)
     return account_dict

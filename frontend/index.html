@@ -16,6 +16,16 @@
     })();
   </script>
 
+  <!-- EmailJS SDK Integration -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+      if (typeof emailjs !== 'undefined') {
+        emailjs.init({ publicKey: "MQxZeO4-7lL0-gfX7" });
+      }
+    })();
+  </script>
+
   <!-- Favicon / Browser Icon -->
   <link rel="icon" type="image/png" href="img/logo.png" />
   <link rel="apple-touch-icon" href="img/logo.png" />
@@ -2296,17 +2306,25 @@ function syncNavbarUser() {
   }
 
   // ---- Account Exists (Hide Create Account button, Show Profile badge) ----
-  if (createAccountBtn) createAccountBtn.style.display = 'none';
-  if (navUserBadge) navUserBadge.style.display = 'inline-flex';
-  if (heroAccountBtn) {
-    heroAccountBtn.innerHTML = '<span>👤 Student Passport</span>';
-    heroAccountBtn.onclick = () => window.location.href = 'profile.html';
-  }
-
   const name = user.displayName || user.name || 'Student';
   const handle = user.username || user.handle || '@student';
   const initial = name[0].toUpperCase();
   const photo = Storage.getUserPhoto(handle) || user.photo;
+  const profileUrl = `profile.html?handle=${encodeURIComponent(handle)}`;
+
+  if (createAccountBtn) createAccountBtn.style.display = 'none';
+  if (navUserBadge) {
+    navUserBadge.style.display = 'inline-flex';
+    navUserBadge.href = profileUrl;
+  }
+  if (heroAccountBtn) {
+    heroAccountBtn.innerHTML = '<span>👤 Student Passport</span>';
+    heroAccountBtn.onclick = () => window.location.href = profileUrl;
+  }
+  const bottomProfileTab = document.getElementById('mobileBottomProfileTab');
+  if (bottomProfileTab) {
+    bottomProfileTab.href = profileUrl;
+  }
 
   if (navUserName) navUserName.textContent = name.split(' ')[0];
   
@@ -2492,6 +2510,15 @@ async function executeModalAccountSave(e) {
     syncNavbarUser();
     showCampusToast(`🎉 Welcome to Campus OS, ${name}! Your account is now active on the main platform.`);
     if (btn) btn.disabled = false;
+
+    // Dispatch Welcome Confirmation Email via EmailJS
+    if (userAccount.email && window.sendWelcomeEmail) {
+      window.sendWelcomeEmail(userAccount).then(res => {
+        if (res && res.success) {
+          showCampusToast(`📧 Confirmation email sent to ${userAccount.email}!`);
+        }
+      }).catch(e => console.warn('Welcome email note:', e));
+    }
   } catch (err) {
     alert(err.message || 'Failed to create account.');
     if (btn) btn.disabled = false;

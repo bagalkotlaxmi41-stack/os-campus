@@ -843,29 +843,34 @@
       }
     }
 
-    // Send Welcome Email notification via EmailJS (non-blocking, wise error handling)
+    // Update success message & show panel
+    document.getElementById('successMsg').textContent =
+      'Welcome, ' + name + '! Setting up your student passport and dispatching confirmation...';
+    showPanel('success');
+
+    // Send Welcome Email notification via EmailJS
     if (user.email) {
-      sendWelcomeEmail(user).then(function(sent) {
-        var notice = document.getElementById('emailNotice');
+      try {
+        const sendFn = window.sendWelcomeEmail || sendWelcomeEmail;
+        const emailRes = await sendFn(user);
+        const isSuccess = emailRes === true || (emailRes && emailRes.success);
+        const notice = document.getElementById('emailNotice');
         if (notice) {
-          notice.innerHTML = sent
+          notice.innerHTML = isSuccess
             ? '✨ A confirmation email has been dispatched to <strong>' + user.email + '</strong>'
-            : '📧 Account ready! Welcome notice queued for <strong>' + user.email + '</strong>';
+            : '📧 Account ready! Confirmation queued for <strong>' + user.email + '</strong>';
         }
-      }).catch(function(err) {
+      } catch (err) {
         console.warn('Email dispatch warning:', err);
-      });
+      }
     }
 
-    // Update success message
     document.getElementById('successMsg').textContent =
-      'Welcome, ' + name + '! Your student account is ready. Taking you to Main Campus OS...';
+      'Welcome, ' + name + '! Taking you to Main Campus OS...';
 
-    // Show success and auto-redirect to main app
-    showPanel('success');
     setTimeout(function() {
       window.location.href = 'index.html';
-    }, 1200);
+    }, 1800);
   }
 
   // =====================================================

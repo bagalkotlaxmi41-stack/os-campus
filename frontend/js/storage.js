@@ -25,9 +25,7 @@ const FAKE_HANDLES = [
   '@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma',
   'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma',
   'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu',
-  '@alex_cs', 'alex_cs', 'demo@collegeos.app',
-  '@laxmi_patil', 'laxmi_patil', 'laxmi.patil@campus.edu',
-  '@channu patil', 'channu patil', '@channu_patil', 'channu_patil', 'channupatil299@gmail.com'
+  '@alex_cs', 'alex_cs', 'demo@collegeos.app'
 ];
 
 const FAKE_POST_IDS = [
@@ -120,8 +118,9 @@ var Storage = {
     // 2. Real-time Backend Sync
     if (window.PythonAPI) {
       try {
-        // Sync Accounts from Backend and deduplicate by handle AND email
-        const remoteAccounts = await PythonAPI.getAccounts();
+        // Sync Accounts from Vercel Blob Cloud / Backend and deduplicate by handle AND email
+        const getAccFn = (PythonAPI.getCloudAccounts || PythonAPI.getAccounts).bind(PythonAPI);
+        const remoteAccounts = await getAccFn();
         if (remoteAccounts && Array.isArray(remoteAccounts)) {
           const localAccs = this.getAccounts();
           const map = new Map();
@@ -158,8 +157,9 @@ var Storage = {
           this.setAccounts(Array.from(map.values()));
         }
 
-        // Sync Posts from Backend - merge so locally created student posts NEVER disappear!
-        const posts = await PythonAPI.getPosts();
+        // Sync Posts from Vercel Blob Cloud / Backend - merge so student posts NEVER disappear!
+        const getPostsFn = (PythonAPI.getCloudPosts || PythonAPI.getPosts).bind(PythonAPI);
+        const posts = await getPostsFn();
         if (posts && Array.isArray(posts)) {
           const localPosts = this.getPosts() || [];
           const postMap = new Map();
@@ -487,7 +487,8 @@ var Storage = {
   addAccount(account) {
     if (!account) return;
     const rawHandle = account.username || account.handle || (account.name ? '@' + account.name.toLowerCase().replace(/\s+/g, '_') : '@student');
-    const handle = rawHandle.startsWith('@') ? rawHandle.toLowerCase() : '@' + rawHandle.toLowerCase();
+    const cleanH = rawHandle.trim().toLowerCase().replace(/\s+/g, '_');
+    const handle = cleanH.startsWith('@') ? cleanH : '@' + cleanH;
     const emailClean = (account.email || '').trim().toLowerCase();
     
     // Remove from deleted list if re-registered
@@ -512,9 +513,9 @@ var Storage = {
       updatedAt: Date.now()
     };
 
-    // Match existing by handle OR email to prevent duplicate accounts
+    // Match existing by handle OR email to strictly prevent duplicate accounts
     const index = accounts.findIndex(a => {
-      const aHandle = (a.username || a.handle || '').toLowerCase();
+      const aHandle = (a.username || a.handle || '').trim().toLowerCase().replace(/\s+/g, '_');
       const aEmail = (a.email || '').trim().toLowerCase();
       return aHandle === handle || (emailClean && emailClean !== 'campus0012@gmail.com' && aEmail === emailClean);
     });
@@ -534,6 +535,10 @@ var Storage = {
     // Sync to SQLite Backend in background
     if (window.PythonAPI && PythonAPI.saveAccount) {
       PythonAPI.saveAccount(updatedAccount).catch(() => {});
+    }
+    // Also sync to Cloud Store if available
+    if (window.PythonAPI && PythonAPI.saveCloudAccount) {
+      PythonAPI.saveCloudAccount(updatedAccount).catch(() => {});
     }
 
     return updatedAccount;
