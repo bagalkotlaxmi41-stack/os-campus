@@ -2112,7 +2112,7 @@
       const sInput = document.getElementById('adminEmailjsServiceId');
       const tInput = document.getElementById('adminEmailjsTemplateId');
       if (sInput && !sInput.value) {
-        sInput.value = localStorage.getItem('cos_emailjs_service_id') || 'service_campus_os';
+        sInput.value = localStorage.getItem('cos_emailjs_service_id') || 'default_service';
       }
       if (tInput && !tInput.value) {
         tInput.value = localStorage.getItem('cos_emailjs_template_id') || 'template_welcome';

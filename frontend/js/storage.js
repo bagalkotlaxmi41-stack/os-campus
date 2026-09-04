@@ -492,6 +492,28 @@ var Storage = {
       return aEmail === cleanEmail && aHandle !== cleanExclude;
     });
   },
+  getAccountByHandle(handle) {
+    if (!handle) return null;
+    const clean = handle.trim().toLowerCase().startsWith('@') ? handle.trim().toLowerCase() : '@' + handle.trim().toLowerCase();
+    const accounts = this.getAccounts();
+    return accounts.find(a => (a.username || a.handle || '').trim().toLowerCase() === clean) || null;
+  },
+  getAccountByEmail(email) {
+    if (!email) return null;
+    const clean = email.trim().toLowerCase();
+    const accounts = this.getAccounts();
+    return accounts.find(a => (a.email || '').trim().toLowerCase() === clean) || null;
+  },
+  isHandleTaken(handle, excludeEmail = null) {
+    if (!handle) return false;
+    const clean = handle.trim().toLowerCase().startsWith('@') ? handle.trim().toLowerCase() : '@' + handle.trim().toLowerCase();
+    const accounts = this.getAccounts();
+    return accounts.some(a => {
+      const aHandle = (a.username || a.handle || '').trim().toLowerCase();
+      const aEmail = (a.email || '').trim().toLowerCase();
+      return aHandle === clean && (!excludeEmail || aEmail !== excludeEmail.trim().toLowerCase());
+    });
+  },
   addAccount(account) {
     if (!account) return;
     const rawHandle = account.username || account.handle || (account.name ? '@' + account.name.toLowerCase().replace(/\s+/g, '_') : '@student');

@@ -657,7 +657,7 @@ const CampusEmailService = {
   },
 
   getServiceId() {
-    return localStorage.getItem('cos_emailjs_service_id') || window.EMAILJS_SERVICE_ID || 'service_campus_os';
+    return localStorage.getItem('cos_emailjs_service_id') || window.EMAILJS_SERVICE_ID || 'default_service';
   },
 
   getTemplateId() {

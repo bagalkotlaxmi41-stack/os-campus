@@ -782,107 +782,130 @@
   // REGISTER — Complete
   // =====================================================
   async function doRegister() {
-    var username = (document.getElementById('regUsername').value || '').trim();
-    if (!username || username.length < 3) {
-      err('errUsername', true);
-      return;
-    }
-    err('errUsername', false);
-
     var btn = document.getElementById('createBtn');
-    btn.disabled = true;
-    btn.textContent = '🚀 Creating account…';
-
-    var name  = (document.getElementById('regName').value  || '').trim();
-    var email = (document.getElementById('regEmail').value || '').trim();
-    var pass  = (document.getElementById('regPass').value  || '');
-    var handle = '@' + username.replace(/^@/, '').toLowerCase();
-    var usn = (document.getElementById('regUSN')?.value || '').trim();
-    var college = (document.getElementById('regCollege')?.value || '').trim() || 'Campus OS Academic Network';
-    var dept = document.getElementById('regDept').value;
-    var program = document.getElementById('regProgram').value;
-    var sem = parseInt(document.getElementById('regSem').value, 10) || 5;
-    var bio = (document.getElementById('regBio')?.value || '').trim() || `${program} Student studying ${dept}`;
-
-    // Verify handle availability one final time before committing
-    if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
-      try {
-        const check = await PythonAPI.checkHandleAvailability(handle);
-        if (check && check.available === false) {
-          btn.disabled = false;
-          btn.textContent = '🚀 Create My Account';
-          alert(`✕ Username "${handle}" is already taken by another student. Please choose a different username.`);
-          return;
-        }
-      } catch(e) {}
-    }
-
-    var user = {
-      uid:         'user-' + Date.now(),
-      displayName: name,
-      name:        name,
-      email:       email,
-      username:    handle,
-      handle:      handle,
-      usn:         usn || null,
-      college:     college,
-      department:  dept,
-      program:     program,
-      semester:    sem,
-      bio:         bio,
-      photo:       _selectedAuthPhotoBase64 || null,
-      skills:      ['Academic Learner'],
-      interests:   [],
-      role:        'STUDENT',
-      status:      'ACTIVE',
-      joinedAt:    Date.now(),
-      password:    pass
-    };
-
-    // Save locally to Storage & accounts directory
-    Storage.setUser(user);
-    Storage.addAccount(user);
-    if (_selectedAuthPhotoBase64) {
-      Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
-    }
-
-    // Try backend API registration
-    if (window.PythonAPI && PythonAPI.register) {
-      try {
-        await PythonAPI.register(user);
-      } catch (e) {
-        console.warn('Account register API note:', e);
+    try {
+      var username = (document.getElementById('regUsername').value || '').trim();
+      if (!username || username.length < 3) {
+        err('errUsername', true);
+        return;
       }
-    }
+      err('errUsername', false);
 
-    // Update success message & show panel
-    document.getElementById('successMsg').textContent =
-      'Welcome, ' + name + '! Setting up your student passport and dispatching confirmation...';
-    showPanel('success');
+      btn.disabled = true;
+      btn.textContent = '🚀 Creating account…';
 
-    // Send Welcome Email notification via EmailJS
-    if (user.email) {
-      try {
-        const sendFn = window.sendWelcomeEmail || sendWelcomeEmail;
-        const emailRes = await sendFn(user);
-        const isSuccess = emailRes === true || (emailRes && emailRes.success);
-        const notice = document.getElementById('emailNotice');
-        if (notice) {
-          notice.innerHTML = isSuccess
-            ? '✨ A confirmation email has been dispatched to <strong>' + user.email + '</strong>'
-            : '📧 Account ready! Confirmation queued for <strong>' + user.email + '</strong>';
-        }
-      } catch (err) {
-        console.warn('Email dispatch warning:', err);
+      var name  = (document.getElementById('regName').value  || '').trim();
+      var email = (document.getElementById('regEmail').value || '').trim();
+      var pass  = (document.getElementById('regPass').value  || '');
+      var handle = '@' + username.replace(/^@/, '').toLowerCase();
+      var usn = (document.getElementById('regUSN')?.value || '').trim();
+      var college = (document.getElementById('regCollege')?.value || '').trim() || 'Campus OS Academic Network';
+      var dept = document.getElementById('regDept').value;
+      var program = document.getElementById('regProgram').value;
+      var sem = parseInt(document.getElementById('regSem').value, 10) || 5;
+      var bio = (document.getElementById('regBio')?.value || '').trim() || `${program} Student studying ${dept}`;
+
+      // Verify handle availability before committing
+      if (Storage.getAccountByHandle && Storage.getAccountByHandle(handle)) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Create My Account';
+        alert(`✕ Username "${handle}" is already taken by another student. Please choose a different username.`);
+        return;
       }
+
+      if (window.PythonAPI && PythonAPI.checkHandleAvailability) {
+        try {
+          const check = await PythonAPI.checkHandleAvailability(handle);
+          if (check && check.available === false) {
+            btn.disabled = false;
+            btn.textContent = '🚀 Create My Account';
+            alert(`✕ Username "${handle}" is already taken by another student. Please choose a different username.`);
+            return;
+          }
+        } catch(e) {}
+      }
+
+      var user = {
+        uid:         'user-' + Date.now(),
+        displayName: name,
+        name:        name,
+        email:       email,
+        username:    handle,
+        handle:      handle,
+        usn:         usn || null,
+        college:     college,
+        department:  dept,
+        program:     program,
+        semester:    sem,
+        bio:         bio,
+        photo:       _selectedAuthPhotoBase64 || null,
+        skills:      ['Academic Learner'],
+        interests:   [],
+        role:        'STUDENT',
+        status:      'ACTIVE',
+        joinedAt:    Date.now(),
+        password:    pass
+      };
+
+      // Save locally to Storage & accounts directory
+      Storage.setUser(user);
+      if (Storage.addAccount) {
+        Storage.addAccount(user);
+      }
+      if (_selectedAuthPhotoBase64 && Storage.setUserPhoto) {
+        Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
+      }
+
+      // Try backend API registration
+      if (window.PythonAPI && PythonAPI.register) {
+        try {
+          await PythonAPI.register(user);
+        } catch (e) {
+          console.warn('Account register API note:', e);
+        }
+      }
+
+      // Update success message & show panel
+      document.getElementById('successMsg').textContent =
+        'Welcome, ' + name + '! Your student account is active. Dispatching confirmation email...';
+      showPanel('success');
+
+      // Send Welcome / Login Email notification via EmailJS
+      if (user.email) {
+        try {
+          const sendFn = (window.CampusEmailService && window.CampusEmailService.sendLoginNotification)
+            ? window.CampusEmailService.sendLoginNotification.bind(window.CampusEmailService)
+            : (window.sendWelcomeEmail || sendWelcomeEmail);
+          const emailRes = await Promise.race([
+            sendFn(user),
+            new Promise(resolve => setTimeout(() => resolve({ success: false, message: 'timeout' }), 4000))
+          ]);
+          const isSuccess = emailRes === true || (emailRes && emailRes.success);
+          const notice = document.getElementById('emailNotice');
+          if (notice) {
+            notice.innerHTML = isSuccess
+              ? '✨ A confirmation email has been dispatched to <strong>' + user.email + '</strong>'
+              : '📧 Account created! Confirmation queued for <strong>' + user.email + '</strong>';
+          }
+        } catch (err) {
+          console.warn('Email dispatch warning:', err);
+        }
+      }
+
+      document.getElementById('successMsg').textContent =
+        'Welcome, ' + name + '! Taking you to Main Campus OS...';
+
+      setTimeout(function() {
+        window.location.href = 'index.html';
+      }, 3500);
+    } catch (err) {
+      console.error('Registration error:', err);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Create My Account';
+      }
+      alert('Registration error: ' + (err.message || 'Unable to create account. Please try again.'));
     }
-
-    document.getElementById('successMsg').textContent =
-      'Welcome, ' + name + '! Taking you to Main Campus OS...';
-
-    setTimeout(function() {
-      window.location.href = 'index.html';
-    }, 1800);
   }
 
   // =====================================================
