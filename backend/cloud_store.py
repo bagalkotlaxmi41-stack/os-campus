@@ -303,3 +303,24 @@ def cloud_search_accounts(query):
         if q in searchable:
             results.append(a)
     return results
+
+
+DEFAULT_SETTINGS = {
+    "emailjs_public_key": "MQxZeO4-7lL0-gfX7",
+    "emailjs_service_id": "default_service",
+    "emailjs_template_id": "template_welcome",
+}
+
+def cloud_get_settings():
+    """Get system and EmailJS settings from cloud storage."""
+    stored = get_cloud_json("campus_settings.json", default={})
+    return {**DEFAULT_SETTINGS, **(stored or {})}
+
+
+def cloud_save_settings(settings_dict):
+    """Save system settings to cloud storage."""
+    current = cloud_get_settings()
+    updated = {**current, **settings_dict}
+    put_cloud_json("campus_settings.json", updated)
+    return updated
+

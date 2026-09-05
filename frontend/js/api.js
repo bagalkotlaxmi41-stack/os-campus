@@ -54,9 +54,18 @@ const PythonAPI = {
   // ============================================================
   // ACCOUNTS & STUDENT DIRECTORY
   // ============================================================
-  getAccounts: async function() {
+  getAccounts: async function(params = {}) {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/accounts`, {}, 4000);
+      let url = `${PYTHON_API_BASE_URL}/api/accounts`;
+      const queryParts = [];
+      if (params.page) queryParts.push(`page=${encodeURIComponent(params.page)}`);
+      if (params.limit) queryParts.push(`limit=${encodeURIComponent(params.limit)}`);
+      if (params.q) queryParts.push(`q=${encodeURIComponent(params.q)}`);
+      if (params.role) queryParts.push(`role=${encodeURIComponent(params.role)}`);
+      if (params.department) queryParts.push(`department=${encodeURIComponent(params.department)}`);
+      if (queryParts.length > 0) url += `?${queryParts.join('&')}`;
+
+      const res = await fastFetch(url, {}, 5000);
       if (!res.ok) return [];
       return await res.json();
     } catch (err) {
@@ -558,14 +567,80 @@ const PythonAPI = {
   // ============================================================
   // CLOUD SYNC API (Cross-Device Discovery via Vercel Blob)
   // ============================================================
-  getCloudAccounts: async function() {
+  getCloudAccounts: async function(params = {}) {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/accounts`, {}, 6000);
+      let url = `${PYTHON_API_BASE_URL}/api/cloud/accounts`;
+      const queryParts = [];
+      if (params.page) queryParts.push(`page=${encodeURIComponent(params.page)}`);
+      if (params.limit) queryParts.push(`limit=${encodeURIComponent(params.limit)}`);
+      if (params.q) queryParts.push(`q=${encodeURIComponent(params.q)}`);
+      if (params.role) queryParts.push(`role=${encodeURIComponent(params.role)}`);
+      if (params.department) queryParts.push(`department=${encodeURIComponent(params.department)}`);
+      if (queryParts.length > 0) url += `?${queryParts.join('&')}`;
+
+      const res = await fastFetch(url, {}, 6000);
       if (!res.ok) return [];
       return await res.json();
     } catch (err) {
       console.warn('[CloudSync] getCloudAccounts fallback:', err);
-      return this.getAccounts();
+      return this.getAccounts(params);
+    }
+  },
+
+  saveCloudAccount: async function(account) {
+    try {
+      const cleanH = (account.username || account.handle || '').replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const handle = '@' + cleanH;
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/accounts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          handle: handle,
+          displayName: account.displayName || account.name || 'Student',
+          email: account.email || null,
+          password: account.password || null,
+          department: account.department || 'Computer Science & Engineering',
+          semester: Number(account.semester) || 5,
+          program: account.program || 'BCA',
+          college: account.college || 'Campus OS Academic Network',
+          usn: account.usn || null,
+          bio: account.bio || '',
+          skills: account.skills || [],
+          photo: account.photo || null,
+          role: account.role || 'STUDENT',
+          privacy: account.privacy || { profileVisibility: 'public', showEmail: false, showUSN: true }
+        })
+      }, 6000);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.account;
+    } catch (err) {
+      console.warn('[CloudSync] saveCloudAccount note:', err);
+      return null;
+    }
+  },
+
+  getCloudSettings: async function() {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/settings`, {}, 4000);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
+  saveCloudSettings: async function(settings) {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      }, 5000);
+      if (!res.ok) return false;
+      return true;
+    } catch (e) {
+      return false;
     }
   },
 
@@ -588,6 +663,21 @@ const PythonAPI = {
     } catch (err) {
       console.warn('[CloudSync] getCloudPosts fallback:', err);
       return this.getPosts();
+    }
+  },
+
+  saveCloudPost: async function(post) {
+    try {
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/cloud/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(post)
+      }, 6000);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.warn('[CloudSync] saveCloudPost note:', err);
+      return null;
     }
   },
 
@@ -725,12 +815,12 @@ const CampusEmailService = {
     const tId = this.getTemplateId();
 
     const serviceCandidates = [
+      'default_service',
       sId,
       window.EMAILJS_SERVICE_ID,
       'service_campus_os',
       'service_gmail',
-      'service_default',
-      'default_service'
+      'service_default'
     ].filter(Boolean);
 
     const templateCandidates = [
@@ -789,5 +879,18 @@ window.PythonAPI = PythonAPI;
     S.syncWithBackend().catch(function(e) {
       console.warn('[API] Storage syncWithBackend note:', e);
     });
+  }
+  // Hydrate global EmailJS credentials from Vercel Blob cloud settings
+  if (window.PythonAPI && PythonAPI.getCloudSettings) {
+    PythonAPI.getCloudSettings().then(function(s) {
+      if (s && typeof localStorage !== 'undefined') {
+        if (s.emailjs_service_id && !localStorage.getItem('cos_emailjs_service_id')) {
+          localStorage.setItem('cos_emailjs_service_id', s.emailjs_service_id);
+        }
+        if (s.emailjs_template_id && !localStorage.getItem('cos_emailjs_template_id')) {
+          localStorage.setItem('cos_emailjs_template_id', s.emailjs_template_id);
+        }
+      }
+    }).catch(function() {});
   }
 })();

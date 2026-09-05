@@ -686,6 +686,57 @@
       color: #fff;
     }
 
+    /* Pagination Controls */
+    .admin-pagination-bar {
+      padding: 14px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .admin-pagination-info {
+      font-size: 12px;
+      color: var(--admin-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-page-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .admin-page-btn:hover:not(:disabled) {
+      background: rgba(139, 92, 246, 0.25);
+      border-color: #8b5cf6;
+      color: #ffffff;
+    }
+    .admin-page-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .admin-page-btn.active {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border-color: #8b5cf6;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+    }
+
+
     /* ============================================================
        BANNER CARDS GRID
        ============================================================ */
@@ -1786,7 +1837,6 @@
   <!-- Toast Notification -->
   <div class="admin-toast" id="adminToast">Action completed successfully!</div>
 
-  <!-- Core Scripts -->
   <script src="js/storage.js"></script>
   <script src="js/api.js"></script>
 
@@ -1795,6 +1845,10 @@
     let allAdminAccounts = [];
     let allAdminBanners = [];
     let allAdminPosts = [];
+
+    // ── Pagination State ──
+    let accountsCurrentPage = 1;
+    let accountsPerPage = 50;
 
     function showAdminToast(msg) {
       const toast = document.getElementById('adminToast');
@@ -1990,14 +2044,23 @@
     // DATA LOADING & RENDERING
     // ============================================================
     async function loadAllAdminData(isManualRefresh = false) {
-      // 1. Instant 0ms Local Storage Rendering
+      // ── 1. Official Admin always present ──
       const deletedHandles = Storage.getDeletedHandles ? Storage.getDeletedHandles() : [];
+      const officialAdmin = {
+        username: '@campus_admin', handle: '@campus_admin',
+        displayName: 'Campus Administrator', name: 'Campus Administrator',
+        email: 'campus0012@gmail.com', role: 'OWNER_ADMIN',
+        department: 'Central Administration', semester: 8, usn: 'ADMIN-001',
+        bio: 'Official Platform Administrator & Owner for Campus OS.',
+        skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
+        verified: true, createdAt: Date.now()
+      };
+
+      // ── 2. Build from local storage first (instant render) ──
       let localAccs = (Storage.getAccounts() || []).filter(a => {
         const h = (a.handle || a.username || '').toLowerCase();
         return !deletedHandles.includes(h);
       });
-
-      // Also ensure current logged in user session is captured if registered
       const curUser = (typeof Storage !== 'undefined' && Storage.getUser) ? Storage.getUser() : null;
       if (curUser && (curUser.handle || curUser.username)) {
         const curH = (curUser.handle || curUser.username).toLowerCase();
@@ -2006,50 +2069,25 @@
         }
       }
 
-      // Default official admin
-      const officialAdmin = {
-        username: '@campus_admin',
-        handle: '@campus_admin',
-        displayName: 'Campus Administrator',
-        name: 'Campus Administrator',
-        email: 'campus0012@gmail.com',
-        role: 'OWNER_ADMIN',
-        department: 'Central Administration',
-        semester: 8,
-        usn: 'ADMIN-001',
-        bio: 'Official Platform Administrator & Owner for Campus OS.',
-        skills: ['System Administration', 'Campus OS Governance', 'Academic Operations'],
-        verified: true,
-        createdAt: Date.now()
-      };
-
-      if (!localAccs.some(a => (a.handle || a.username || '').toLowerCase() === '@campus_admin')) {
-        localAccs.unshift(officialAdmin);
-      }
-
-      allAdminAccounts = localAccs;
       allAdminBanners = Storage.getBanners() || [];
       allAdminPosts = Storage.getPosts() || [];
 
-      // Render KPIs & Tables instantly
-      updateAdminDashboardUI();
-
-      // 2. Fast Non-blocking Background Sync from Cloud Store & API
+      // ── 3. Fetch from Backend API (authoritative source) ──
       try {
-        const getAccFn = (window.PythonAPI && (PythonAPI.getCloudAccounts || PythonAPI.getAccounts)) ? (PythonAPI.getCloudAccounts || PythonAPI.getAccounts).bind(PythonAPI) : () => Promise.resolve(null);
-        const getPostsFn = (window.PythonAPI && (PythonAPI.getCloudPosts || PythonAPI.getPosts)) ? (PythonAPI.getCloudPosts || PythonAPI.getPosts).bind(PythonAPI) : () => Promise.resolve(null);
-        const getBannersFn = (window.PythonAPI && PythonAPI.getAdminBanners) ? PythonAPI.getAdminBanners.bind(PythonAPI) : () => Promise.resolve(null);
-
-        const [remoteAccs, remoteBanners, remotePosts] = await Promise.allSettled([
-          getAccFn(),
-          getBannersFn(),
-          getPostsFn()
+        const [remoteAccsRes, remoteBannersRes, remotePostsRes] = await Promise.allSettled([
+          (window.PythonAPI && PythonAPI.getAccounts) ? PythonAPI.getAccounts() : Promise.resolve(null),
+          (window.PythonAPI && PythonAPI.getAdminBanners) ? PythonAPI.getAdminBanners() : Promise.resolve(null),
+          (window.PythonAPI && PythonAPI.getPosts) ? PythonAPI.getPosts() : Promise.resolve(null),
         ]);
 
+        // ── Merge accounts: API is the source of truth ──
         const accountMap = new Map();
         const emailMap = new Map();
         accountMap.set('@campus_admin', officialAdmin);
         emailMap.set('campus0012@gmail.com', '@campus_admin');
+
+        const mockHandles = ['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs'];
+        const mockEmails = ['demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu'];
 
         function mergeAccount(a) {
           if (!a) return;
@@ -2057,15 +2095,13 @@
           const em = (a.email || '').trim().toLowerCase();
           if (!rawH || deletedHandles.includes(rawH)) return;
           const formattedH = rawH.startsWith('@') ? rawH : '@' + rawH;
-          // Filter only legacy placeholder mock accounts
-          if (['@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma', '@alex_cs', 'alex_cs'].includes(formattedH)) return;
-          if (['demo@collegeos.app', 'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu'].includes(em)) return;
+          if (mockHandles.includes(formattedH)) return;
+          if (mockEmails.includes(em)) return;
 
           let targetKey = formattedH;
           if (em && em !== 'campus0012@gmail.com' && emailMap.has(em)) {
             targetKey = emailMap.get(em);
           }
-
           const existing = accountMap.get(targetKey) || {};
           const bestRole = (existing.role === 'OWNER_ADMIN' || existing.role === 'ADMIN') ? existing.role : (a.role || existing.role || 'STUDENT');
           accountMap.set(targetKey, { ...existing, ...a, role: bestRole, handle: targetKey, username: targetKey });
@@ -2074,47 +2110,79 @@
           }
         }
 
-        allAdminAccounts.forEach(mergeAccount);
+        // Merge local accounts
+        localAccs.forEach(mergeAccount);
 
-        if (remoteAccs.status === 'fulfilled' && Array.isArray(remoteAccs.value)) {
-          remoteAccs.value.forEach(mergeAccount);
+        // Merge remote accounts from API (may be array or paginated object)
+        if (remoteAccsRes.status === 'fulfilled' && remoteAccsRes.value) {
+          const remoteData = remoteAccsRes.value;
+          const remoteList = Array.isArray(remoteData) ? remoteData : (remoteData.accounts || []);
+          remoteList.forEach(mergeAccount);
         }
 
         allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         Storage.setAccounts(allAdminAccounts);
 
-        if (remoteBanners.status === 'fulfilled' && Array.isArray(remoteBanners.value)) {
+        // ── Banners ──
+        if (remoteBannersRes.status === 'fulfilled' && Array.isArray(remoteBannersRes.value)) {
           const deletedBanners = Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : [];
-          allAdminBanners = remoteBanners.value.filter(b => !deletedBanners.includes(b.id));
+          allAdminBanners = remoteBannersRes.value.filter(b => !deletedBanners.includes(b.id));
           Storage.setBanners(allAdminBanners);
         }
 
-        if (remotePosts.status === 'fulfilled' && Array.isArray(remotePosts.value)) {
+        // ── Posts ──
+        if (remotePostsRes.status === 'fulfilled' && Array.isArray(remotePostsRes.value)) {
           const postMap = new Map();
-          remotePosts.value.forEach(p => { if (p && p.id) postMap.set(p.id, p); });
+          remotePostsRes.value.forEach(p => { if (p && p.id) postMap.set(p.id, p); });
           (Storage.getPosts() || []).forEach(p => { if (p && p.id && !postMap.has(p.id)) postMap.set(p.id, p); });
           allAdminPosts = Array.from(postMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           Storage.setPosts(allAdminPosts);
         }
-
-        updateAdminDashboardUI();
-        loadEmailjsSettings();
-
-        if (isManualRefresh) {
-          showAdminToast('🔄 All student accounts & system metrics updated!');
-        }
       } catch (err) {
         console.warn('Background admin sync note:', err);
+        // On any API failure, use local data
+        if (!allAdminAccounts.length) {
+          allAdminAccounts = localAccs;
+          if (!allAdminAccounts.some(a => (a.handle || a.username || '').toLowerCase() === '@campus_admin')) {
+            allAdminAccounts.unshift(officialAdmin);
+          }
+        }
+      }
+
+      // Ensure we always have at least the official admin
+      if (!allAdminAccounts.some(a => (a.handle || a.username || '').toLowerCase() === '@campus_admin')) {
+        allAdminAccounts.unshift(officialAdmin);
+      }
+
+      // ── 4. Render Everything ──
+      updateAdminDashboardUI();
+      loadEmailjsSettings();
+
+      if (isManualRefresh) {
+        showAdminToast('🔄 All student accounts & system metrics updated!');
       }
     }
 
-    function loadEmailjsSettings() {
+    async function loadEmailjsSettings() {
       const sInput = document.getElementById('adminEmailjsServiceId');
       const tInput = document.getElementById('adminEmailjsTemplateId');
-      if (sInput && !sInput.value) {
+      if (window.PythonAPI && PythonAPI.getCloudSettings) {
+        try {
+          const cSettings = await PythonAPI.getCloudSettings();
+          if (cSettings) {
+            if (cSettings.emailjs_service_id && !localStorage.getItem('cos_emailjs_service_id')) {
+              localStorage.setItem('cos_emailjs_service_id', cSettings.emailjs_service_id);
+            }
+            if (cSettings.emailjs_template_id && !localStorage.getItem('cos_emailjs_template_id')) {
+              localStorage.setItem('cos_emailjs_template_id', cSettings.emailjs_template_id);
+            }
+          }
+        } catch(e) {}
+      }
+      if (sInput) {
         sInput.value = localStorage.getItem('cos_emailjs_service_id') || 'default_service';
       }
-      if (tInput && !tInput.value) {
+      if (tInput) {
         tInput.value = localStorage.getItem('cos_emailjs_template_id') || 'template_welcome';
       }
     }
@@ -2127,6 +2195,12 @@
       if (window.CampusEmailService) {
         CampusEmailService.setCredentials(sVal, tVal);
       }
+      if (window.PythonAPI && PythonAPI.saveCloudSettings) {
+        PythonAPI.saveCloudSettings({
+          emailjs_service_id: sVal || 'default_service',
+          emailjs_template_id: tVal || 'template_welcome'
+        }).catch(err => console.warn('Cloud settings save note:', err));
+      }
       showAdminToast('✅ EmailJS Service & Template IDs saved successfully!');
     }
 
@@ -2135,14 +2209,10 @@
       if (!testEmail) return;
       showAdminToast('🚀 Sending test welcome email via EmailJS...');
       const testUser = {
-        displayName: 'Test Student',
-        name: 'Test Student',
-        handle: '@test_student',
-        username: '@test_student',
-        email: testEmail.trim(),
-        college: 'Campus OS Academic Network',
-        department: 'Computer Science & Engineering',
-        semester: 5
+        displayName: 'Test Student', name: 'Test Student',
+        handle: '@test_student', username: '@test_student',
+        email: testEmail.trim(), college: 'Campus OS Academic Network',
+        department: 'Computer Science & Engineering', semester: 5
       };
       try {
         const sendFn = window.sendWelcomeEmail || (window.CampusEmailService ? window.CampusEmailService.sendWelcome.bind(window.CampusEmailService) : null);
@@ -2165,12 +2235,12 @@
       const totalLikes = allAdminPosts.reduce((acc, p) => acc + (p.likes || 0), 0);
       const totalBanners = allAdminBanners.length;
 
-      document.getElementById('kpiTotalStudents').textContent = totalStudents;
-      document.getElementById('kpiTotalPosts').textContent = totalPosts;
-      document.getElementById('kpiTotalLikes').textContent = totalLikes;
+      document.getElementById('kpiTotalStudents').textContent = totalStudents.toLocaleString();
+      document.getElementById('kpiTotalPosts').textContent = totalPosts.toLocaleString();
+      document.getElementById('kpiTotalLikes').textContent = totalLikes.toLocaleString();
       document.getElementById('kpiTotalBanners').textContent = totalBanners;
 
-      document.getElementById('sidebarAccountsCount').textContent = totalStudents;
+      document.getElementById('sidebarAccountsCount').textContent = totalStudents.toLocaleString();
       document.getElementById('sidebarBannersCount').textContent = totalBanners;
 
       // Render Department Breakdown
@@ -2184,8 +2254,9 @@
       // Render Recent Students
       renderRecentStudents(allAdminAccounts.slice(0, 5));
 
-      // Render Accounts Table
-      renderAccountsTable(allAdminAccounts);
+      // Render Accounts Table with pagination
+      accountsCurrentPage = 1;
+      renderPaginatedAccounts();
 
       // Render Banners Grid
       renderBannersGrid(allAdminBanners);
@@ -2259,8 +2330,50 @@
     }
 
     // ============================================================
-    // STUDENT ACCOUNTS TABLE & ACTIONS
+    // STUDENT ACCOUNTS TABLE WITH VIRTUAL PAGINATION
     // ============================================================
+
+    /** Get currently filtered account list */
+    function getFilteredAccounts() {
+      const rawInput = document.getElementById('accountsSearchInput').value.trim();
+      const q = rawInput.toLowerCase();
+      const cleanQ = q.startsWith('@') ? q.slice(1).trim() : q;
+      const roleFilter = document.getElementById('roleFilterSelect').value;
+
+      return allAdminAccounts.filter(a => {
+        const name = (a.displayName || a.name || '').toLowerCase();
+        const rawHandle = (a.handle || a.username || '').toLowerCase();
+        const cleanHandle = rawHandle.startsWith('@') ? rawHandle.slice(1) : rawHandle;
+        const email = (a.email || '').toLowerCase();
+        const usn = (a.usn || '').toLowerCase();
+        const dept = (a.department || '').toLowerCase();
+        const role = (a.role || 'STUDENT').toUpperCase();
+
+        const matchesQuery = !cleanQ || name.includes(cleanQ) || cleanHandle.includes(cleanQ) || rawHandle.includes(q) || email.includes(cleanQ) || usn.includes(cleanQ) || dept.includes(cleanQ);
+        const matchesRole = roleFilter === 'all' || role === roleFilter || (roleFilter === 'ADMIN' && (role === 'ADMIN' || role === 'OWNER_ADMIN'));
+
+        return matchesQuery && matchesRole;
+      });
+    }
+
+    /** Render paginated accounts table with pagination bar */
+    function renderPaginatedAccounts() {
+      const filtered = getFilteredAccounts();
+      const totalAccounts = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalAccounts / accountsPerPage));
+
+      // Clamp current page
+      if (accountsCurrentPage > totalPages) accountsCurrentPage = totalPages;
+      if (accountsCurrentPage < 1) accountsCurrentPage = 1;
+
+      const startIdx = (accountsCurrentPage - 1) * accountsPerPage;
+      const endIdx = Math.min(startIdx + accountsPerPage, totalAccounts);
+      const pageSlice = filtered.slice(startIdx, endIdx);
+
+      renderAccountsTable(pageSlice);
+      renderPaginationBar(totalAccounts, totalPages);
+    }
+
     function renderAccountsTable(accounts) {
       const tbody = document.getElementById('accountsTableBody');
       const mobileContainer = document.getElementById('accountsMobileCards');
@@ -2381,36 +2494,83 @@
       }
     }
 
+    /** Render the pagination bar below the accounts table */
+    function renderPaginationBar(totalAccounts, totalPages) {
+      // Find or create pagination bar
+      const tableContainer = document.querySelector('#tab-accounts .admin-table-container');
+      if (!tableContainer) return;
+      let paginationBar = tableContainer.querySelector('.admin-pagination-bar');
+      if (!paginationBar) {
+        paginationBar = document.createElement('div');
+        paginationBar.className = 'admin-pagination-bar';
+        tableContainer.appendChild(paginationBar);
+      }
+
+      const startIdx = (accountsCurrentPage - 1) * accountsPerPage + 1;
+      const endIdx = Math.min(accountsCurrentPage * accountsPerPage, totalAccounts);
+
+      // Build page buttons
+      let pageButtons = '';
+      const maxVisiblePages = 7;
+      let startPage = Math.max(1, accountsCurrentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+
+      if (startPage > 1) {
+        pageButtons += `<button class="admin-page-btn" onclick="goToAccountPage(1)">1</button>`;
+        if (startPage > 2) pageButtons += `<span style="color:var(--admin-text-muted);font-size:12px;padding:0 4px;">…</span>`;
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageButtons += `<button class="admin-page-btn ${i === accountsCurrentPage ? 'active' : ''}" onclick="goToAccountPage(${i})">${i}</button>`;
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) pageButtons += `<span style="color:var(--admin-text-muted);font-size:12px;padding:0 4px;">…</span>`;
+        pageButtons += `<button class="admin-page-btn" onclick="goToAccountPage(${totalPages})">${totalPages}</button>`;
+      }
+
+      paginationBar.innerHTML = `
+        <div class="admin-pagination-info">
+          <span>Showing <strong>${totalAccounts > 0 ? startIdx : 0}–${endIdx}</strong> of <strong>${totalAccounts.toLocaleString()}</strong> accounts</span>
+          <select class="admin-select" style="padding:5px 8px;font-size:11px;" onchange="changeAccountsPerPage(this.value)">
+            <option value="25" ${accountsPerPage === 25 ? 'selected' : ''}>25 / page</option>
+            <option value="50" ${accountsPerPage === 50 ? 'selected' : ''}>50 / page</option>
+            <option value="100" ${accountsPerPage === 100 ? 'selected' : ''}>100 / page</option>
+            <option value="200" ${accountsPerPage === 200 ? 'selected' : ''}>200 / page</option>
+          </select>
+        </div>
+        <div class="admin-pagination-controls">
+          <button class="admin-page-btn" onclick="goToAccountPage(${accountsCurrentPage - 1})" ${accountsCurrentPage <= 1 ? 'disabled' : ''}>← Prev</button>
+          ${pageButtons}
+          <button class="admin-page-btn" onclick="goToAccountPage(${accountsCurrentPage + 1})" ${accountsCurrentPage >= totalPages ? 'disabled' : ''}>Next →</button>
+        </div>
+      `;
+    }
+
+    function goToAccountPage(page) {
+      accountsCurrentPage = page;
+      renderPaginatedAccounts();
+      // Scroll to top of accounts table
+      document.querySelector('#tab-accounts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function changeAccountsPerPage(val) {
+      accountsPerPage = parseInt(val) || 50;
+      accountsCurrentPage = 1;
+      renderPaginatedAccounts();
+    }
+
+    // Debounced search
+    let _accountSearchTimer;
     function filterAccountsTable() {
-      const rawInput = document.getElementById('accountsSearchInput').value.trim();
-      const q = rawInput.toLowerCase();
-      // Strip leading '@' if typed so searching "student", "@student", "campus", "@campus" works identically
-      const cleanQ = q.startsWith('@') ? q.slice(1).trim() : q;
-      const roleFilter = document.getElementById('roleFilterSelect').value;
-
-      const filtered = allAdminAccounts.filter(a => {
-        const name = (a.displayName || a.name || '').toLowerCase();
-        const rawHandle = (a.handle || a.username || '').toLowerCase();
-        const cleanHandle = rawHandle.startsWith('@') ? rawHandle.slice(1) : rawHandle;
-        const email = (a.email || '').toLowerCase();
-        const usn = (a.usn || '').toLowerCase();
-        const dept = (a.department || '').toLowerCase();
-        const role = (a.role || 'STUDENT').toUpperCase();
-
-        const matchesQuery = !cleanQ || 
-          name.includes(cleanQ) || 
-          cleanHandle.includes(cleanQ) || 
-          rawHandle.includes(q) || 
-          email.includes(cleanQ) || 
-          usn.includes(cleanQ) || 
-          dept.includes(cleanQ);
-
-        const matchesRole = roleFilter === 'all' || role === roleFilter || (roleFilter === 'ADMIN' && (role === 'ADMIN' || role === 'OWNER_ADMIN'));
-
-        return matchesQuery && matchesRole;
-      });
-
-      renderAccountsTable(filtered);
+      clearTimeout(_accountSearchTimer);
+      _accountSearchTimer = setTimeout(() => {
+        accountsCurrentPage = 1;
+        renderPaginatedAccounts();
+      }, 250);
     }
 
     async function toggleAccountRole(handle, currentRole) {
@@ -2431,10 +2591,10 @@
       });
       if (acc) acc.role = newRole;
 
-      // 3. Immediately re-render table with updated role badge so UI changes on the spot
-      renderAccountsTable(allAdminAccounts);
+      // 3. Immediately re-render table with updated role badge
+      renderPaginatedAccounts();
 
-      // 4. Update backend and await confirmation
+      // 4. Update backend
       if (window.PythonAPI && PythonAPI.updateAccountRole) {
         try {
           await PythonAPI.updateAccountRole(cleanH, newRole);
@@ -2467,14 +2627,24 @@
     async function confirmDeleteAccount(handle) {
       if (!confirm(`⚠️ Are you sure you want to permanently delete student account (${handle}) and all their materials?`)) return;
 
-      // 1. Permanently delete from Storage (handles posts, photos, and API sync)
+      // 1. Permanently delete from Storage
       Storage.deleteAccount(handle);
 
-      // 2. Remove from active in-memory admin list
+      // 2. Delete from backend
+      if (window.PythonAPI && PythonAPI.deleteAccount) {
+        try {
+          await PythonAPI.deleteAccount(handle);
+        } catch(e) {
+          console.warn('Backend deleteAccount notice:', e);
+        }
+      }
+
+      // 3. Remove from active in-memory admin list
       allAdminAccounts = allAdminAccounts.filter(a => (a.handle || a.username || '').toLowerCase() !== handle.toLowerCase());
 
       showAdminToast(`Account ${handle} deleted permanently.`);
-      await loadAllAdminData();
+      renderPaginatedAccounts();
+      updateAdminDashboardUI();
     }
 
     function exportAccountsCSV() {
@@ -2822,12 +2992,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       checkAdminAuth();
 
-      // Automatic live data polling every 10 seconds
+      // Automatic live data polling every 30 seconds (was 10s — reduced to avoid API flooding)
       setInterval(() => {
         if (Storage.isAdmin && Storage.isAdmin()) {
           loadAllAdminData();
         }
-      }, 10000);
+      }, 30000);
 
       // Refresh on tab focus
       document.addEventListener('visibilitychange', () => {

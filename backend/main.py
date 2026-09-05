@@ -16,6 +16,7 @@ try:
         cloud_upsert_account, cloud_delete_account, cloud_get_accounts, cloud_search_accounts,
         cloud_add_post, cloud_delete_post, cloud_get_posts,
         cloud_add_notification, cloud_get_notifications,
+        cloud_get_settings, cloud_save_settings,
     )
     CLOUD_ENABLED = True
 except ImportError:
@@ -24,10 +25,12 @@ except ImportError:
             cloud_upsert_account, cloud_delete_account, cloud_get_accounts, cloud_search_accounts,
             cloud_add_post, cloud_delete_post, cloud_get_posts,
             cloud_add_notification, cloud_get_notifications,
+            cloud_get_settings, cloud_save_settings,
         )
         CLOUD_ENABLED = True
     except ImportError:
         CLOUD_ENABLED = False
+
 
 START_TIME = time.time()
 
@@ -596,7 +599,13 @@ class AttendanceModel(BaseModel):
 # ============================================================
 
 @app.get("/api/accounts")
-def get_all_accounts():
+def get_all_accounts(
+    page: Optional[int] = Query(None, ge=1, description="Page number (1-indexed)"),
+    limit: Optional[int] = Query(None, ge=1, description="Accounts per page"),
+    q: Optional[str] = Query(None, description="Search query across name, handle, email, USN, dept"),
+    role: Optional[str] = Query(None, description="Filter by role: STUDENT, ADMIN, FACULTY"),
+    department: Optional[str] = Query(None, description="Filter by department")
+):
     cloud_accs = cloud_get_accounts() if CLOUD_ENABLED else []
     conn = get_db()
     cursor = conn.cursor()
@@ -644,7 +653,125 @@ def get_all_accounts():
 
     result = list(account_map.values())
     result.sort(key=lambda x: x.get("updatedAt") or x.get("createdAt") or 0, reverse=True)
+
+    # Parameter normalization (supports direct function calls and FastAPI Query defaults)
+    query_str = q if isinstance(q, str) else None
+    role_str = role if isinstance(role, str) else None
+    dept_str = department if isinstance(department, str) else None
+    page_num = page if isinstance(page, int) else (int(page) if (page is not None and str(page).isdigit()) else 1)
+    limit_num = limit if isinstance(limit, int) else (int(limit) if (limit is not None and str(limit).isdigit()) else None)
+
+    # Filtering by Search Query
+    if query_str and query_str.strip():
+        term = query_str.strip().lower().replace("@", "")
+        result = [
+            a for a in result
+            if term in " ".join([
+                (a.get("displayName") or a.get("name") or ""),
+                (a.get("handle") or a.get("username") or ""),
+                (a.get("email") or ""),
+                (a.get("usn") or ""),
+                (a.get("department") or ""),
+                (a.get("college") or ""),
+                " ".join(a.get("skills") or [])
+            ]).lower()
+        ]
+
+    # Filtering by Role
+    if role_str and role_str.strip() and role_str.upper() != "ALL":
+        target_role = role_str.strip().upper()
+        if target_role == "ADMIN":
+            result = [a for a in result if (a.get("role") or "").upper() in ["ADMIN", "OWNER_ADMIN"]]
+        else:
+            result = [a for a in result if (a.get("role") or "").upper() == target_role]
+
+    # Filtering by Department
+    if dept_str and dept_str.strip() and dept_str.upper() != "ALL":
+        target_dept = dept_str.strip().lower()
+        result = [a for a in result if target_dept in (a.get("department") or "").lower()]
+
+    # Pagination Support (returns structured payload if limit is supplied)
+    if limit_num is not None:
+        p = page_num or 1
+        total = len(result)
+        total_pages = max(1, math.ceil(total / limit_num))
+        start_idx = (p - 1) * limit_num
+        end_idx = start_idx + limit_num
+        paginated_slice = result[start_idx:end_idx]
+        return {
+            "total": total,
+            "page": p,
+            "limit": limit_num,
+            "totalPages": total_pages,
+            "accounts": paginated_slice
+        }
+
+    # Backward compatibility: return raw list when no pagination parameters provided
     return result
+
+
+@app.get("/api/accounts/check-handle/{handle}")
+def check_handle_availability(handle: str):
+    raw_h = handle.strip().lower().replace("@", "")
+    clean_h = re.sub(r'[^a-z0-9_]', '', raw_h)
+    if not clean_h or len(clean_h) < 3:
+        return {"available": False, "handle": "@" + clean_h, "reason": "Handle must be at least 3 characters"}
+    formatted_h = "@" + clean_h
+
+    # Check SQLite
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT handle FROM accounts WHERE LOWER(handle) = ?", (formatted_h,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {"available": False, "handle": formatted_h, "reason": "Handle is already taken"}
+
+    # Check Cloud Store
+    if CLOUD_ENABLED:
+        try:
+            cloud_accs = cloud_get_accounts()
+            for ca in cloud_accs:
+                ca_h = (ca.get("handle") or ca.get("username") or "").strip().lower()
+                if not ca_h.startswith("@"):
+                    ca_h = "@" + ca_h
+                if ca_h == formatted_h:
+                    return {"available": False, "handle": formatted_h, "reason": "Handle is already taken"}
+        except Exception:
+            pass
+
+    return {"available": True, "handle": formatted_h}
+
+
+@app.get("/api/accounts/check-email/{email:path}")
+def check_email_availability(email: str):
+    clean_email = email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        return {"available": False, "email": clean_email, "reason": "Please enter a valid email address"}
+
+    # Check SQLite
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT handle FROM accounts WHERE LOWER(email) = ?", (clean_email,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {"available": False, "email": clean_email, "existing_handle": row[0], "reason": "An account with this email already exists"}
+
+    # Check Cloud Store
+    if CLOUD_ENABLED:
+        try:
+            cloud_accs = cloud_get_accounts()
+            for ca in cloud_accs:
+                ca_em = (ca.get("email") or "").strip().lower()
+                if ca_em and ca_em == clean_email:
+                    ca_h = ca.get("handle") or ca.get("username") or "@student"
+                    return {"available": False, "email": clean_email, "existing_handle": ca_h, "reason": "An account with this email already exists"}
+        except Exception:
+            pass
+
+    return {"available": True, "email": clean_email}
+
 
 
 @app.get("/api/accounts/search")
@@ -775,8 +902,12 @@ def get_account_by_handle(handle: str):
 @app.post("/api/auth/register")
 @app.post("/api/accounts")
 def create_or_update_account(acc: AccountModel):
-    handle = acc.handle.strip()
-    if not handle.startswith("@"): handle = "@" + handle
+    raw_h = acc.handle.strip().lower().replace("@", "")
+    # Strictly sanitize: only lowercase alphanumeric characters and underscores (no spaces)
+    clean_h = re.sub(r'[^a-z0-9_]', '', raw_h)
+    if not clean_h:
+        clean_h = f"student_{int(time.time())}"
+    handle = "@" + clean_h
 
     conn = get_db()
     cursor = conn.cursor()
@@ -785,14 +916,20 @@ def create_or_update_account(acc: AccountModel):
     # 1. Enforce Strict "One Email One Account" Uniqueness
     if acc.email and acc.email.strip():
         email_clean = acc.email.strip().lower()
-        cursor.execute("SELECT handle FROM accounts WHERE LOWER(email) = ? AND LOWER(handle) != ?", (email_clean, handle.lower()))
+        cursor.execute("SELECT handle, password_hash FROM accounts WHERE LOWER(email) = ? AND LOWER(handle) != ?", (email_clean, handle.lower()))
         existing_email_row = cursor.fetchone()
         if existing_email_row:
-            conn.close()
-            raise HTTPException(
-                status_code=400,
-                detail=f"An account with email '{acc.email}' is already registered under handle {existing_email_row[0]}. Please sign in with your password."
-            )
+            existing_h = existing_email_row[0]
+            existing_pwd_hash = existing_email_row[1]
+            # If the user provides the correct password for their existing account, allow profile updates/sign-in
+            if acc.password and existing_pwd_hash and verify_password(acc.password, existing_pwd_hash):
+                handle = existing_h
+            else:
+                conn.close()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"An account with email '{acc.email}' is already registered under handle {existing_h}. Please sign in with your password or choose another email."
+                )
 
     # 2. Prevent Handle Hijacking (if handle exists under a different email)
     cursor.execute("SELECT created_at, password_hash, role, email FROM accounts WHERE LOWER(handle) = ?", (handle.lower(),))
@@ -800,16 +937,20 @@ def create_or_update_account(acc: AccountModel):
     if existing and acc.email and acc.email.strip():
         existing_email = (existing["email"] or "").strip().lower()
         if existing_email and existing_email != acc.email.strip().lower():
-            conn.close()
-            raise HTTPException(
-                status_code=400,
-                detail=f"Username '{handle}' is already registered by another student. Please choose a different handle."
-            )
+            if acc.password and existing["password_hash"] and verify_password(acc.password, existing["password_hash"]):
+                pass
+            else:
+                conn.close()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Username '{handle}' is already registered by another student. Please choose a different username."
+                )
 
     created_at = existing["created_at"] if existing else now
     role = acc.role if acc.role else (existing["role"] if existing else "STUDENT")
     pwd_hash = hash_password(acc.password) if (acc.password and acc.password.strip()) else (existing["password_hash"] if existing else None)
     privacy_str = json.dumps(acc.privacy or {"profileVisibility": "public", "showEmail": False, "showUSN": True})
+
 
     cursor.execute("""
     INSERT OR REPLACE INTO accounts
@@ -989,36 +1130,6 @@ def update_account_photo(handle: str, data: Dict[str, str]):
     conn.close()
     return {"status": "success", "handle": clean, "photo": photo}
 
-
-@app.get("/api/accounts/check-handle/{handle}")
-def check_handle_availability(handle: str):
-    clean = handle.strip().lower()
-    if not clean.startswith("@"): clean = "@" + clean
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM accounts WHERE LOWER(handle) = ?", (clean,))
-    exists = cursor.fetchone() is not None
-    conn.close()
-    return {
-        "available": not exists,
-        "handle": clean,
-        "message": "Handle is available" if not exists else "Handle is already taken by another student"
-    }
-
-
-@app.get("/api/accounts/check-email/{email}")
-def check_email_availability(email: str):
-    clean = email.strip().lower()
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM accounts WHERE LOWER(email) = ?", (clean,))
-    exists = cursor.fetchone() is not None
-    conn.close()
-    return {
-        "available": not exists,
-        "email": clean,
-        "message": "Email is available" if not exists else "An account with this email is already registered"
-    }
 
 
 @app.put("/api/accounts/{handle}/profile")
@@ -2537,15 +2648,133 @@ def serve_auth():
 # ============================================================
 
 @app.get("/api/cloud/accounts")
-def cloud_accounts_endpoint():
-    """Get all accounts from Vercel Blob cloud store (live cross-device data)."""
-    if not CLOUD_ENABLED:
+def cloud_accounts_endpoint(
+    page: Optional[int] = Query(None, ge=1),
+    limit: Optional[int] = Query(None, ge=1),
+    q: Optional[str] = Query(None),
+    role: Optional[str] = Query(None),
+    department: Optional[str] = Query(None)
+):
+    """Get accounts from Vercel Blob cloud store (live cross-device data) with optional pagination."""
+    accounts = cloud_get_accounts() if CLOUD_ENABLED else []
+    if not accounts:
         # Fallback to SQLite
-        return get_all_accounts()
+        return get_all_accounts(page=page, limit=limit, q=q, role=role, department=department)
+
+    # Parameter normalization
+    query_str = q if isinstance(q, str) else None
+    role_str = role if isinstance(role, str) else None
+    dept_str = department if isinstance(department, str) else None
+    page_num = page if isinstance(page, int) else (int(page) if (page is not None and str(page).isdigit()) else 1)
+    limit_num = limit if isinstance(limit, int) else (int(limit) if (limit is not None and str(limit).isdigit()) else None)
+
+    # Filtering by Search Query
+    if query_str and query_str.strip():
+        term = query_str.strip().lower().replace("@", "")
+        accounts = [
+            a for a in accounts
+            if term in " ".join([
+                (a.get("displayName") or a.get("name") or ""),
+                (a.get("handle") or a.get("username") or ""),
+                (a.get("email") or ""),
+                (a.get("usn") or ""),
+                (a.get("department") or ""),
+                (a.get("college") or ""),
+                " ".join(a.get("skills") or [])
+            ]).lower()
+        ]
+
+    # Filtering by Role
+    if role_str and role_str.strip() and role_str.upper() != "ALL":
+        target_role = role_str.strip().upper()
+        if target_role == "ADMIN":
+            accounts = [a for a in accounts if (a.get("role") or "").upper() in ["ADMIN", "OWNER_ADMIN"]]
+        else:
+            accounts = [a for a in accounts if (a.get("role") or "").upper() == target_role]
+
+    # Filtering by Department
+    if dept_str and dept_str.strip() and dept_str.upper() != "ALL":
+        target_dept = dept_str.strip().lower()
+        accounts = [a for a in accounts if target_dept in (a.get("department") or "").lower()]
+
+    # Pagination Support
+    if limit_num is not None:
+        p = page_num or 1
+        total = len(accounts)
+        total_pages = max(1, math.ceil(total / limit_num))
+        start_idx = (p - 1) * limit_num
+        end_idx = start_idx + limit_num
+        return {
+            "total": total,
+            "page": p,
+            "limit": limit_num,
+            "totalPages": total_pages,
+            "accounts": accounts[start_idx:end_idx]
+        }
+
+    return accounts
+
+
+@app.post("/api/cloud/accounts")
+def cloud_accounts_create_endpoint(acc: AccountModel):
+    """Directly register / update an account in Vercel Blob cloud store for instant cross-device sharing."""
+    raw_h = acc.handle.strip().lower().replace("@", "")
+    clean_h = re.sub(r'[^a-z0-9_]', '', raw_h)
+    if not clean_h:
+        clean_h = f"student_{int(time.time())}"
+    handle = "@" + clean_h
+    now = int(time.time() * 1000)
+
+    pwd_hash = hash_password(acc.password) if (acc.password and acc.password.strip()) else None
+
+    user_dict = {
+        "username": handle,
+        "handle": handle,
+        "displayName": acc.displayName,
+        "name": acc.displayName,
+        "email": acc.email,
+        "password_hash": pwd_hash,
+        "department": acc.department or "Computer Science & Engineering",
+        "semester": acc.semester or 5,
+        "program": acc.program or "BCA",
+        "college": acc.college or "Campus OS Academic Network",
+        "usn": acc.usn,
+        "bio": acc.bio or "",
+        "skills": acc.skills or [],
+        "photo": acc.photo,
+        "role": acc.role or "STUDENT",
+        "privacy": acc.privacy or {"profileVisibility": "public", "showEmail": False, "showUSN": True},
+        "createdAt": now,
+        "updatedAt": now
+    }
+
+    if CLOUD_ENABLED:
+        try:
+            cloud_upsert_account(user_dict)
+        except Exception as e:
+            print(f"[CloudSync] Direct cloud account upsert error: {e}")
+
+    # Also mirror into local SQLite
     try:
-        return cloud_get_accounts()
-    except Exception:
-        return get_all_accounts()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT OR REPLACE INTO accounts
+        (handle, display_name, email, password_hash, department, semester, program, college, usn, bio, skills, photo, role, privacy_json, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            handle, acc.displayName, acc.email, pwd_hash,
+            acc.department or "Computer Science & Engineering",
+            acc.semester or 5, acc.program or "BCA", acc.college or "Campus OS Academic Network",
+            acc.usn, acc.bio, json.dumps(acc.skills or []), acc.photo, acc.role or "STUDENT",
+            json.dumps(user_dict["privacy"]), now, now
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[CloudSync] SQLite mirror note: {e}")
+
+    return {"status": "success", "account": user_dict}
 
 
 @app.get("/api/cloud/accounts/search")
@@ -2557,6 +2786,37 @@ def cloud_search_endpoint(q: str = ""):
         return cloud_search_accounts(q)
     except Exception:
         return search_accounts(q)
+
+
+@app.get("/api/cloud/settings")
+def cloud_settings_get_endpoint():
+    """Get platform and EmailJS settings from cloud store."""
+    if not CLOUD_ENABLED:
+        return {
+            "emailjs_public_key": "MQxZeO4-7lL0-gfX7",
+            "emailjs_service_id": "default_service",
+            "emailjs_template_id": "template_welcome",
+        }
+    try:
+        return cloud_get_settings()
+    except Exception:
+        return {
+            "emailjs_public_key": "MQxZeO4-7lL0-gfX7",
+            "emailjs_service_id": "default_service",
+            "emailjs_template_id": "template_welcome",
+        }
+
+
+@app.post("/api/cloud/settings")
+def cloud_settings_save_endpoint(data: dict):
+    """Save platform and EmailJS settings to Vercel Blob cloud store."""
+    if not CLOUD_ENABLED:
+        return {"status": "success", "settings": data}
+    try:
+        updated = cloud_save_settings(data)
+        return {"status": "success", "settings": updated}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @app.get("/api/cloud/posts")
@@ -2633,6 +2893,7 @@ def cloud_notifications_create_endpoint(data: dict):
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 
 if os.path.isdir(frontend_dir):

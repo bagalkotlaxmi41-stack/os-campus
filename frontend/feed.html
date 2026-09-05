@@ -1395,6 +1395,13 @@
           console.warn('Backend sync notice:', err);
         }
       }
+      if (window.PythonAPI && PythonAPI.saveCloudPost) {
+        try {
+          await PythonAPI.saveCloudPost(postPayload);
+        } catch (cErr) {
+          console.warn('Cloud post sync notice:', cErr);
+        }
+      }
     }
 
     // ============================================================

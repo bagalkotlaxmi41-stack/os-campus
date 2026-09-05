@@ -785,7 +785,8 @@
     var btn = document.getElementById('createBtn');
     try {
       var username = (document.getElementById('regUsername').value || '').trim();
-      if (!username || username.length < 3) {
+      var rawHandle = username.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (!rawHandle || rawHandle.length < 3) {
         err('errUsername', true);
         return;
       }
@@ -797,7 +798,7 @@
       var name  = (document.getElementById('regName').value  || '').trim();
       var email = (document.getElementById('regEmail').value || '').trim();
       var pass  = (document.getElementById('regPass').value  || '');
-      var handle = '@' + username.replace(/^@/, '').toLowerCase();
+      var handle = '@' + rawHandle;
       var usn = (document.getElementById('regUSN')?.value || '').trim();
       var college = (document.getElementById('regCollege')?.value || '').trim() || 'Campus OS Academic Network';
       var dept = document.getElementById('regDept').value;
@@ -847,7 +848,32 @@
         password:    pass
       };
 
-      // Save locally to Storage & accounts directory
+      // 1. Save to Backend Database
+      if (window.PythonAPI && PythonAPI.register) {
+        try {
+          await PythonAPI.register(user);
+        } catch (apiErr) {
+          const errMsg = apiErr.message || String(apiErr);
+          if (errMsg.includes('already registered') || errMsg.includes('taken') || errMsg.includes('another student')) {
+            btn.disabled = false;
+            btn.textContent = '🚀 Create My Account';
+            alert('⚠️ ' + errMsg);
+            return;
+          }
+          console.warn('Backend register sync note:', apiErr);
+        }
+      }
+
+      // 2. Direct sync to Vercel Blob Cloud Store (guarantees cross-device visibility)
+      if (window.PythonAPI && PythonAPI.saveCloudAccount) {
+        try {
+          await PythonAPI.saveCloudAccount(user);
+        } catch (cErr) {
+          console.warn('Cloud account save note:', cErr);
+        }
+      }
+
+      // 3. Save locally to Storage & active session
       Storage.setUser(user);
       if (Storage.addAccount) {
         Storage.addAccount(user);
@@ -856,40 +882,24 @@
         Storage.setUserPhoto(handle, _selectedAuthPhotoBase64);
       }
 
-      // Try backend API registration
-      if (window.PythonAPI && PythonAPI.register) {
-        try {
-          await PythonAPI.register(user);
-        } catch (e) {
-          console.warn('Account register API note:', e);
-        }
-      }
-
-      // Update success message & show panel
+      // 4. Update success message & show panel
       document.getElementById('successMsg').textContent =
         'Welcome, ' + name + '! Your student account is active. Dispatching confirmation email...';
       showPanel('success');
 
-      // Send Welcome / Login Email notification via EmailJS
-      if (user.email) {
-        try {
-          const sendFn = (window.CampusEmailService && window.CampusEmailService.sendLoginNotification)
-            ? window.CampusEmailService.sendLoginNotification.bind(window.CampusEmailService)
-            : (window.sendWelcomeEmail || sendWelcomeEmail);
-          const emailRes = await Promise.race([
-            sendFn(user),
-            new Promise(resolve => setTimeout(() => resolve({ success: false, message: 'timeout' }), 4000))
-          ]);
+      // 5. Send Welcome / Confirmation Email via EmailJS
+      if (user.email && window.CampusEmailService) {
+        CampusEmailService.sendLoginNotification(user).then(emailRes => {
           const isSuccess = emailRes === true || (emailRes && emailRes.success);
           const notice = document.getElementById('emailNotice');
           if (notice) {
             notice.innerHTML = isSuccess
               ? '✨ A confirmation email has been dispatched to <strong>' + user.email + '</strong>'
-              : '📧 Account created! Confirmation queued for <strong>' + user.email + '</strong>';
+              : '📧 Account created! Confirmation email queued for <strong>' + user.email + '</strong>';
           }
-        } catch (err) {
-          console.warn('Email dispatch warning:', err);
-        }
+        }).catch(err => {
+          console.warn('Email dispatch note:', err);
+        });
       }
 
       document.getElementById('successMsg').textContent =
@@ -897,7 +907,7 @@
 
       setTimeout(function() {
         window.location.href = 'index.html';
-      }, 3500);
+      }, 3000);
     } catch (err) {
       console.error('Registration error:', err);
       if (btn) {

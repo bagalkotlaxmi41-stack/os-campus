@@ -2475,7 +2475,8 @@ function handleModalPhotoUpload(input) {
 async function executeModalAccountSave(e) {
   e.preventDefault();
   const name = document.getElementById('modalFullName').value.trim();
-  const rawHandle = document.getElementById('modalUsername').value.trim().replace(/^@/, '');
+  const inputHandle = document.getElementById('modalUsername').value.trim().replace(/^@/, '');
+  const cleanHandle = inputHandle.toLowerCase().replace(/[^a-z0-9_]/g, '');
   const email = document.getElementById('modalEmail').value.trim();
   const password = document.getElementById('modalPassword').value;
   const usn = document.getElementById('modalUSN')?.value.trim() || '';
@@ -2484,8 +2485,13 @@ async function executeModalAccountSave(e) {
   const sem = parseInt(document.getElementById('modalSem').value, 10) || 5;
   const btn = document.getElementById('btnModalSubmitRegister');
 
-  if (!name || !rawHandle || !email || !password) {
+  if (!name || !cleanHandle || !email || !password) {
     alert('Full name, username, email, and password are required.');
+    return;
+  }
+
+  if (cleanHandle.length < 3) {
+    alert('Username must be at least 3 characters long (letters, numbers, underscores only).');
     return;
   }
 
@@ -2494,18 +2500,30 @@ async function executeModalAccountSave(e) {
     return;
   }
 
+  const handle = '@' + cleanHandle;
+
   // Enforce Unique Email
-  if (Storage.isEmailTaken(email)) {
+  if (Storage.isEmailTaken && Storage.isEmailTaken(email)) {
     alert(`An account with email '${email}' already exists. Please switch to the 'Sign In' tab.`);
     switchModalAuthTab('login');
     document.getElementById('modalLoginIdent').value = email;
     return;
   }
 
-  const handle = '@' + rawHandle.toLowerCase();
+  if (window.PythonAPI && PythonAPI.checkEmailAvailability) {
+    try {
+      const eCheck = await PythonAPI.checkEmailAvailability(email);
+      if (eCheck && eCheck.available === false) {
+        alert(`An account with email '${email}' already exists. Please switch to the 'Sign In' tab.`);
+        switchModalAuthTab('login');
+        document.getElementById('modalLoginIdent').value = email;
+        return;
+      }
+    } catch(e) {}
+  }
 
   // Enforce Unique Handle
-  if (Storage.getAccountByHandle(handle)) {
+  if (Storage.getAccountByHandle && Storage.getAccountByHandle(handle)) {
     alert(`The handle '${handle}' is already taken by another student. Please choose a different username.`);
     return;
   }
@@ -2544,24 +2562,47 @@ async function executeModalAccountSave(e) {
   if (btn) btn.disabled = true;
 
   try {
+    // 1. Primary SQLite Database Save
     if (window.PythonAPI && PythonAPI.register) {
-      await PythonAPI.register(userAccount).catch(err => console.warn('API register sync:', err));
+      try {
+        await PythonAPI.register(userAccount);
+      } catch (apiErr) {
+        const errMsg = apiErr.message || String(apiErr);
+        if (errMsg.includes('already registered') || errMsg.includes('taken') || errMsg.includes('another student')) {
+          alert('⚠️ ' + errMsg);
+          if (btn) btn.disabled = false;
+          return;
+        }
+        console.warn('API register sync note:', apiErr);
+      }
     }
 
+    // 2. Direct Vercel Blob Cloud Store Persistence (cross-device sync)
+    if (window.PythonAPI && PythonAPI.saveCloudAccount) {
+      try {
+        await PythonAPI.saveCloudAccount(userAccount);
+      } catch(cErr) {
+        console.warn('Cloud account save note:', cErr);
+      }
+    }
+
+    // 3. Local Storage Session
     Storage.setUser(userAccount);
-    Storage.addAccount(userAccount);
-    if (_modalSelectedPhotoBase64) {
+    if (Storage.addAccount) {
+      Storage.addAccount(userAccount);
+    }
+    if (_modalSelectedPhotoBase64 && Storage.setUserPhoto) {
       Storage.setUserPhoto(handle, _modalSelectedPhotoBase64);
     }
 
     closeAccountModal();
     syncNavbarUser();
-    showCampusToast(`🎉 Welcome to Campus OS, ${name}! Your account is now active on the main platform.`);
+    showCampusToast(`🎉 Welcome to Campus OS, ${name}! Your account is now active on the platform.`);
     if (btn) btn.disabled = false;
 
-    // Dispatch Welcome Confirmation Email via EmailJS
-    if (userAccount.email && window.sendWelcomeEmail) {
-      window.sendWelcomeEmail(userAccount).then(res => {
+    // 4. Dispatch Welcome Confirmation Email via EmailJS
+    if (userAccount.email && window.CampusEmailService) {
+      CampusEmailService.sendLoginNotification(userAccount).then(res => {
         if (res && res.success) {
           showCampusToast(`📧 Confirmation email sent to ${userAccount.email}!`);
         }
