@@ -25,7 +25,8 @@ const FAKE_HANDLES = [
   '@priya_sharma', '@vikram_patil', '@ananya_kulkarni', '@rahul_verma',
   'priya_sharma', 'vikram_patil', 'ananya_kulkarni', 'rahul_verma',
   'priya.sharma@campus.edu', 'vikram.patil@campus.edu', 'ananya.k@campus.edu', 'rahul.verma@campus.edu',
-  '@alex_cs', 'alex_cs', 'demo@collegeos.app'
+  '@alex_cs', 'alex_cs', 'demo@collegeos.app',
+  '@john_doe', 'john_doe', 'johndoe@gmail.com'
 ];
 
 const FAKE_POST_IDS = [
@@ -202,12 +203,10 @@ var Storage = {
         // Sync Banners from Backend
         if (PythonAPI.getBanners) {
           const banners = await PythonAPI.getBanners();
-          if (banners && Array.isArray(banners) && banners.length > 0) {
+          if (banners && Array.isArray(banners)) {
             const deletedBanners = this.getDeletedBannerIds();
             const filteredBanners = banners.filter(b => !deletedBanners.includes(b.id));
-            if (filteredBanners.length > 0) {
-              this.setBanners(filteredBanners);
-            }
+            this.setBanners(filteredBanners);
           }
         }
 
@@ -268,8 +267,7 @@ var Storage = {
       } catch (e) {
         console.warn('Realtime sync background boot note:', e);
       }
-    }
-  },
+    },
 
   // ============================================================
   // CURRENT ACTIVE USER SESSION
@@ -1152,50 +1150,8 @@ var Storage = {
     let list = [];
 
     if (raw !== null && Array.isArray(raw)) {
-      list = raw;
-    } else {
-      list = [
-        {
-          id: "banner_1",
-          title: "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>",
-          subtitle: "Stay ahead with academic roadmaps, lecture timetables, verified study notes, and campus resource hubs.",
-          badge: "✨ Universal Campus Academic Platform",
-          cta_text: "📊 Open Dashboard →",
-          cta_url: "dashboard.html",
-          secondary_text: "🚀 Create Account",
-          secondary_url: "javascript:openAccountModal()",
-          image_url: "img/banner1.jpg",
-          sort_order: 1,
-          active: 1
-        },
-        {
-          id: "banner_2",
-          title: "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>",
-          subtitle: "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.",
-          badge: "📅 Class Timetables",
-          cta_text: "📅 View Timetable →",
-          cta_url: "timetable.html",
-          secondary_text: null,
-          secondary_url: null,
-          image_url: "img/banner2.jpg",
-          sort_order: 2,
-          active: 1
-        },
-        {
-          id: "banner_3",
-          title: "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>",
-          subtitle: "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.",
-          badge: "🌟 75% Attendance Radar",
-          cta_text: "📈 Check Attendance",
-          cta_url: "attendance.html",
-          secondary_text: "📝 Notes Vault",
-          secondary_url: "notes.html",
-          image_url: "img/banner3.jpg",
-          sort_order: 3,
-          active: 1
-        }
-      ];
-      this.set(KEYS.BANNERS, list);
+      // Filter out legacy mock banners
+      list = raw.filter(b => b && !['banner_1', 'banner_2', 'banner_3'].includes(b.id) && !['img/banner1.jpg', 'img/banner2.jpg', 'img/banner3.jpg'].includes(b.image_url));
     }
 
     if (deleted.length > 0) {
@@ -1205,14 +1161,22 @@ var Storage = {
   },
   setBanners(banners) {
     const deleted = this.getDeletedBannerIds();
-    const clean = (banners || []).filter(b => !deleted.includes(b.id));
-    return this.set(KEYS.BANNERS, clean);
+    const clean = (banners || []).filter(b => b && !deleted.includes(b.id) && !['banner_1', 'banner_2', 'banner_3'].includes(b.id));
+    try {
+      return this.set(KEYS.BANNERS, clean);
+    } catch (e) {
+      console.warn('Storage setBanners warning:', e);
+      return false;
+    }
   },
   saveBanner(banner) {
     if (!banner) return null;
     const id = banner.id || ('banner_' + Date.now());
     this.removeDeletedBannerId(id);
-    const banners = this.getBanners();
+    let banners = [];
+    try {
+      banners = this.getBanners();
+    } catch (e) { banners = []; }
     const idx = banners.findIndex(b => b.id === id);
     const newB = { ...banner, id, sort_order: Number(banner.sort_order) || (banners.length + 1) };
     if (idx >= 0) {
@@ -1220,7 +1184,11 @@ var Storage = {
     } else {
       banners.push(newB);
     }
-    this.setBanners(banners);
+    try {
+      this.setBanners(banners);
+    } catch (e) {
+      console.warn('Storage saveBanner warning:', e);
+    }
     if (window.PythonAPI && PythonAPI.saveAdminBanner) {
       PythonAPI.saveAdminBanner(newB).catch(() => {});
     }
@@ -1229,8 +1197,13 @@ var Storage = {
   deleteBanner(id) {
     if (!id) return false;
     this.addDeletedBannerId(id);
-    const banners = this.getBanners().filter(b => b.id !== id);
-    this.setBanners(banners);
+    let banners = [];
+    try {
+      banners = this.getBanners().filter(b => b.id !== id);
+      this.setBanners(banners);
+    } catch (e) {
+      console.warn('Storage deleteBanner warning:', e);
+    }
     if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
       PythonAPI.deleteAdminBanner(id).catch(() => {});
     }

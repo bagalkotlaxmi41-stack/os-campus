@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin & Owner Control Center · Campus OS</title>
   <meta name="description" content="Official Owner and Administrator Control Suite for Campus OS. Manage student accounts, logins, dynamic hero banners, broadcast alerts, and system analytics." />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
+  <link rel="icon" type="image/svg+xml" href="img/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon-192x192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -1820,9 +1824,20 @@
           </div>
         </div>
 
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-form-label">SECONDARY BUTTON TEXT (OPTIONAL)</label>
+            <input type="text" class="admin-form-input" id="bannerSecondaryTextInput" placeholder="🚀 Create Account" />
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">SECONDARY BUTTON URL / ACTION</label>
+            <input type="text" class="admin-form-input" id="bannerSecondaryUrlInput" placeholder="javascript:openAccountModal() or notes.html" />
+          </div>
+        </div>
+
         <div class="admin-form-group">
           <label class="admin-form-label">BANNER IMAGE (URL OR UPLOAD)</label>
-          <input type="text" class="admin-form-input" id="bannerImageUrlInput" placeholder="img/banner1.jpg or https://..." required />
+          <input type="text" class="admin-form-input" id="bannerImageUrlInput" placeholder="https://... or upload image below" />
           <input type="file" id="bannerFileInput" accept="image/*" style="margin-top:8px;font-size:12px;" onchange="handleBannerFileUpload(this)" />
         </div>
 
@@ -2125,8 +2140,7 @@
 
         // ── Banners ──
         if (remoteBannersRes.status === 'fulfilled' && Array.isArray(remoteBannersRes.value)) {
-          const deletedBanners = Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : [];
-          allAdminBanners = remoteBannersRes.value.filter(b => !deletedBanners.includes(b.id));
+          allAdminBanners = remoteBannersRes.value;
           Storage.setBanners(allAdminBanners);
         }
 
@@ -2701,9 +2715,12 @@
 
       container.innerHTML = banners.map(b => {
         const isActive = b.active !== 0;
+        const imgDisplay = b.image_url 
+          ? `<img src="${b.image_url}" alt="${b.title}" class="admin-banner-preview-img" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';" /><div class="admin-banner-preview-img" style="display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1b4b,#0f172a);color:#94a3b8;font-size:12px;">Image unavailable</div>`
+          : `<div class="admin-banner-preview-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1b4b,#0f172a);color:#94a3b8;font-size:12px;">No image (gradient used)</div>`;
         return `
           <div class="admin-banner-card" style="opacity: ${isActive ? 1 : 0.6};">
-            <img src="${b.image_url || 'img/banner1.jpg'}" alt="${b.title}" class="admin-banner-preview-img" onerror="this.src='img/banner1.jpg'" />
+            ${imgDisplay}
             <div class="admin-banner-body">
               <div class="admin-banner-badge">${b.badge || '✨ Campus Update'}</div>
               <div class="admin-banner-title">${b.title}</div>
@@ -2715,7 +2732,7 @@
                   <span class="slider-round"></span>
                 </label>
                 <div style="display:flex;gap:6px;">
-                  <button class="admin-action-btn" onclick='editBannerSlide(${JSON.stringify(b).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                  <button class="admin-action-btn" onclick="openEditBannerModal('${b.id}')">✏️ Edit</button>
                   <button class="admin-action-btn danger" onclick="deleteBannerSlide('${b.id}')">🗑️</button>
                 </div>
               </div>
@@ -2725,12 +2742,20 @@
       }).join('');
     }
 
+    function openEditBannerModal(id) {
+      const b = allAdminBanners.find(x => String(x.id) === String(id));
+      if (!b) return;
+      editBannerSlide(b);
+    }
+
     function openBannerModal() {
       document.getElementById('bannerForm').reset();
       document.getElementById('bannerId').value = '';
       document.getElementById('bannerModalTitle').textContent = 'Add New Hero Banner Slide';
-      document.getElementById('bannerImageUrlInput').value = 'img/banner1.jpg';
+      document.getElementById('bannerImageUrlInput').value = '';
       document.getElementById('bannerOrderInput').value = allAdminBanners.length + 1;
+      if (document.getElementById('bannerSecondaryTextInput')) document.getElementById('bannerSecondaryTextInput').value = '';
+      if (document.getElementById('bannerSecondaryUrlInput')) document.getElementById('bannerSecondaryUrlInput').value = '';
       document.getElementById('bannerModal').classList.add('open');
     }
 
@@ -2746,18 +2771,42 @@
       document.getElementById('bannerOrderInput').value = b.sort_order || 1;
       document.getElementById('bannerCtaTextInput').value = b.cta_text || 'Explore Now';
       document.getElementById('bannerCtaUrlInput').value = b.cta_url || 'dashboard.html';
-      document.getElementById('bannerImageUrlInput').value = b.image_url || 'img/banner1.jpg';
+      if (document.getElementById('bannerSecondaryTextInput')) {
+        document.getElementById('bannerSecondaryTextInput').value = b.secondary_text || '';
+      }
+      if (document.getElementById('bannerSecondaryUrlInput')) {
+        document.getElementById('bannerSecondaryUrlInput').value = b.secondary_url || '';
+      }
+      document.getElementById('bannerImageUrlInput').value = b.image_url || '';
       document.getElementById('bannerModalTitle').textContent = 'Edit Hero Banner Slide';
       document.getElementById('bannerModal').classList.add('open');
     }
 
-    function handleBannerFileUpload(input) {
+    async function handleBannerFileUpload(input) {
       const file = input.files?.[0];
       if (!file) return;
+
+      showAdminToast('Uploading banner image...');
+
+      // Try uploading to backend first if available
+      if (window.PythonAPI && PythonAPI.uploadBannerImage) {
+        try {
+          const res = await PythonAPI.uploadBannerImage(file);
+          if (res && res.url) {
+            document.getElementById('bannerImageUrlInput').value = res.url;
+            showAdminToast('Banner image uploaded successfully!');
+            return;
+          }
+        } catch (err) {
+          console.warn('Backend banner upload error, using local fallback:', err);
+        }
+      }
+
+      // Safe local fallback
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('bannerImageUrlInput').value = e.target.result;
-        showAdminToast('Image uploaded to banner builder!');
+        showAdminToast('Image loaded to banner builder!');
       };
       reader.readAsDataURL(file);
     }
@@ -2765,6 +2814,10 @@
     async function handleSaveBanner(e) {
       e.preventDefault();
       const bId = document.getElementById('bannerId').value || 'banner_' + Date.now();
+      const existing = allAdminBanners.find(b => String(b.id) === String(bId));
+      const secText = document.getElementById('bannerSecondaryTextInput')?.value.trim() || null;
+      const secUrl = document.getElementById('bannerSecondaryUrlInput')?.value.trim() || null;
+
       const newBanner = {
         id: bId,
         title: document.getElementById('bannerTitleInput').value.trim(),
@@ -2773,11 +2826,17 @@
         sort_order: parseInt(document.getElementById('bannerOrderInput').value) || (allAdminBanners.length + 1),
         cta_text: document.getElementById('bannerCtaTextInput').value.trim() || 'Explore Now',
         cta_url: document.getElementById('bannerCtaUrlInput').value.trim() || 'dashboard.html',
-        image_url: document.getElementById('bannerImageUrlInput').value.trim() || 'img/banner1.jpg',
-        active: 1
+        secondary_text: secText,
+        secondary_url: secUrl,
+        image_url: document.getElementById('bannerImageUrlInput').value.trim() || '',
+        active: existing && existing.active !== undefined ? existing.active : 1
       };
 
-      Storage.saveBanner(newBanner);
+      try {
+        Storage.saveBanner(newBanner);
+      } catch (err) {
+        console.warn('Storage saveBanner warning:', err);
+      }
 
       if (window.PythonAPI && PythonAPI.saveAdminBanner) {
         try {
@@ -2788,7 +2847,7 @@
       }
 
       // Update in local list
-      const existingIdx = allAdminBanners.findIndex(b => b.id === bId);
+      const existingIdx = allAdminBanners.findIndex(b => String(b.id) === String(bId));
       if (existingIdx >= 0) {
         allAdminBanners[existingIdx] = newBanner;
       } else {
@@ -2801,7 +2860,7 @@
     }
 
     async function toggleBannerStatus(id) {
-      const banner = allAdminBanners.find(b => b.id === id);
+      const banner = allAdminBanners.find(b => String(b.id) === String(id));
       if (!banner) return;
       banner.active = banner.active === 0 ? 1 : 0;
 
@@ -2812,7 +2871,9 @@
           console.warn('API toggleAdminBanner:', err);
         }
       }
-      Storage.setBanners(allAdminBanners);
+      try {
+        Storage.setBanners(allAdminBanners);
+      } catch (e) {}
       showAdminToast(`Banner rotation ${banner.active ? 'enabled' : 'disabled'}.`);
       renderBannersGrid(allAdminBanners);
     }
@@ -2820,7 +2881,9 @@
     async function deleteBannerSlide(id) {
       if (!confirm('Are you sure you want to permanently delete this hero slide?')) return;
 
-      Storage.deleteBanner(id);
+      try {
+        Storage.deleteBanner(id);
+      } catch (e) {}
 
       if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
         try {
@@ -2830,7 +2893,7 @@
         }
       }
 
-      allAdminBanners = allAdminBanners.filter(b => b.id !== id);
+      allAdminBanners = allAdminBanners.filter(b => String(b.id) !== String(id));
       showAdminToast('Hero banner slide deleted permanently.');
       renderBannersGrid(allAdminBanners);
     }

@@ -499,7 +499,7 @@ const PythonAPI = {
 
   getBanners: async function() {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/banners`, {}, 900);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/banners`, {}, 4000);
       if (!res.ok) return null;
       return await res.json();
     } catch (e) { return null; }
@@ -507,10 +507,26 @@ const PythonAPI = {
 
   getAdminBanners: async function() {
     try {
-      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/banners`, {}, 900);
+      const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/banners`, {}, 4000);
       if (!res.ok) return null;
       return await res.json();
     } catch (e) { return null; }
+  },
+
+  uploadBannerImage: async function(file) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${PYTHON_API_BASE_URL}/api/admin/banners/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('API uploadBannerImage error:', e);
+      return null;
+    }
   },
 
   saveAdminBanner: async function(banner) {
@@ -519,7 +535,7 @@ const PythonAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(banner)
-      }, 1500);
+      }, 5000);
       if (!res.ok) return null;
       return await res.json();
     } catch (e) { return null; }
@@ -529,7 +545,7 @@ const PythonAPI = {
     try {
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/banners/${encodeURIComponent(id)}`, {
         method: 'DELETE'
-      }, 1200);
+      }, 4000);
       return res.ok;
     } catch (e) { return false; }
   },
@@ -538,7 +554,7 @@ const PythonAPI = {
     try {
       const res = await fastFetch(`${PYTHON_API_BASE_URL}/api/admin/banners/${encodeURIComponent(id)}/toggle`, {
         method: 'PUT'
-      }, 1200);
+      }, 4000);
       if (!res.ok) return null;
       return await res.json();
     } catch (e) { return null; }

@@ -6,7 +6,7 @@ import re
 import sqlite3
 import time
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI, HTTPException, Query, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -263,17 +263,8 @@ def init_database():
     )
     """)
 
-    # Seed initial 3 default banners only once on fresh setup
-    cursor.execute("SELECT value FROM app_meta WHERE key = 'banners_seeded'")
-    is_seeded = cursor.fetchone()
-    if not is_seeded:
-        default_banners = [
-            ("banner_1", "Student Academic Platform &<br /><span class=\"text-hero-gradient\">Campus OS Network</span>", "Stay ahead with academic roadmaps, timetables, and campus resource hubs.", "✨ Universal Student Platform", "📊 Open Dashboard →", "dashboard.html", "🚀 Create Account", "javascript:openAccountModal()", "img/banner1.jpg", 1, 1, int(time.time()*1000)),
-            ("banner_2", "Weekly Lectures &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Daily Class Periods</span>", "Check live timetable periods, room locations, and lab schedule allocations across all semester branches.", "📅 Class Timetables", "📅 View Timetable →", "timetable.html", None, None, "img/banner2.jpg", 2, 1, int(time.time()*1000)),
-            ("banner_3", "Attendance Health &<br /><span class=\"text-hero-gradient\" style=\"background:linear-gradient(135deg, #34d399 0%, #38bdf8 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;\">Smart Study Notes Vault</span>", "Calculate safe bunk margins, track minimum 75% thresholds, and access verified handwritten student notes.", "🌟 75% Attendance Radar", "📈 Check Attendance", "attendance.html", "📝 Notes Vault", "notes.html", "img/banner3.jpg", 3, 1, int(time.time()*1000))
-        ]
-        cursor.executemany("INSERT OR IGNORE INTO banners VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", default_banners)
-        cursor.execute("INSERT OR REPLACE INTO app_meta VALUES ('banners_seeded', '1')")
+    # Ensure banners seeded marker is set so mock banners are not re-inserted
+    cursor.execute("INSERT OR REPLACE INTO app_meta VALUES ('banners_seeded', '1')")
 
     # 11. Admin Logs Table
     cursor.execute("""
@@ -496,7 +487,7 @@ class BannerModel(BaseModel):
     cta_url: Optional[str] = "dashboard.html"
     secondary_text: Optional[str] = None
     secondary_url: Optional[str] = None
-    image_url: str
+    image_url: Optional[str] = ""
     sort_order: Optional[int] = 0
     active: Optional[int] = 1
 
@@ -647,7 +638,7 @@ def get_all_accounts(
             "updatedAt": r["updated_at"],
         }
         if h in account_map:
-            account_map[h] = {**sqlite_acc, **account_map[h]}
+            account_map[h] = {**account_map[h], **sqlite_acc}
         else:
             account_map[h] = sqlite_acc
 
@@ -2411,6 +2402,21 @@ def get_all_admin_banners():
     return [dict(r) for r in rows]
 
 
+@app.post("/api/admin/banners/upload")
+async def upload_banner_image(file: UploadFile = File(...)):
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".jpg"
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        ext = ".png"
+    filename = f"banner_uploaded_{int(time.time() * 1000)}{ext}"
+    frontend_img_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "img")
+    os.makedirs(frontend_img_dir, exist_ok=True)
+    file_path = os.path.join(frontend_img_dir, filename)
+    contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
+    return {"status": "success", "url": f"img/{filename}"}
+
+
 @app.post("/api/admin/banners")
 def save_admin_banner(data: BannerModel):
     conn = get_db()
@@ -2434,7 +2440,7 @@ def save_admin_banner(data: BannerModel):
         data.cta_url or "dashboard.html",
         data.secondary_text,
         data.secondary_url,
-        data.image_url,
+        data.image_url or "",
         data.sort_order or 0,
         data.active if data.active is not None else 1,
         now

@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Campus OS — Sign In / Join</title>
   <meta name="description" content="Create your Campus OS account or sign in to access your student dashboard." />
-  <link rel="icon" type="image/png" href="img/logo.png" />
-  <link rel="apple-touch-icon" href="img/logo.png" />
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
+  <link rel="icon" type="image/svg+xml" href="img/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon-192x192.png" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/animations.css" />
@@ -652,7 +655,14 @@
             console.warn('Sign-in email notice:', emailErr);
           }
         }
-        window.location.href = 'index.html';
+        // Redirect back to where user was trying to go, or dashboard
+        var _redir = (function(){
+          try { return sessionStorage.getItem('cos_auth_redirect'); } catch(e){}
+          return null;
+        })();
+        var _dest = (_redir && !_redir.includes('auth.html')) ? _redir : 'dashboard.html';
+        try { sessionStorage.removeItem('cos_auth_redirect'); } catch(e){}
+        window.location.href = _dest;
       } else {
         btn.disabled = false;
         btn.textContent = 'Sign In →';
@@ -905,8 +915,15 @@
       document.getElementById('successMsg').textContent =
         'Welcome, ' + name + '! Taking you to Main Campus OS...';
 
+      // Redirect back to where user was trying to go, or index
+      var _redir2 = (function(){
+        try { return sessionStorage.getItem('cos_auth_redirect'); } catch(e){}
+        return null;
+      })();
+      var _dest2 = (_redir2 && !_redir2.includes('auth.html')) ? _redir2 : 'index.html';
+      try { sessionStorage.removeItem('cos_auth_redirect'); } catch(e){}
       setTimeout(function() {
-        window.location.href = 'index.html';
+        window.location.href = _dest2;
       }, 3000);
     } catch (err) {
       console.error('Registration error:', err);
@@ -932,6 +949,12 @@
   // Init
   // =====================================================
   document.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    var mode = (params.get('mode') || params.get('tab') || params.get('step') || '').toLowerCase();
+    if (mode === 'register' || mode === 'step1' || mode === '1' || mode === 'signup') {
+      showPanel('step1');
+    }
+
     var existing = Storage.getUser ? Storage.getUser() : null;
     if (existing) {
       var banner = document.createElement('div');

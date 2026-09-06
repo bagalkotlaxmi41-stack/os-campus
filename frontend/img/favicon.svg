@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06050e"/>
+      <stop offset="100%" stop-color="#0c0a1e"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="capGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="30%" stop-color="#e9d5ff"/>
+      <stop offset="70%" stop-color="#a855f7" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark rounded background -->
+  <rect x="0" y="0" width="64" height="64" rx="13" fill="url(#bg)"/>
+
+  <!-- Ambient purple glow behind shield -->
+  <ellipse cx="32" cy="38" rx="20" ry="18" fill="#7c3aed" opacity="0.2" filter="url(#softglow)"/>
+  <ellipse cx="32" cy="38" rx="14" ry="12" fill="#22d3ee" opacity="0.08" filter="url(#softglow)"/>
+
+  <!-- SHIELD BODY — outer path -->
+  <path d="M32 14 L52 22 L52 40 Q52 54 32 60 Q12 54 12 40 L12 22 Z"
+        fill="none"
+        stroke="url(#shieldGrad)"
+        stroke-width="2.5"
+        stroke-linejoin="round"
+        filter="url(#glow)"/>
+
+  <!-- Shield inner fill (dark translucent) -->
+  <path d="M32 16 L50 23.5 L50 40 Q50 52.5 32 58 Q14 52.5 14 40 L14 23.5 Z"
+        fill="rgba(124,58,237,0.12)"/>
+
+  <!-- Shield inner border (cyan) -->
+  <path d="M32 20 L46 26 L46 40 Q46 50 32 55 Q18 50 18 40 L18 26 Z"
+        fill="none"
+        stroke="#38bdf8"
+        stroke-width="0.8"
+        stroke-opacity="0.5"
+        stroke-linejoin="round"/>
+
+  <!-- Circuit lines inside shield -->
+  <line x1="32" y1="28" x2="24" y2="36" stroke="#a855f7" stroke-width="0.9" stroke-opacity="0.7"/>
+  <line x1="32" y1="28" x2="40" y2="36" stroke="#a855f7" stroke-width="0.9" stroke-opacity="0.7"/>
+  <line x1="24" y1="36" x2="24" y2="43" stroke="#38bdf8" stroke-width="0.9" stroke-opacity="0.6"/>
+  <line x1="40" y1="36" x2="40" y2="43" stroke="#38bdf8" stroke-width="0.9" stroke-opacity="0.6"/>
+  <line x1="24" y1="43" x2="40" y2="43" stroke="#6366f1" stroke-width="0.9" stroke-opacity="0.6"/>
+  <circle cx="24" cy="36" r="1.2" fill="#a855f7"/>
+  <circle cx="40" cy="36" r="1.2" fill="#a855f7"/>
+  <circle cx="24" cy="43" r="1.2" fill="#22d3ee"/>
+  <circle cx="40" cy="43" r="1.2" fill="#22d3ee"/>
+
+  <!-- 8-point star / crystal center glow -->
+  <circle cx="32" cy="36" r="5.5" fill="url(#starGlow)" filter="url(#glow)"/>
+  <!-- Star points -->
+  <path d="M32 29.5 Q32.8 33.5 36 34.8 Q32.8 36 32 40 Q31.2 36 28 34.8 Q31.2 33.5 32 29.5Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M26.5 34.8 Q30 34 32 30 Q34 34 37.5 34.8 Q34 35.6 32 40 Q30 35.6 26.5 34.8Z" fill="#e9d5ff" opacity="0.4"/>
+  <circle cx="32" cy="34.8" r="1.5" fill="#ffffff"/>
+
+  <!-- GRADUATION CAP — top of shield -->
+  <!-- Cap board (diamond/parallelogram) -->
+  <polygon points="32,5 50,13 32,21 14,13"
+           fill="url(#capGrad)"
+           stroke="#c084fc"
+           stroke-width="0.8"
+           filter="url(#glow)"/>
+  <!-- Cap brim shine -->
+  <polygon points="32,7 47,13.5 32,20 17,13.5"
+           fill="none"
+           stroke="rgba(255,255,255,0.2)"
+           stroke-width="0.5"/>
+  <!-- Cap button center -->
+  <circle cx="32" cy="13" r="1.8" fill="#e9d5ff"/>
+
+  <!-- Tassel cord -->
+  <path d="M32 13 Q20 14 16 21 L16 28"
+        fill="none" stroke="#c084fc" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Tassel bob -->
+  <rect x="14" y="27" width="4" height="5" rx="1.5" fill="#e9d5ff"/>
+</svg>
