@@ -97,4 +97,4 @@ os-campus/
 ---
 
 ## 📜 License
-Developed for **LAXMI BAGALKOT, Jamkhandi**.
+Developed for **LAXMI BAGALKOT & CHANNU PATIL,  Jamkhandi**.
