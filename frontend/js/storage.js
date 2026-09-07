@@ -113,6 +113,18 @@ var Storage = {
           this.set(KEYS.POSTS, cleanedPosts);
         }
       }
+
+      // Purge only legacy mock banners (banner_1, banner_2, banner_3) so user starts clean
+      const localBanners = this.get(KEYS.BANNERS, []);
+      if (Array.isArray(localBanners) && localBanners.length > 0) {
+        const cleanedBanners = localBanners.filter(b => b &&
+          !['banner_1', 'banner_2', 'banner_3'].includes(String(b.id)) &&
+          !['img/banner1.jpg', 'img/banner2.jpg', 'img/banner3.jpg'].includes(b.image_url)
+        );
+        if (cleanedBanners.length !== localBanners.length) {
+          this.set(KEYS.BANNERS, cleanedBanners);
+        }
+      }
     } catch (e) {
       console.warn('Legacy data purge note:', e);
     }
@@ -200,13 +212,24 @@ var Storage = {
           }
         }
 
-        // Sync Banners from Backend
+        // Sync Banners from Backend (Merge with local banners so custom banners are never erased)
         if (PythonAPI.getBanners) {
-          const banners = await PythonAPI.getBanners();
-          if (banners && Array.isArray(banners)) {
+          try {
+            const remoteBanners = await PythonAPI.getBanners();
             const deletedBanners = this.getDeletedBannerIds();
-            const filteredBanners = banners.filter(b => !deletedBanners.includes(b.id));
-            this.setBanners(filteredBanners);
+            const delSet = new Set(deletedBanners.map(String));
+            localBanners.forEach(b => { if (b && b.id && !delSet.has(String(b.id))) bannerMap.set(String(b.id), b); });
+            if (remoteBanners && Array.isArray(remoteBanners) && remoteBanners.length > 0) {
+              remoteBanners.forEach(b => {
+                if (b && b.id && !delSet.has(String(b.id))) {
+                  bannerMap.set(String(b.id), { ...(bannerMap.get(String(b.id)) || {}), ...b });
+                }
+              });
+            }
+            const mergedBanners = Array.from(bannerMap.values()).sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+            this.setBanners(mergedBanners);
+          } catch (e) {
+            console.warn('[Storage] Banner sync notice:', e);
           }
         }
 
@@ -715,16 +738,27 @@ var Storage = {
   updateAccountRole(handle, role) {
     if (!handle) return;
     const clean = handle.startsWith('@') ? handle.toLowerCase() : '@' + handle.toLowerCase();
+    const raw = clean.replace(/^@/, '');
     const accounts = this.getAccounts();
-    const target = accounts.find(a => (a.username || a.handle || '').toLowerCase() === clean);
+    const target = accounts.find(a => {
+      const h = (a.username || a.handle || '').toLowerCase();
+      return h === clean || h === raw || h.replace(/^@/, '') === raw;
+    });
     if (target) {
       target.role = role;
+      target.updatedAt = Date.now();
       this.setAccounts(accounts);
+      if (window.PythonAPI && PythonAPI.saveCloudAccount) {
+        PythonAPI.saveCloudAccount(target).catch(() => {});
+      }
     }
     const curUser = this.getUser();
-    if (curUser && (curUser.username || curUser.handle || '').toLowerCase() === clean) {
-      curUser.role = role;
-      this.setUser(curUser);
+    if (curUser) {
+      const curH = (curUser.username || curUser.handle || '').toLowerCase();
+      if (curH === clean || curH === raw || curH.replace(/^@/, '') === raw) {
+        curUser.role = role;
+        this.setUser(curUser);
+      }
     }
   },
   deleteAccount(handle) {
@@ -1150,18 +1184,24 @@ var Storage = {
     let list = [];
 
     if (raw !== null && Array.isArray(raw)) {
-      // Filter out legacy mock banners
-      list = raw.filter(b => b && !['banner_1', 'banner_2', 'banner_3'].includes(b.id) && !['img/banner1.jpg', 'img/banner2.jpg', 'img/banner3.jpg'].includes(b.image_url));
+      // Filter out only legacy mock banners
+      list = raw.filter(b => b &&
+        !['banner_1', 'banner_2', 'banner_3'].includes(String(b.id)) &&
+        !['img/banner1.jpg', 'img/banner2.jpg', 'img/banner3.jpg'].includes(b.image_url)
+      );
     }
 
     if (deleted.length > 0) {
-      list = list.filter(b => !deleted.includes(b.id));
+      list = list.filter(b => !deleted.includes(String(b.id)));
     }
-    return list.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    return list.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
   },
   setBanners(banners) {
     const deleted = this.getDeletedBannerIds();
-    const clean = (banners || []).filter(b => b && !deleted.includes(b.id) && !['banner_1', 'banner_2', 'banner_3'].includes(b.id));
+    const clean = (banners || []).filter(b => b &&
+      !deleted.includes(String(b.id)) &&
+      !['banner_1', 'banner_2', 'banner_3'].includes(String(b.id))
+    );
     try {
       return this.set(KEYS.BANNERS, clean);
     } catch (e) {
@@ -1171,13 +1211,13 @@ var Storage = {
   },
   saveBanner(banner) {
     if (!banner) return null;
-    const id = banner.id || ('banner_' + Date.now());
+    const id = String(banner.id || ('banner_' + Date.now()));
     this.removeDeletedBannerId(id);
     let banners = [];
     try {
       banners = this.getBanners();
     } catch (e) { banners = []; }
-    const idx = banners.findIndex(b => b.id === id);
+    const idx = banners.findIndex(b => String(b.id) === id);
     const newB = { ...banner, id, sort_order: Number(banner.sort_order) || (banners.length + 1) };
     if (idx >= 0) {
       banners[idx] = newB;
@@ -1196,16 +1236,17 @@ var Storage = {
   },
   deleteBanner(id) {
     if (!id) return false;
-    this.addDeletedBannerId(id);
+    const strId = String(id);
+    this.addDeletedBannerId(strId);
     let banners = [];
     try {
-      banners = this.getBanners().filter(b => b.id !== id);
+      banners = this.getBanners().filter(b => String(b.id) !== strId);
       this.setBanners(banners);
     } catch (e) {
       console.warn('Storage deleteBanner warning:', e);
     }
     if (window.PythonAPI && PythonAPI.deleteAdminBanner) {
-      PythonAPI.deleteAdminBanner(id).catch(() => {});
+      PythonAPI.deleteAdminBanner(strId).catch(() => {});
     }
     return true;
   },
@@ -1230,6 +1271,10 @@ var Storage = {
   clearAdminSession() {
     sessionStorage.removeItem(KEYS.ADMIN_TOKEN);
     localStorage.removeItem(KEYS.ADMIN_TOKEN);
+    sessionStorage.removeItem('cos_admin_token');
+    localStorage.removeItem('cos_admin_token');
+    sessionStorage.removeItem('cos_admin_user');
+    localStorage.removeItem('cos_admin_user');
     this.remove(KEYS.ADMIN_USER);
   },
   isAdmin() {

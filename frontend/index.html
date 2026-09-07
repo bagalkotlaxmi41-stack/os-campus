@@ -29,9 +29,6 @@
   <!-- Favicon / Browser Icon -->
   <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon-192x192.png" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1366,6 +1363,11 @@
       <span>🚀 Create Account</span>
     </button>
 
+    <!-- Desktop PC Admin Suite Badge for Promoted Admins / Owners -->
+    <a href="admin.html" class="nav-admin-link" id="navAdminSuiteBtn" title="Owner & Administrator Control Suite" style="display:none; align-items:center; gap:6px; background:linear-gradient(135deg, rgba(124,58,237,0.25), rgba(6,182,212,0.18)); border:1px solid rgba(168,85,247,0.45); color:#e0e7ff; padding:7px 13px; border-radius:12px; font-size:12.5px; font-weight:700; text-decoration:none; transition:all 0.2s ease;">
+      <span>👑 Admin Suite</span>
+    </a>
+
     <!-- Desktop PC User Profile Badge -->
     <a href="profile.html" class="nav-user-chip" id="navUserBadge">
       <div class="nav-user-avatar-circle" id="navUserAvatar">S</div>
@@ -2213,19 +2215,31 @@ let heroSlideTimer = null;
 let activeHeroBanners = [];
 
 async function renderDynamicHeroSlider() {
-  let banners = Storage.getBanners ? Storage.getBanners() : [];
-  const deleted = Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : [];
+  let localBanners = (Storage.getBanners ? Storage.getBanners() : []) || [];
+  const deleted = (Storage.getDeletedBannerIds ? Storage.getDeletedBannerIds() : []) || [];
+
+  const bannerMap = new Map();
+  localBanners.forEach(b => {
+    if (b && b.id && !deleted.includes(String(b.id))) {
+      bannerMap.set(String(b.id), b);
+    }
+  });
 
   if (window.PythonAPI && PythonAPI.getBanners) {
     try {
       const remote = await PythonAPI.getBanners();
-      if (remote && Array.isArray(remote)) {
-        banners = remote.filter(b => !deleted.includes(b.id));
+      if (remote && Array.isArray(remote) && remote.length > 0) {
+        remote.forEach(b => {
+          if (b && b.id && !deleted.includes(String(b.id))) {
+            bannerMap.set(String(b.id), { ...(bannerMap.get(String(b.id)) || {}), ...b });
+          }
+        });
       }
     } catch (e) {}
   }
 
-  activeHeroBanners = (banners || []).filter(b => b.active !== 0 && !deleted.includes(b.id));
+  const merged = Array.from(bannerMap.values()).sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+  activeHeroBanners = merged.filter(b => b.active !== 0 && b.active !== '0' && b.active !== false);
 
   const slidesWrapper = document.querySelector('.hero-slides-wrapper');
   const dotsBar = document.getElementById('sliderDotsBar');
@@ -2372,6 +2386,12 @@ function syncNavbarUser() {
   const initial = name[0].toUpperCase();
   const photo = Storage.getUserPhoto(handle) || user.photo;
   const profileUrl = `profile.html?handle=${encodeURIComponent(handle)}`;
+
+  const isAdmin = (user.role === 'ADMIN' || user.role === 'OWNER_ADMIN');
+  const navAdminBtn = document.getElementById('navAdminSuiteBtn');
+  if (navAdminBtn) {
+    navAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  }
 
   if (createAccountBtn) createAccountBtn.style.display = 'none';
   if (navUserBadge) {
@@ -2936,12 +2956,64 @@ window.addEventListener('scroll', () => {
   if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 30);
 });
 
+function formatTimeAgo(ts) {
+  if (!ts) return 'Official Bulletin';
+  const diff = Math.floor((Date.now() - Number(ts)) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function renderLiveAdminBroadcasts() {
+  const container = document.getElementById('liveAdminBroadcastContainer');
+  if (!container) return;
+
+  const allPosts = (typeof Storage !== 'undefined' && Storage.getPosts) ? Storage.getPosts() : [];
+  const broadcasts = (allPosts || []).filter(p => 
+    p && (p.type === 'announcement' || (Array.isArray(p.tags) && p.tags.includes('#OfficialBroadcast')) || (p.author && p.author.toLowerCase().includes('admin')))
+  ).slice(0, 3);
+
+  if (broadcasts.length === 0) return;
+
+  container.innerHTML = broadcasts.map(b => {
+    const timeAgo = b.createdAt ? formatTimeAgo(b.createdAt) : 'Official Bulletin';
+    const author = b.author || 'Central Campus Administration';
+    const title = b.title || 'Official Campus Announcement';
+    const content = b.content || b.desc || '';
+    const tags = Array.isArray(b.tags) && b.tags.length > 0 ? b.tags : ['#OfficialBroadcast', '#CampusCircular'];
+
+    return `
+      <div class="admin-broadcast-banner-card" style="margin-bottom:16px;">
+        <div class="broadcast-banner-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="broadcast-live-badge">🔴 LIVE BROADCAST</div>
+            <span class="broadcast-authority-badge">🏛️ ${escapeHtml(author)}</span>
+          </div>
+          <span class="broadcast-timestamp-tag">${timeAgo}</span>
+        </div>
+        <h3 class="broadcast-headline">${escapeHtml(title)}</h3>
+        <p class="broadcast-body-text">${escapeHtml(content)}</p>
+        <div class="broadcast-footer-actions">
+          <div class="broadcast-tags-strip">
+            ${tags.map(t => `<span class="broadcast-tag-pill">${escapeHtml(t)}</span>`).join('')}
+          </div>
+          <a href="feed.html" class="hero-btn-primary" style="padding:7px 18px; font-size:12px; text-decoration:none;">
+            <span>View in Feed →</span>
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   syncNavbarUser();
 
   // Await slider rendering so hero account button is in DOM before syncNavbarUser
   try {
     await renderDynamicHeroSlider();
+    renderLiveAdminBroadcasts();
   } catch(e) {
     console.warn('Hero slider render note:', e);
   }
@@ -2959,10 +3031,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await CampusStorage.init();
       syncNavbarUser();
+      await renderDynamicHeroSlider();
+      renderLiveAdminBroadcasts();
     } catch (e) {
       console.warn('Realtime sync note:', e);
     }
   }
+
+  // Cross-tab and dynamic storage update listener
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'cos_banners' || e.key === 'cos_deleted_banner_ids') {
+      renderDynamicHeroSlider();
+    }
+    if (e.key === 'cos_posts') {
+      renderLiveAdminBroadcasts();
+    }
+    if (e.key === 'cos_user' || e.key === 'cos_accounts') {
+      syncNavbarUser();
+    }
+  });
 });
 </script>
 </body>

@@ -7,9 +7,6 @@
   <meta name="description" content="Official Owner and Administrator Control Suite for Campus OS. Manage student accounts, logins, dynamic hero banners, broadcast alerts, and system analytics." />
   <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon-192x192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -1609,7 +1606,10 @@
             <h1 class="admin-section-title">Hero Banner Slider Manager</h1>
             <p class="admin-section-desc">Add, edit, toggle, or reorder the visual slides featured on the Homepage hero banner.</p>
           </div>
-          <button class="admin-btn-primary" onclick="openBannerModal()">➕ Add New Banner</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <a href="index.html" class="admin-btn-secondary" style="text-decoration:none;" title="Open Homepage in new tab" target="_blank">👁️ View on Homepage ↗</a>
+            <button class="admin-btn-primary" onclick="openBannerModal()">➕ Add New Banner</button>
+          </div>
         </div>
 
         <div class="admin-banners-grid" id="bannersGridContainer">
@@ -1836,9 +1836,15 @@
         </div>
 
         <div class="admin-form-group">
-          <label class="admin-form-label">BANNER IMAGE (URL OR UPLOAD)</label>
-          <input type="text" class="admin-form-input" id="bannerImageUrlInput" placeholder="https://... or upload image below" />
-          <input type="file" id="bannerFileInput" accept="image/*" style="margin-top:8px;font-size:12px;" onchange="handleBannerFileUpload(this)" />
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label class="admin-form-label" style="margin-bottom:0;">BANNER IMAGE URL (WEB LINK / UNSPLASH / DIRECT URL)</label>
+            <button type="button" onclick="document.getElementById('bannerImageUrlInput').value=''; updateBannerImagePreview('');" style="background:none;border:none;color:#f43f5e;font-size:11px;cursor:pointer;font-weight:600;padding:0;">✕ Clear Image (Use Gradient)</button>
+          </div>
+          <input type="text" class="admin-form-input" id="bannerImageUrlInput" placeholder="Paste image link: https://images.unsplash.com/... or any image URL (leave empty for gradient)" oninput="updateBannerImagePreview(this.value)" />
+          <div id="bannerImagePreviewContainer" style="display:none;margin-top:10px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.3);position:relative;">
+            <img id="bannerImagePreviewImg" src="" alt="Banner Preview" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="document.getElementById('bannerImagePreviewContainer').style.display='none';" />
+            <div style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);padding:3px 8px;border-radius:4px;font-size:11px;color:#38bdf8;">✓ Image Attached</div>
+          </div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
@@ -1909,17 +1915,20 @@
 
     async function checkAdminAuth() {
       const token = safeGetAdminToken();
-      const currentUser = Storage.getUser ? Storage.getUser() : null;
-      const isAdminUser = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER_ADMIN');
-
-      if (token || isAdminUser) {
-        if (!token && isAdminUser) {
-          safeSetAdminSession('adm_token_' + Date.now(), currentUser, true);
-        }
+      if (token) {
         document.getElementById('adminGatekeeper').classList.add('authenticated');
         loadAllAdminData();
       } else {
         document.getElementById('adminGatekeeper').classList.remove('authenticated');
+        const emailInp = document.getElementById('adminEmailInput');
+        const keyInp = document.getElementById('adminKeyInput');
+        if (emailInp && !emailInp.value) {
+          const cu = (typeof Storage !== 'undefined' && Storage.getUser) ? Storage.getUser() : null;
+          if (cu && (cu.role === 'ADMIN' || cu.role === 'OWNER_ADMIN')) {
+            emailInp.value = cu.email || cu.username || cu.handle || '';
+          }
+        }
+        if (keyInp) keyInp.value = '';
       }
     }
 
@@ -1965,22 +1974,24 @@
         if (!authResult && window.PythonAPI && PythonAPI.login) {
           try {
             const userLoginRes = await PythonAPI.login(rawIdent, key);
-            if (userLoginRes && (userLoginRes.role === 'ADMIN' || userLoginRes.role === 'OWNER_ADMIN')) {
-              authResult = { admin: userLoginRes, token: 'adm_token_' + Date.now() };
+            const userRole = (userLoginRes?.role || userLoginRes?.user?.role || '').toUpperCase();
+            if (userRole === 'ADMIN' || userRole === 'OWNER_ADMIN') {
+              const uData = userLoginRes.user || userLoginRes;
+              authResult = { admin: uData, token: 'adm_token_' + Date.now() };
             }
           } catch(e) {}
         }
 
         // Master key & official admin local verification fallback
         const validMasterKeys = ['campus@#1974', 'AdminMaster#2026', 'campus_admin_2026', 'owner_secret_key', 'CampusOSAdmin2026!'];
-        const isOfficialOwner = (['campus0012@gmail.com', '@campus_admin', 'campus_admin'].includes(ident) && key === 'campus@#1974') || validMasterKeys.includes(key);
+        const isOfficialOwner = (['campus0012@gmail.com', '@campus_admin', 'campus_admin'].includes(ident) && key === 'campus@#1974') || (validMasterKeys.includes(key) && (!ident || ['campus0012@gmail.com', '@campus_admin', 'campus_admin'].includes(ident)));
 
         // Check local storage for promoted admin user
         let isLocalPromotedAdmin = false;
         let promotedAdminData = null;
 
-        const allAccs = Storage.getAccounts ? Storage.getAccounts() : [];
-        const curUser = Storage.getUser ? Storage.getUser() : null;
+        const allAccs = (Storage && Storage.getAccounts) ? Storage.getAccounts() : [];
+        const curUser = (Storage && Storage.getUser) ? Storage.getUser() : null;
         if (curUser && !allAccs.some(a => (a.handle || a.username || '').toLowerCase() === (curUser.handle || curUser.username || '').toLowerCase())) {
           allAccs.unshift(curUser);
         }
@@ -1988,7 +1999,10 @@
         const candidate = allAccs.find(a => {
           const aEmail = (a.email || '').toLowerCase().trim();
           const aHandle = (a.username || a.handle || '').toLowerCase().trim();
-          return aEmail === ident || aHandle === ident || aHandle === cleanHandle || aHandle.replace(/^@/, '') === rawHandleNoAt;
+          return (aEmail && aEmail === ident) ||
+                 aHandle === ident ||
+                 aHandle === cleanHandle ||
+                 aHandle.replace(/^@/, '') === rawHandleNoAt;
         });
 
         if (candidate) {
@@ -2037,8 +2051,15 @@
     }
 
     function exitAdminSession() {
-      if (confirm('Are you sure you want to exit your Owner / Admin session?')) {
+      if (confirm('Are you sure you want to exit your Owner / Admin session? You will need to log in again to access the suite.')) {
         safeClearAdminSession();
+        localStorage.removeItem('cos_admin_token');
+        sessionStorage.removeItem('cos_admin_token');
+        localStorage.removeItem('cos_admin_user');
+        sessionStorage.removeItem('cos_admin_user');
+        document.getElementById('adminGatekeeper').classList.remove('authenticated');
+        const keyInp = document.getElementById('adminKeyInput');
+        if (keyInp) keyInp.value = '';
         window.location.reload();
       }
     }
@@ -2138,9 +2159,12 @@
         allAdminAccounts = Array.from(accountMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         Storage.setAccounts(allAdminAccounts);
 
-        // ── Banners ──
-        if (remoteBannersRes.status === 'fulfilled' && Array.isArray(remoteBannersRes.value)) {
-          allAdminBanners = remoteBannersRes.value;
+        // ── Banners (Merge with local banners so custom banners are retained) ──
+        if (remoteBannersRes.status === 'fulfilled' && Array.isArray(remoteBannersRes.value) && remoteBannersRes.value.length > 0) {
+          const bMap = new Map();
+          allAdminBanners.forEach(b => { if (b && b.id) bMap.set(String(b.id), b); });
+          remoteBannersRes.value.forEach(b => { if (b && b.id) bMap.set(String(b.id), { ...(bMap.get(String(b.id)) || {}), ...b }); });
+          allAdminBanners = Array.from(bMap.values()).sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
           Storage.setBanners(allAdminBanners);
         }
 
@@ -2599,11 +2623,17 @@
       Storage.updateAccountRole(cleanH, newRole);
 
       // 2. Update in-memory allAdminAccounts list
+      const raw = cleanH.replace(/^@/, '').toLowerCase();
       const acc = allAdminAccounts.find(a => {
         const h = (a.handle || a.username || '').toLowerCase();
-        return h === cleanH.toLowerCase() || h === handle.toLowerCase();
+        return h === cleanH.toLowerCase() || h === raw || h.replace(/^@/, '') === raw;
       });
-      if (acc) acc.role = newRole;
+      if (acc) {
+        acc.role = newRole;
+        if (window.PythonAPI && PythonAPI.saveCloudAccount) {
+          PythonAPI.saveCloudAccount(acc).catch(() => {});
+        }
+      }
 
       // 3. Immediately re-render table with updated role badge
       renderPaginatedAccounts();
@@ -2612,14 +2642,15 @@
       if (window.PythonAPI && PythonAPI.updateAccountRole) {
         try {
           await PythonAPI.updateAccountRole(cleanH, newRole);
-          showAdminToast(`🎉 Successfully updated role for ${cleanH} to ${newRole}!`);
         } catch (e) {
           console.warn('Backend updateAccountRole notice:', e);
-          showAdminToast(`🎉 Role for ${cleanH} updated to ${newRole}!`);
         }
-      } else {
-        showAdminToast(`🎉 Successfully updated role for ${cleanH} to ${newRole}!`);
       }
+
+      const msg = newRole === 'STUDENT'
+        ? `Account ${cleanH} demoted to STUDENT.`
+        : `👑 ${cleanH} is now an ADMINISTRATOR! They can sign in to the Admin Suite using their account password or master key.`;
+      showAdminToast(msg);
     }
 
     async function promptResetPassword(handle) {
@@ -2748,6 +2779,19 @@
       editBannerSlide(b);
     }
 
+    function updateBannerImagePreview(url) {
+      const container = document.getElementById('bannerImagePreviewContainer');
+      const img = document.getElementById('bannerImagePreviewImg');
+      if (!container || !img) return;
+      if (url && url.trim()) {
+        img.src = url.trim();
+        container.style.display = 'block';
+      } else {
+        img.src = '';
+        container.style.display = 'none';
+      }
+    }
+
     function openBannerModal() {
       document.getElementById('bannerForm').reset();
       document.getElementById('bannerId').value = '';
@@ -2756,6 +2800,7 @@
       document.getElementById('bannerOrderInput').value = allAdminBanners.length + 1;
       if (document.getElementById('bannerSecondaryTextInput')) document.getElementById('bannerSecondaryTextInput').value = '';
       if (document.getElementById('bannerSecondaryUrlInput')) document.getElementById('bannerSecondaryUrlInput').value = '';
+      updateBannerImagePreview('');
       document.getElementById('bannerModal').classList.add('open');
     }
 
@@ -2778,38 +2823,12 @@
         document.getElementById('bannerSecondaryUrlInput').value = b.secondary_url || '';
       }
       document.getElementById('bannerImageUrlInput').value = b.image_url || '';
+      updateBannerImagePreview(b.image_url || '');
       document.getElementById('bannerModalTitle').textContent = 'Edit Hero Banner Slide';
       document.getElementById('bannerModal').classList.add('open');
     }
 
-    async function handleBannerFileUpload(input) {
-      const file = input.files?.[0];
-      if (!file) return;
 
-      showAdminToast('Uploading banner image...');
-
-      // Try uploading to backend first if available
-      if (window.PythonAPI && PythonAPI.uploadBannerImage) {
-        try {
-          const res = await PythonAPI.uploadBannerImage(file);
-          if (res && res.url) {
-            document.getElementById('bannerImageUrlInput').value = res.url;
-            showAdminToast('Banner image uploaded successfully!');
-            return;
-          }
-        } catch (err) {
-          console.warn('Backend banner upload error, using local fallback:', err);
-        }
-      }
-
-      // Safe local fallback
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('bannerImageUrlInput').value = e.target.result;
-        showAdminToast('Image loaded to banner builder!');
-      };
-      reader.readAsDataURL(file);
-    }
 
     async function handleSaveBanner(e) {
       e.preventDefault();
@@ -3062,9 +3081,11 @@
         }
       }, 30000);
 
-      // Refresh on tab focus
+      // Refresh on tab focus (safeguard: do not interrupt user if modal is open)
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && Storage.isAdmin && Storage.isAdmin()) {
+          const modal = document.getElementById('bannerModal');
+          if (modal && modal.classList.contains('open')) return;
           loadAllAdminData();
         }
       });

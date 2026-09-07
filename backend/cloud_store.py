@@ -324,3 +324,30 @@ def cloud_save_settings(settings_dict):
     put_cloud_json("campus_settings.json", updated)
     return updated
 
+
+def cloud_get_banners():
+    """Get all hero banners from cloud storage."""
+    return get_cloud_json("campus_banners.json", default=[])
+
+
+def cloud_save_banner(banner_dict):
+    """Save or update a hero banner in cloud storage."""
+    banners = cloud_get_banners()
+    bid = str(banner_dict.get("id", ""))
+    if bid:
+        banners = [b for b in banners if str(b.get("id", "")) != bid]
+    banners.append(banner_dict)
+    # Sort by sort_order
+    banners.sort(key=lambda b: int(b.get("sort_order") or 0))
+    put_cloud_json("campus_banners.json", banners)
+    return banner_dict
+
+
+def cloud_delete_banner(banner_id):
+    """Remove a hero banner from cloud storage."""
+    banners = cloud_get_banners()
+    bid = str(banner_id)
+    banners = [b for b in banners if str(b.get("id", "")) != bid]
+    put_cloud_json("campus_banners.json", banners)
+
+
